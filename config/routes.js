@@ -1,6 +1,4 @@
 const AccessManager    = require('../engine/access-manager');
-const UserKeysManager  = require('../engine/user-keys-manager');
-
 const ErrorHandler = require('../engine/error-handler');
 
 module.exports = function (app, passport) {
@@ -11,9 +9,11 @@ module.exports = function (app, passport) {
     let keysPath  = indexPath + 'keys/';
 
     /* AUTH */
-    const adminAuth  = passport.authenticate.bind(passport)('jwt-admin',  {session: false});
-    const userAuth   = passport.authenticate.bind(passport)('jwt-user',   {session: false});
-    const editorAuth = passport.authenticate.bind(passport)('jwt-editor', {session: false});
+    const adminAuth    = passport.authenticate.bind(passport)('jwt-admin',    {session: false});
+    const producerAuth = passport.authenticate.bind(passport)('jwt-producer', {session: false});
+    const brokerAuth   = passport.authenticate.bind(passport)('jwt-broker',   {session: false});
+    const consumerAuth = passport.authenticate.bind(passport)('jwt-consumer', {session: false});
+    const verifierAuth = passport.authenticate.bind(passport)('jwt-verifier', {session: false});
 
     /****************** ACCESS MANAGER ********************/
 
@@ -25,15 +25,7 @@ module.exports = function (app, passport) {
     app.put(amPath    + 'update/', adminAuth, AccessManager.updateUser);        // Update
     app.delete(amPath + 'delete/', adminAuth, AccessManager.deleteUser);        // Delete
 
-
     app.get(amPath + 'getUserFromUsername/:usern', AccessManager.getUserFromUsername); // NOT USEFUL
-
-    /****************** CRUD USER KEYS ********************/
-    app.post(keysPath   + 'insert/', userAuth, UserKeysManager.insertKey);                      // Create
-    app.get(keysPath    + 'getAll/:user_id', userAuth, UserKeysManager.readAllKeysById);        // Read all keys by User
-    app.get(keysPath    + 'getByUserService/', userAuth, UserKeysManager.readServiceKeyByUser); // Read a key by User and Service
-    app.put(keysPath    + 'update/', userAuth, UserKeysManager.update);                         // Update
-    app.delete(keysPath + 'delete/', userAuth, UserKeysManager.delete);                         // Delete
 
     /****************** ERROR HANDLER ********************/
 
