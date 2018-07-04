@@ -4,17 +4,17 @@
 
 module.exports = (sequelize, DataType) => {
     let Coupons = sequelize.define('Coupons', {
-        id:             DataType.STRING(20),
-        title:          DataType.STRING(50),
-        description:    DataType.STRING(100),
-        timestamp:      DataType.STRING(11),
-        price:          DataType.STRING(40),
-        valid_from:     DataType.DATEONLY,
-        valid_until:    DataType.DATEONLY,
-        state:          DataType.STRING(100),
-        constraints:    DataType.STRING(2),
-        owner:          DataType.STRING(50),
-        consumer:       DataType.STRING(5)
+        id:             DataType.INTEGER(11),
+        title:          DataType.STRING(255),
+        description:    DataType.STRING(255),
+        timestamp:      DataType.TIMESTAMP,
+        price:          DataType.INTEGER(10),
+        valid_from:     DataType.DATE,
+        valid_until:    DataType.DATE,
+        state:          DataType.INTEGER(11),
+        constraints:    DataType.STRING(255),
+        owner:          DataType.INTEGER(11),
+        consumer:       DataType.INTEGER(11)
     }, {
         freezeTableName: true,
         timestamps: false,
