@@ -1,12 +1,13 @@
-const AccessManager    = require('../engine/access-manager');
-const ErrorHandler = require('../engine/error-handler');
+const AccessManager     = require('../engine/access-manager');
+const CouponManager     = require('../engine/coupon-manager');
+const ErrorHandler      = require('../engine/error-handler');
 
 module.exports = function (app, passport) {
 
     /* PATHs */
     let indexPath = "/";
     let amPath    = indexPath + 'users/';
-    let keysPath  = indexPath + 'keys/';
+    let cmPath    = indexPath + 'coupons/';
 
     /* AUTH */
     const adminAuth    = passport.authenticate.bind(passport)('jwt-admin',    {session: false});
@@ -16,10 +17,11 @@ module.exports = function (app, passport) {
     const verifierAuth = passport.authenticate.bind(passport)('jwt-verifier', {session: false});
 
     /****************** ACCESS MANAGER ********************/
-
     app.post('/login', AccessManager.basicLogin);
 
-    /****************** CRUD USERS ********************/
+
+
+    /****************** CRUD USERS ************************/
     app.post(amPath   + 'create/', adminAuth, AccessManager.createUser);        // Create
     app.get(amPath    + 'getFromId/:id', adminAuth, AccessManager.getUserById); // Read by ID
     app.put(amPath    + 'update/', adminAuth, AccessManager.updateUser);        // Update
@@ -27,7 +29,13 @@ module.exports = function (app, passport) {
 
     app.get(amPath + 'getUserFromUsername/:usern', AccessManager.getUserFromUsername); // NOT USEFUL
 
-    /****************** ERROR HANDLER ********************/
 
+
+    /****************** CRUD COUPONS **********************/
+    app.post(amPath   + 'create/', adminAuth, CouponManager.createCoupon);
+
+
+
+    /****************** ERROR HANDLER *********************/
     app.use(ErrorHandler.fun404);
 };

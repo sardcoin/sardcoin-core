@@ -2,7 +2,7 @@
 const bcrypt = require('bcrypt-nodejs');
 
 module.exports = (sequelize, DataType) => {
-    let Users = sequelize.define('Users', {
+    let User = sequelize.define('User', {
         username:       DataType.STRING(20),
         email:          DataType.STRING(50),
         company_name:   DataType.STRING(100),
@@ -28,9 +28,10 @@ module.exports = (sequelize, DataType) => {
         // Users.hasMany(models.User_keys, {foreignKey: 'id', sourceKey: models.User_keys.})
       };*/
 
-    Users.prototype.verifyPassword = function(password) {
+    // Instance method
+    User.prototype.verifyPassword = function(password) {
         return bcrypt.compareSync(password, this.password);
     };
 
-    return Users;
+    return User;
 };

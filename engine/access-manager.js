@@ -1,21 +1,22 @@
 'use strict';
 
-const Model = require('../models/index');
-const passport = require('../app').passport;
+const Sequelize = require('sequelize');
+const User = require('../models/index').User;
+const Passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 
+
 exports.getUserFromUsername = function (req, res, next) {
-    const username = req.params.usern;
+    const usern = req.params.usern;
 
-    Model.Users.findOne({where: {username: username}})
+    User.findOne({where: {username: usern}})
         .then(user => {
-            // Returning the new object instantiated
-            if (user === null) {
-                res.json("This username doesn't exist in the platform.");
-            }
 
-            res.json(user.email);
+            if (user === null)
+                res.json("This username doesn't exist in the platform.");
+            else
+                res.json(user.email);
         })
         .catch(err => {
             res.json(err);
@@ -23,11 +24,12 @@ exports.getUserFromUsername = function (req, res, next) {
 };
 
 exports.createUser = function (req, res, next) {
-    const Op = Model.Sequelize.Op;
+
+    const Op = Sequelize.Op;
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    Model.Users.findAll({
+    User.findAll({
         where: {
             [Op.or] : [
                 { username: user.username },
@@ -36,15 +38,15 @@ exports.createUser = function (req, res, next) {
         }
     })
         .then(userbn => {
-            // user !== null then a username or an email already exists in the sistem
-            // the registration has to be rejected
+            // user not null means a username or an email already exists in the system and
+            // the registration must be rejected
 
             if(userbn.length !== 0) {
-                res.status(400).send('The username or email choosen already exists in the system');
+                res.status(400).send('The username or email chosen already exists.');
             } else {
                 // A new user can be created
 
-                Model.Users.create({
+                User.create({
                     username: user.username,
                     email: user.email,
                     company_name: user.company_name,
@@ -79,9 +81,10 @@ exports.createUser = function (req, res, next) {
 };
 
 exports.getUserById = function (req, res, next) {
+
     const userId = req.params.id;
 
-    Model.Users.findOne({where: {id: userId}})
+    User.findOne({where: {id: userId}})
         .then(user => {
             res.send(user);
         })
@@ -95,7 +98,7 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    Model.Users.update({
+    User.update({
         username: user.username,
         email: user.email,
         company_name: user.company_name,
@@ -124,7 +127,8 @@ exports.updateUser = function (req, res, next) {
 };
 
 exports.deleteUser = function (req, res, next) {
-    Model.Users.destroy({where: {user: req.body.username}})
+
+    User.destroy({where: {user: req.body.username}})
         .then(() => {
             res.send("user" + req.body.username + " destroyed");
         })
@@ -135,7 +139,8 @@ exports.deleteUser = function (req, res, next) {
 };
 
 exports.basicLogin = function (req, res, next) {
-    passport.authenticate('basic', {session: false}, function (err, user, info) {
+
+    Passport.authenticate('basic', {session: false}, function (err, user, info) {
         if (err) {
             return next(err);
         }

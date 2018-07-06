@@ -1,10 +1,12 @@
 'use strict';
 
-// TODO: check data types
-
 module.exports = (sequelize, DataType) => {
-    let Coupons = sequelize.define('Coupons', {
-        id:             DataType.INTEGER(11),
+    let Coupon = sequelize.define('Coupon', {
+        id:             {
+                        type: DataType.INTEGER(11),
+                        autoIncrement: true,
+                        primaryKey: true
+                        },
         title:          DataType.STRING(255),
         description:    DataType.STRING(255),
         timestamp:      DataType.TIMESTAMP,
@@ -18,8 +20,8 @@ module.exports = (sequelize, DataType) => {
     }, {
         freezeTableName: true,
         timestamps: false,
-        tableName: 'users'
+        tableName: 'coupons'
     });
 
-    return Coupons;
+    return Coupon;
 };
