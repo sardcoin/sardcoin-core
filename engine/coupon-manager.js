@@ -2,33 +2,33 @@
 
 const Coupon = require('../models/index').Coupon;
 
-// TODO check correctness
-
 exports.createCoupon = function (req, res, next) {
 
     const data = req.body;
 
+    console.log("DATA: " + new Date(Number(data.timestamp)));
+
     Coupon.create({
         title:          data.title,
         description:    data.description,
-        timestamp:      data.timestamp,
+        timestamp:      Number(data.timestamp),
         price:          data.price,
-        valid_from:     data.valid_from,
-        valid_until:    data.valid_until,
+        valid_from:     Number(data.valid_from),
+        valid_until:    Number(data.valid_until),
         state:          data.state,
         constraints:    data.constraints,
         owner:          data.owner,
         consumer:       data.consumer
     })
-        .then(newUser => {
+        .then(newCoupon => {
                         res.send({
-                            created:    true,
-                            first_name: newUser.get('first_name'),
-                            last_name:  newUser.get('last_name')
+                            created:        true,
+                            title:          newCoupon.get('title'),
+                            description:    newCoupon.get('description')
                         });
                     })
         .catch(err => {
-            console.log("User cannot be created");
+            console.log("The coupon cannot be created.");
             res.send(err);
         })
 

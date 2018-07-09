@@ -32,7 +32,7 @@ module.exports = function (app, passport) {
 
 
     /****************** CRUD COUPONS **********************/
-    app.post(amPath   + 'create/', adminAuth, CouponManager.createCoupon);
+    app.post(cmPath   + 'create/', CouponManager.createCoupon);
 
 
 

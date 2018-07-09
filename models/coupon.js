@@ -9,7 +9,7 @@ module.exports = (sequelize, DataType) => {
                         },
         title:          DataType.STRING(255),
         description:    DataType.STRING(255),
-        timestamp:      DataType.TIMESTAMP,
+        timestamp:      DataType.DATE,
         price:          DataType.INTEGER(10),
         valid_from:     DataType.DATE,
         valid_until:    DataType.DATE,
