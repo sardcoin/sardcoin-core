@@ -23,7 +23,4 @@ module.exports = function (passport) {
     passport.use('jwt-broker', jwtBroker);
     passport.use('jwt-consumer', jwtConsumer);
     passport.use('jwt-verifier', jwtVerifier);
-
-
-
 };

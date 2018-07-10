@@ -9,5 +9,9 @@ exports.validationError = function  (err, req, res, next){
 
 exports.fun404 = function (req, res, next) {
 
-    return res.status(404).json({ error_message: "Page not found." });
+    return res.status(404).json({
+        statusCode: 404,
+        error:      "Resource not found.",
+        message:    "The resource URL of the request cannot be found in this server."
+    });
 };
