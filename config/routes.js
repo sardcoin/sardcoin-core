@@ -1,3 +1,7 @@
+const joi = require('joi');
+const expressJoi = require('express-joi-validator');
+
+const Schemas           = require('../schemas/coupons-schema');
 const AccessManager     = require('../engine/access-manager');
 const CouponManager     = require('../engine/coupon-manager');
 const ErrorHandler      = require('../engine/error-handler');
@@ -32,10 +36,15 @@ module.exports = function (app, passport) {
 
 
     /****************** CRUD COUPONS **********************/
-    app.post(cmPath   + 'create/', CouponManager.createCoupon);
+    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), CouponManager.createCoupon);
 
 
 
     /****************** ERROR HANDLER *********************/
-    app.use(ErrorHandler.fun404);
+    //pp.use(ErrorHandler.fun404);
+
+
+    // error handler
+    app.use(ErrorHandler.validationError);
+    app.use(ErrorHandler.fun404)
 };
