@@ -3,7 +3,7 @@ let createError = require('http-errors');
 exports.validationError = function  (err, req, res, next){
 
     if (err !== null) {
-        return res.status(err.output.statusCode).json(err.output.payload);
+        return res.status(500).json(err);
     }
 };
 
