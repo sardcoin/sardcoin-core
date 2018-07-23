@@ -1,7 +1,7 @@
 const passportJWT = require('passport-jwt');
 const JWTStrategy = passportJWT.Strategy;
 const ExtractJWT = passportJWT.ExtractJwt;
-const User = require('../../models/index').Users;
+const User = require('../../models/index').User;
 
 module.exports =
     new JWTStrategy(
@@ -11,7 +11,7 @@ module.exports =
         },
         function (jwtPayload, cb) {
 
-            if(jwtPayload.user_type !== '2'&& jwtPayload.user_type !== '0'){
+            if(jwtPayload.user_type !== '2'){
                 cb("Unauthorized");
             }
 

@@ -12,8 +12,16 @@ const jwtVerifier   = require('./passport/jwt-verifier');
 module.exports = function (passport) {
 
     // serialize sessions
-    passport.serializeUser((user, done) => done(null, user));
-    passport.deserializeUser((user, done) => done(null, user));
+    passport.serializeUser((user, done) => done(null, user.id));
+    passport.deserializeUser((id, done) => {
+        Users.findById(id).then(user => {
+            if (user) {
+                done(null, user.get());
+            } else {
+                done(user.errors, null);
+            }
+        })
+    });
 
     // strategies
     passport.use(basic);
@@ -24,3 +32,4 @@ module.exports = function (passport) {
     passport.use('jwt-consumer', jwtConsumer);
     passport.use('jwt-verifier', jwtVerifier);
 };
+

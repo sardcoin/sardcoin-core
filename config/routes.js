@@ -14,37 +14,32 @@ module.exports = function (app, passport) {
     let cmPath    = indexPath + 'coupons/';
 
     /* AUTH */
-    const adminAuth    = passport.authenticate.bind(passport)('jwt-admin',    {session: false});
-    const producerAuth = passport.authenticate.bind(passport)('jwt-producer', {session: false});
-    const brokerAuth   = passport.authenticate.bind(passport)('jwt-broker',   {session: false});
-    const consumerAuth = passport.authenticate.bind(passport)('jwt-consumer', {session: false});
-    const verifierAuth = passport.authenticate.bind(passport)('jwt-verifier', {session: false});
+    const admin     = 'jwt-admin';
+    const producer  = 'jwt-producer';
+    const broker    = 'jwt-broker';
+    const consumer  = 'jwt-consumer';
+    const verifier  = 'jwt-verifier';
+    const all       = ['jwt-admin', 'jwt-producer', 'jwt-broker', 'jwt-consumer', 'jwt-verifier'];
 
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AccessManager.basicLogin);
 
-
-
     /****************** CRUD USERS ************************/
-    app.post(amPath   + 'create/', adminAuth, AccessManager.createUser);        // Create
-    app.get(amPath    + 'getFromId/:id', adminAuth, AccessManager.getUserById); // Read by ID
-    app.put(amPath    + 'update/', adminAuth, AccessManager.updateUser);        // Update
-    app.delete(amPath + 'delete/', adminAuth, AccessManager.deleteUser);        // Delete
-
-    app.get(amPath + 'getUserFromUsername/:usern', AccessManager.getUserFromUsername); // NOT USEFUL
-
-
+    app.post(amPath   + 'create/', AccessManager.createUser);        // Create
+    app.get(amPath    + 'getFromId', auth(all), AccessManager.getUserById);     // Read by ID
+    app.put(amPath    + 'update/', auth(all), AccessManager.updateUser);        // Update
+    app.delete(amPath + 'delete/', auth([admin]), AccessManager.deleteUser);        // Delete
 
     /****************** CRUD COUPONS **********************/
-    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), CouponManager.createCoupon);
-
-
+    app.post(cmPath + 'create/', expressJoi(Schemas.createCouponSchema), auth([admin, producer]), CouponManager.createCoupon); // Create
+    app.get(cmPath  + 'getById/:coupon_id', auth(all), CouponManager.getFromId); // Get a coupon by his ID
+    app.get(cmPath  + 'getAllByUser/', auth(all), CouponManager.getAllByUser);
 
     /****************** ERROR HANDLER *********************/
-    //pp.use(ErrorHandler.fun404);
+    // app.use(ErrorHandler.validationError);
+    // app.use(ErrorHandler.fun404);
 
-
-    // error handler
-    app.use(ErrorHandler.validationError);
-    app.use(ErrorHandler.fun404)
+    function auth(strategies) {
+        return passport.authenticate.bind(passport)(strategies,  {session: false});
+    }
 };
