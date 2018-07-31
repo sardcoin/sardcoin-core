@@ -4,7 +4,7 @@ const createCouponSchema = {
     query: {},
     body: {
         title:          Joi.string().allow('').min(5).max(50).required(),
-        description:    Joi.string().min(5).max(255).allow(''),
+        description:    Joi.string().min(5).max(255).allow('').allow(null),
         price:          Joi.number().integer().required(),
         valid_from:     Joi.number(),
         valid_until:    Joi.number(),
