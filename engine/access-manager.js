@@ -1,17 +1,17 @@
 'use strict';
 
-const Model = require('../models/index');
+const Users = require('../models/index').Users;
+const Op    = require('../models/index').Sequelize.Op;
 const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 
 exports.createUser = function (req, res, next) {
-    const Op = Model.Sequelize.Op;
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    Model.Users.findAll({
+    Users.findAll({
         where: {
             [Op.or] : [
                 { username: user.username },
@@ -31,7 +31,7 @@ exports.createUser = function (req, res, next) {
             } else {
                 // A new user can be created
 
-                Model.Users.create({
+                Users.create({
                     username: user.username,
                     email: user.email,
                     company_name: user.company_name,
@@ -68,7 +68,7 @@ exports.createUser = function (req, res, next) {
 };
 
 exports.getUserById = function (req, res, next) {
-    Model.Users.findById(req.user.id)
+    Users.findById(req.user.id)
         .then(user => {
             return res.status(HttpStatus.OK).send(user);
         })
@@ -84,7 +84,7 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    Model.Users.update({
+    Users.update({
         username: user.username,
         email: user.email,
         company_name: user.company_name,
@@ -122,7 +122,7 @@ exports.updateUser = function (req, res, next) {
 };
 
 exports.deleteUser = function (req, res, next) {
-    Model.Users.destroy({where: {user: req.body.username}})
+    Users.destroy({where: {user: req.body.username}})
         .then(() => {
             return res.status(HttpStatus.OK).json({
                 deleted: true,
