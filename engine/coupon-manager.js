@@ -59,14 +59,14 @@ exports.getAllByUser = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.or]: [
-                { owner: req.user.id },
-                { consumer: req.user.id }
+                {owner: req.user.id},
+                {consumer: req.user.id}
             ]
         }
     })
-    .then(coupons => {
-        return res.status(HttpStatus.OK).json(coupons)
-    })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).json(coupons)
+        })
         .catch(err => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -75,3 +75,64 @@ exports.getAllByUser = function (req, res, next) {
         });
 };
 
+exports.update = function (req, res, next) {
+    const data = req.body;
+
+    Coupon.update({
+        title: data.title,
+        description: data.description,
+        price: data.price,
+        valid_from: Number(data.valid_from),
+        valid_until: Number(data.valid_until),
+        state: data.state,
+        constraints: data.constraints,
+    }, {
+        where: {
+            [Op.and]: [
+                {owner: req.user.id},
+                {id: data.id}
+            ]
+        }
+    })
+        .then(couponUpdated => {
+            return res.status(HttpStatus.OK).json({
+                updated: true,
+                coupon_id: data.id
+            })
+        })
+        .catch(err => {
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                updated: false,
+                coupon_id: data.id,
+                error: 'Cannot update the coupon'
+            })
+        });
+};
+
+exports.delete = function (req, res, next) {
+    Coupon.destroy({
+        where: {
+            [Op.and]: [
+                { id: req.body.id },
+                { owner: req.user.id }
+            ]
+        }
+    })
+        .then(() => {
+            return res.status(HttpStatus.OK).json({
+                deleted: true,
+                coupon: parseInt(req.body.id)
+            })
+        })
+        .catch(err => {
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                deleted: false,
+                coupon: parseInt(req.body.id),
+                error: 'Cannot delete the coupon'
+            })
+        })
+};

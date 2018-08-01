@@ -130,6 +130,8 @@ exports.deleteUser = function (req, res, next) {
             })
         })
         .catch(err => {
+            console.log(err);
+
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 user: req.body.username,

@@ -31,9 +31,11 @@ module.exports = function (app, passport) {
     app.delete(amPath + 'delete/', auth([admin]), AccessManager.deleteUser);        // Delete
 
     /****************** CRUD COUPONS **********************/
-    app.post(cmPath + 'create/', expressJoi(Schemas.createCouponSchema), auth([admin, producer]), CouponManager.createCoupon); // Create
-    app.get(cmPath  + 'getById/:coupon_id', auth(all), CouponManager.getFromId); // Get a coupon by his ID
-    app.get(cmPath  + 'getAllByUser/', auth(all), CouponManager.getAllByUser);
+    app.post(cmPath    + 'create/', expressJoi(Schemas.createCouponSchema), auth([admin, producer]), CouponManager.createCoupon); // Create
+    app.get(cmPath     + 'getById/:coupon_id', auth(all), CouponManager.getFromId); // Get a coupon by his ID
+    app.get(cmPath     + 'getAllByUser/', auth(all), CouponManager.getAllByUser);
+    app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), auth([admin, producer]), CouponManager.update);
+    app.delete(cmPath  + 'delete/', auth([admin, producer]), CouponManager.delete);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
