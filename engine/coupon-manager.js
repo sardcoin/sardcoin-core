@@ -3,6 +3,8 @@
 const Coupon = require('../models/index').Coupon;
 const Op = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
+const fs = require('file-system');
+const path = require('path');
 
 exports.createCoupon = function (req, res, next) {
 
@@ -11,6 +13,7 @@ exports.createCoupon = function (req, res, next) {
     Coupon.create({
         title: data.title,
         description: data.description,
+        image: data.image,
         timestamp: Number(Date.now()),
         price: data.price,
         valid_from: Number(data.valid_from),
@@ -81,6 +84,7 @@ exports.update = function (req, res, next) {
     Coupon.update({
         title: data.title,
         description: data.description,
+        image: data.image,
         price: data.price,
         valid_from: Number(data.valid_from),
         valid_until: Number(data.valid_until),
@@ -115,8 +119,8 @@ exports.delete = function (req, res, next) {
     Coupon.destroy({
         where: {
             [Op.and]: [
-                { id: req.body.id },
-                { owner: req.user.id }
+                {id: req.body.id},
+                {owner: req.user.id}
             ]
         }
     })
@@ -135,4 +139,30 @@ exports.delete = function (req, res, next) {
                 error: 'Cannot delete the coupon'
             })
         })
+};
+
+exports.addImage = function (req, res, next) {
+    fs.readFile(req.files.file.path, function (err, data) {
+        // set the correct path for the file not the temporary one from the API:
+        const file = req.files.file;
+        file.path = path.join(__dirname, "../media/images/" + file.name);
+
+        // copy the data from the req.files.file.path and paste it to file.path
+        fs.writeFile(file.path, data, function (err) {
+            if (err) {
+                console.warn(err);
+
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    name: 'Upload Image Error',
+                    message: 'A problem occurred during upload of the image'
+                })
+            }
+
+            return res.status(HttpStatus.CREATED).send({
+                inserted: true,
+                image: file.name,
+                path: file.path
+            });
+        });
+    });
 };

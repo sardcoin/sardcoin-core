@@ -4,14 +4,14 @@
  * Module dependencies.
  */
 
-const express = require('express');
+const express =      require('express');
 const cookieParser = require('cookie-parser');
-const cors = require('cors');
-let path   = require('path');
-let helmet = require('helmet');
-let logger = require('morgan');
-let config = require('./index');
-const bodyParser = require('body-parser');
+const cors =         require('cors');
+let path   =         require('path');
+let helmet =         require('helmet');
+let logger =         require('morgan');
+let config =         require('./index');
+const bodyParser =   require('body-parser');
 
 module.exports = function (app, passport) {
 

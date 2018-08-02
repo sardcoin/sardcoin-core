@@ -1,10 +1,15 @@
 const joi = require('joi');
 const expressJoi = require('express-joi-validator');
 
+const multiparty = require('connect-multiparty');
+const multipartyMiddleware = multiparty();
+const fs = require('file-system');
+
 const Schemas           = require('../schemas/coupons-schema');
 const AccessManager     = require('../engine/access-manager');
 const CouponManager     = require('../engine/coupon-manager');
 const ErrorHandler      = require('../engine/error-handler');
+
 
 module.exports = function (app, passport) {
 
@@ -36,6 +41,7 @@ module.exports = function (app, passport) {
     app.get(cmPath     + 'getAllByUser/', auth(all), CouponManager.getAllByUser);
     app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), auth([admin, producer]), CouponManager.update);
     app.delete(cmPath  + 'delete/', auth([admin, producer]), CouponManager.delete);
+    app.post(cmPath    + 'addImage/', auth([admin, producer]), multipartyMiddleware, CouponManager.addImage);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
