@@ -142,6 +142,8 @@ exports.delete = function (req, res, next) {
 };
 
 exports.addImage = function (req, res, next) {
+    console.log(req);
+
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
         const file = req.files.file;

@@ -15,6 +15,12 @@ const bodyParser =   require('body-parser');
 
 module.exports = function (app, passport) {
 
+    const corsOpt = {
+        origin: process.env.CORS_ALLOW_ORIGIN || '*', // this work well to configure origin url in the server
+        methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'], // to works well with web app, OPTIONS is required
+        allowedHeaders: ['Content-Type', 'Authorization'] // allow json and token in the headers
+    };
+
     // use bodyParser
     app.use(bodyParser.json());
 
@@ -36,6 +42,8 @@ module.exports = function (app, passport) {
     app.use(express.static(config.root + '/public'));
 
     // enabling cors
-    app.use(cors());
+    app.use(cors(corsOpt)); // cors for all the routes of the application
+    app.options('*', cors(corsOpt)); // automatic cors gen for HTTP verbs in all routes, This can be redundant but I kept to be sure that will always work.
+
 
 };
