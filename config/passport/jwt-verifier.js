@@ -12,7 +12,7 @@ module.exports =
         function (jwtPayload, cb) {
 
             if(jwtPayload.user_type !== '4'){
-                cb({'unauthorized': true});
+                cb('unauthorized');
             }
 
             User.findOne({where: {username: jwtPayload.username}})
