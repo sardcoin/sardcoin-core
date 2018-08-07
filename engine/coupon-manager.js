@@ -71,10 +71,11 @@ exports.getAllByUser = function (req, res, next) {
             return res.status(HttpStatus.OK).json(coupons)
         })
         .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: err
-            })
+            console.log(JSON.stringify(err));
+            // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            //     error: err
+            // })
+            return res.send(JSON.stringify(err));
         });
 };
 
