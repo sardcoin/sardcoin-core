@@ -24,7 +24,7 @@ module.exports = function (app, passport) {
     const broker    = 'jwt-broker';
     const consumer  = 'jwt-consumer';
     const verifier  = 'jwt-verifier';
-    const all       = ['jwt-admin', 'jwt-producer', 'jwt-broker', 'jwt-consumer', 'jwt-verifier'];
+    const all       = ['jwt-producer', 'jwt-broker', 'jwt-consumer', 'jwt-verifier', 'jwt-admin'];
 
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AccessManager.basicLogin);
@@ -38,8 +38,8 @@ module.exports = function (app, passport) {
     /****************** CRUD COUPONS **********************/
     app.post(cmPath    + 'create/', expressJoi(Schemas.createCouponSchema), auth([admin, producer]), CouponManager.createCoupon); // Create
     app.get(cmPath     + 'getById/:coupon_id', auth(all), CouponManager.getFromId); // Get a coupon by his ID
-    app.get(cmPath     + 'getAllByUser/', auth(all), CouponManager.getAllByUser);
-    app.get(cmPath     + 'getAffordables/', auth([admin, consumer]), CouponManager.getAffordables);
+    app.get(cmPath     + 'getAllByUser/', auth([producer, consumer, admin]), CouponManager.getAllByUser);
+    app.get(cmPath     + 'getAffordables/', auth([consumer, admin]), CouponManager.getAffordables);
     app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), auth([admin, producer]), CouponManager.update);
     app.delete(cmPath  + 'delete/', auth([admin, producer]), CouponManager.delete);
     app.post(cmPath    + 'addImage/', auth([admin, producer]), multipartyMiddleware, CouponManager.addImage);
