@@ -79,6 +79,43 @@ exports.getAllByUser = function (req, res, next) {
         });
 };
 
+exports.getAffordables = function (req, res, next) {
+    Coupon.findAll({
+        where: {
+            [Op.and]: [
+                {
+                    consumer: {
+                        [Op.eq]: null    // coupon is not bought yet
+                    }
+                },
+                {
+                    valid_from: {
+                        [Op.lte]: new Date()
+                    }
+                },
+                {
+                    valid_until: {
+                        [Op.or]: [
+                            { [Op.gte]: new Date() },
+                            { [Op.eq]: null }
+                        ]
+                    }
+                }
+            ]
+        }
+    })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).json(coupons)
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: 'Cannot GET coupons affordable'
+            })
+        });
+
+};
+
 exports.update = function (req, res, next) {
     const data = req.body;
 

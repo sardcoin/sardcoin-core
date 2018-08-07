@@ -16,7 +16,8 @@ const bodyParser =   require('body-parser');
 module.exports = function (app, passport) {
 
     const corsOpt = {
-        origin: process.env.CORS_ALLOW_ORIGIN || '*', // this work well to configure origin url in the server
+        origin: 'http://localhost:4200',
+        credentials: true,
         methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'], // to works well with web app, OPTIONS is required
         allowedHeaders: ['Content-Type', 'Authorization'] // allow json and token in the headers
     };
