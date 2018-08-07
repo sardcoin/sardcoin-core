@@ -68,6 +68,7 @@ exports.getAllByUser = function (req, res, next) {
         }
     })
         .then(coupons => {
+            console.log('coupons ',coupons)
             return res.status(HttpStatus.OK).json(coupons)
         })
         .catch(err => {
