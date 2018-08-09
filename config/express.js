@@ -40,7 +40,10 @@ module.exports = function (app, passport) {
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
     app.use(cookieParser());
-    app.use(express.static(config.root + '/public'));
+    app.use(express.static(config.root + '/public')); // original
+    app.use(express.static(config.root + '/media/images')); // getting image with localhost:3000/nameImage.extension
+    //app.use(express.static('/public'));
+
 
     // enabling cors
     app.use(cors(corsOpt)); // cors for all the routes of the application
