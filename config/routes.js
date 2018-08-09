@@ -42,7 +42,7 @@ module.exports = function (app, passport) {
     app.get(cmPath     + 'getAffordables/', auth([consumer, admin]), CouponManager.getAffordables);
     app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), auth([producer, admin]), CouponManager.update);
     app.delete(cmPath  + 'delete/', auth([producer, admin]), CouponManager.delete);
-    app.post(cmPath    + 'addImage/', auth([producer, admin]), multipartyMiddleware, CouponManager.addImage);
+    app.post(cmPath    + 'addImage/', multipartyMiddleware, CouponManager.addImage);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
