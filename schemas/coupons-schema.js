@@ -12,7 +12,8 @@ const createCouponSchema = {
         state:          Joi.number().integer(),
         constraints:    Joi.string().allow(null),
         owner:          Joi.number().integer().required(),
-        consumer:       Joi.number().integer().allow(null)
+        consumer:       Joi.number().integer().allow(null),
+        quantity:       Joi.number().integer()
     },
     params: {}
 };
@@ -30,7 +31,8 @@ const updateCouponSchema = {
         state:          Joi.number().integer(),
         constraints:    Joi.string().allow(null),
         owner:          Joi.number().integer().required(),
-        consumer:       Joi.number().integer().allow(null)
+        consumer:       Joi.number().integer().allow(null),
+        quantity:       Joi.number().integer
     },
     params: {}
 };
