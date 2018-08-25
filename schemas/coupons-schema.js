@@ -32,7 +32,7 @@ const updateCouponSchema = {
         constraints:    Joi.string().allow(null),
         owner:          Joi.number().integer().required(),
         consumer:       Joi.number().integer().allow(null),
-        quantity:       Joi.number().integer
+        quantity:       Joi.number().integer()
     },
     params: {}
 };
