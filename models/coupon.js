@@ -17,7 +17,8 @@ module.exports = (sequelize, DataType) => {
         state:       DataType.INTEGER(11),
         constraints: DataType.STRING(255),
         owner:       DataType.INTEGER(11),
-        consumer:    DataType.INTEGER(11)
+        consumer:    DataType.INTEGER(11),
+        quantity:    DataType.INTEGER(11)
     }, {
         freezeTableName: true,
         timestamps: false,

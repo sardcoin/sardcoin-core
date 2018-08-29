@@ -5,7 +5,7 @@
 /dist-server
 /tmp
 /out-tsc
-
+/media/*
 # dependencies
 /node_modules
 
