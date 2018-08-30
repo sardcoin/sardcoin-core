@@ -10,6 +10,10 @@ exports.createCoupon = function (req, res, next) {
 
     const data = req.body;
 
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
+
+    console.log(data.valid_until);
+
     Coupon.create({
         title: data.title,
         description: data.description,
@@ -17,7 +21,7 @@ exports.createCoupon = function (req, res, next) {
         timestamp: Number(Date.now()),
         price: data.price,
         valid_from: Number(data.valid_from),
-        valid_until: Number(data.valid_until),
+        valid_until: valid_until,
         state: data.state,
         constraints: data.constraints,
         owner: data.owner,
