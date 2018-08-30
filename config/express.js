@@ -44,8 +44,8 @@ module.exports = function (app, passport) {
     app.use(express.static(config.root + '/media/images'));
 
     // enabling cors
-    app.use(cors(corsOpt)); // cors for all the routes of the application
-    app.options('*', cors(corsOpt)); // automatic cors gen for HTTP verbs in all routes, This can be redundant but I kept to be sure that will always work.
-
+    //app.use(cors(corsOpt)); // cors for all the routes of the application
+    //app.options('*', cors(corsOpt)); // automatic cors gen for HTTP verbs in all routes, This can be redundant but I kept to be sure that will always work.
+    app.use(cors());
 
 };
