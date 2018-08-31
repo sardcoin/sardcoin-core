@@ -82,11 +82,9 @@ exports.getAllByUser = function (req, res, next) {
         }
     })
         .then(coupons => {
-            console.log('coupons ',coupons)
             return res.status(HttpStatus.OK).json(coupons)
         })
         .catch(err => {
-            console.log(JSON.stringify(err));
             // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             //     error: err
             // })
@@ -196,7 +194,7 @@ exports.delete = function (req, res, next) {
 };
 
 exports.addImage = function (req, res, next) {
-    console.log(req);
+    // console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
@@ -225,6 +223,8 @@ exports.addImage = function (req, res, next) {
 
 exports.buyCoupon = function (req, res, next) {
   let couponID = req.body.coupon_id;
+
+  console.log("coupon id: " + couponID);
 
   Coupon.update({
       consumer: req.user.id
