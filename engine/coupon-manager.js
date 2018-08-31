@@ -10,6 +10,10 @@ exports.createCoupon = function (req, res, next) {
 
     const data = req.body;
 
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
+
+    console.log(data.valid_until);
+
     Coupon.create({
         title: data.title,
         description: data.description,
@@ -17,7 +21,7 @@ exports.createCoupon = function (req, res, next) {
         timestamp: Number(Date.now()),
         price: data.price,
         valid_from: Number(data.valid_from),
-        valid_until: Number(data.valid_until),
+        valid_until: valid_until,
         state: data.state,
         constraints: data.constraints,
         owner: data.owner,
@@ -40,12 +44,21 @@ exports.createCoupon = function (req, res, next) {
 
 exports.getFromId = function (req, res, next) {
 
-    Coupon.findById(req.params.coupon_id)
+    Coupon.findOne({
+        where: {
+            id: req.params.coupon_id,
+            [Op.or]: [
+                {owner: req.user.id},
+                {consumer: req.user.id}
+            ]
+        }
+    })
         .then(coupon => {
             if (coupon === null) {
                 return res.status(HttpStatus.OK).json({
-                    error: 'No coupon found with the given id',
-                    coupon_id: req.params.coupon_id
+                    error: 'No coupon found with the given id and the given user',
+                    coupon_id: req.params.coupon_id,
+                    user_id: req.user.id
                 })
             }
 
@@ -208,4 +221,31 @@ exports.addImage = function (req, res, next) {
             });
         });
     });
+};
+
+exports.buyCoupon = function (req, res, next) {
+  let couponID = req.body.coupon_id;
+
+  Coupon.update({
+      consumer: req.user.id
+  }, {
+      where: {
+          id: couponID
+      }
+  })
+      .then(bought => {
+          return res.status(HttpStatus.OK).json({
+              updated: true,
+              coupon_id: couponID
+          })
+      })
+      .catch(err => {
+          console.log(err);
+
+          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+              updated: false,
+              coupon_id: couponID,
+              error: 'Cannot buy the coupon'
+          })
+      });
 };
