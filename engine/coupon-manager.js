@@ -29,7 +29,7 @@ exports.createCoupon = function (req, res, next) {
         quantity: data.quantity
     })
         .then(newCoupon => {
-            return res.send({
+            return res.status(HttpStatus.CREATED).send({
                 created: true,
                 title: newCoupon.get('title'),
                 description: newCoupon.get('description')
@@ -37,7 +37,7 @@ exports.createCoupon = function (req, res, next) {
         })
         .catch(err => {
             console.log("The coupon cannot be created.");
-            return res.send(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(err);
         })
 
 };
@@ -72,7 +72,22 @@ exports.getFromId = function (req, res, next) {
         });
 };
 
-exports.getAllByUser = function (req, res, next) {
+exports.getCreatedCoupons = function (req, res, next) {
+    Coupon.findAll({
+        where: { owner: req.user.id }
+    })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).json(coupons)
+        })
+        .catch(err => {
+            // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            //     error: err
+            // })
+            return res.send(JSON.stringify(err));
+        });
+};
+
+exports.getPurchasedCoupons = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.or]: [
