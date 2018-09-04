@@ -29,7 +29,7 @@ exports.createCoupon = function (req, res, next) {
         quantity: data.quantity
     })
         .then(newCoupon => {
-            return res.send({
+            return res.status(HttpStatus.CREATED).send({
                 created: true,
                 title: newCoupon.get('title'),
                 description: newCoupon.get('description')
@@ -37,7 +37,7 @@ exports.createCoupon = function (req, res, next) {
         })
         .catch(err => {
             console.log("The coupon cannot be created.");
-            return res.send(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(err);
         })
 
 };
@@ -72,7 +72,22 @@ exports.getFromId = function (req, res, next) {
         });
 };
 
-exports.getAllByUser = function (req, res, next) {
+exports.getCreatedCoupons = function (req, res, next) {
+    Coupon.findAll({
+        where: { owner: req.user.id }
+    })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).json(coupons)
+        })
+        .catch(err => {
+            // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            //     error: err
+            // })
+            return res.send(JSON.stringify(err));
+        });
+};
+
+exports.getPurchasedCoupons = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.or]: [
@@ -82,11 +97,9 @@ exports.getAllByUser = function (req, res, next) {
         }
     })
         .then(coupons => {
-            console.log('coupons ',coupons)
             return res.status(HttpStatus.OK).json(coupons)
         })
         .catch(err => {
-            console.log(JSON.stringify(err));
             // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             //     error: err
             // })
@@ -196,7 +209,7 @@ exports.delete = function (req, res, next) {
 };
 
 exports.addImage = function (req, res, next) {
-    console.log(req);
+    // console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
@@ -225,6 +238,8 @@ exports.addImage = function (req, res, next) {
 
 exports.buyCoupon = function (req, res, next) {
   let couponID = req.body.coupon_id;
+
+  console.log("coupon id: " + couponID);
 
   Coupon.update({
       consumer: req.user.id
