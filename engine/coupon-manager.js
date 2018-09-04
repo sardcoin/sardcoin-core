@@ -89,12 +89,7 @@ exports.getCreatedCoupons = function (req, res, next) {
 
 exports.getPurchasedCoupons = function (req, res, next) {
     Coupon.findAll({
-        where: {
-            [Op.or]: [
-                {owner: req.user.id},
-                {consumer: req.user.id}
-            ]
-        }
+        where: { consumer: req.user.id }
     })
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
