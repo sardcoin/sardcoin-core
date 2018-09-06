@@ -31,6 +31,7 @@ exports.createCoupon = function (req, res, next) {
         .then(newCoupon => {
             return res.status(HttpStatus.CREATED).send({
                 created: true,
+                id: newCoupon.get('id'),
                 title: newCoupon.get('title'),
                 description: newCoupon.get('description')
             });
