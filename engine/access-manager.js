@@ -1,6 +1,6 @@
 'use strict';
 
-const Users = require('../models/index').Users;
+const Users = require('../models/index').User;
 const Op    = require('../models/index').Sequelize.Op;
 const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
@@ -155,4 +155,28 @@ exports.basicLogin = function (req, res, next) {
             return res.status(HttpStatus.OK).json({user, token});
         }
     })(req, res, next);
+};
+
+exports.roleAuthorization = function(roles){
+
+    return function(req, res, next){
+
+        let user = req.user;
+
+        Users.findById(user.id)
+            .then(userFound => {
+                console.log(roles);
+
+                if(roles.indexOf(userFound.user_type) > -1){
+                    return next();
+                }
+
+                res.status(401).json({error: 'You are not authorized to view this content'});
+                return next('Unauthorized');
+            })
+            .catch(err => {
+                res.status(422).json({error: 'No user found.'});
+                return next(err);
+            });
+    }
 };

@@ -11,10 +11,6 @@ module.exports =
         },
         function (jwtPayload, cb) {
 
-            if(jwtPayload.user_type !== '2'){
-                cb('unauthorized');
-            }
-
             User.findOne({where: {username: jwtPayload.username}})
                 .then(user => {
                     return cb(null, user);
