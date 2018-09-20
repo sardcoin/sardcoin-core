@@ -26,7 +26,8 @@ exports.createCoupon = function (req, res, next) {
         constraints: data.constraints,
         owner: data.owner,
         consumer: data.consumer,
-        quantity: data.quantity
+        quantity: data.quantity,
+        token: data.token,
     })
         .then(newCoupon => {
             return res.status(HttpStatus.CREATED).send({
@@ -152,7 +153,8 @@ exports.update = function (req, res, next) {
         valid_until: Number(data.valid_until),
         state: data.state,
         constraints: data.constraints,
-        quantity: data.quantity
+        quantity: data.quantity,
+        token:data.token,
     }, {
         where: {
             [Op.and]: [
