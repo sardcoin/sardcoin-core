@@ -5,6 +5,12 @@ const Op = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
+const bcrypt = require('bcrypt-nodejs');
+
+function generateUniqueToken(title) {
+
+    return bcrypt.hashSync(title);
+}
 
 exports.createCoupon = function (req, res, next) {
 
@@ -27,7 +33,7 @@ exports.createCoupon = function (req, res, next) {
         owner: data.owner,
         consumer: data.consumer,
         quantity: data.quantity,
-        token: data.token,
+        token: generateUniqueToken(data.title),
     })
         .then(newCoupon => {
             return res.status(HttpStatus.CREATED).send({
