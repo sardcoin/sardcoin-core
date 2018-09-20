@@ -13,9 +13,7 @@ const createCouponSchema = {
         constraints:    Joi.string().allow(null),
         owner:          Joi.number().integer().required(),
         consumer:       Joi.number().integer().allow(null),
-        quantity:       Joi.number().integer(),
-        token:          Joi.string().required(),
-
+        quantity:       Joi.number().integer()
     },
     params: {}
 };
