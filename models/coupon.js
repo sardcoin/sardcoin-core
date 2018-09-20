@@ -18,7 +18,8 @@ module.exports = (sequelize, DataType) => {
         constraints: DataType.STRING(255),
         owner:       DataType.INTEGER(11),
         consumer:    DataType.INTEGER(11),
-        quantity:    DataType.INTEGER(11)
+        quantity:    DataType.INTEGER(11),
+        token:       DataType.STRING(255),
     }, {
         freezeTableName: true,
         timestamps: false,
