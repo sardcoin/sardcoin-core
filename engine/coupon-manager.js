@@ -7,10 +7,10 @@ const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
 
-function generateUniqueToken(title) {
+function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
-    let hash = crypto.createHash('sha256').update(title).digest('hex').substr(0, 8).toUpperCase();
-    console.log('COUPON HASH: ' + hash);
+    let hash = crypto.createHash('sha256').update(title + password).digest('hex').substr(0, 8).toUpperCase();
+    // console.log('COUPON HASH: ' + hash);
 
     return hash;
 }
@@ -36,7 +36,7 @@ exports.createCoupon = function (req, res, next) {
         owner: data.owner,
         consumer: data.consumer,
         quantity: data.quantity,
-        token: generateUniqueToken(data.title),
+        token: generateUniqueToken(data.title, req.user.password),
     })
         .then(newCoupon => {
             return res.status(HttpStatus.CREATED).send({
