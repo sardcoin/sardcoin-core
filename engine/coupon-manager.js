@@ -9,7 +9,7 @@ const crypto = require('crypto');
 
 function generateUniqueToken(title) {
 
-    let hash = crypto.createHash('sha256').update(title).digest('hex').substr(0, 8);
+    let hash = crypto.createHash('sha256').update(title).digest('hex').substr(0, 8).toUpperCase();
     console.log('COUPON HASH: ' + hash);
 
     return hash;
