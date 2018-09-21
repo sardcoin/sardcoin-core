@@ -1,10 +1,20 @@
 'use strict';
 
-const Coupon = require('../models/index').Coupon;
-const Op = require('../models/index').Sequelize.Op;
+const Coupon     = require('../models/index').Coupon;
+const Sequelize  = require('../models/index').sequelize;
+const Op         = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
-const fs = require('file-system');
-const path = require('path');
+const fs         = require('file-system');
+const path       = require('path');
+const crypto     = require('crypto');
+
+function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
+
+    let hash = crypto.createHash('sha256').update(title + password).digest('hex').substr(0, 8).toUpperCase();
+    // console.log('COUPON HASH: ' + hash);
+
+    return hash;
+}
 
 exports.createCoupon = function (req, res, next) {
 
@@ -26,7 +36,8 @@ exports.createCoupon = function (req, res, next) {
         constraints: data.constraints,
         owner: data.owner,
         consumer: data.consumer,
-        quantity: data.quantity
+        quantity: data.quantity,
+        token: generateUniqueToken(data.title, req.user.password),
     })
         .then(newCoupon => {
             return res.status(HttpStatus.CREATED).send({
@@ -140,6 +151,20 @@ exports.getAffordables = function (req, res, next) {
 
 };
 
+exports.getDistinctCoupons = function(req, res, next) {
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL GROUP BY token', { model: Coupon })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons'
+            })
+        })
+};
+
 exports.update = function (req, res, next) {
     const data = req.body;
 
@@ -152,7 +177,8 @@ exports.update = function (req, res, next) {
         valid_until: Number(data.valid_until),
         state: data.state,
         constraints: data.constraints,
-        quantity: data.quantity
+        quantity: data.quantity,
+        token:data.token,
     }, {
         where: {
             [Op.and]: [

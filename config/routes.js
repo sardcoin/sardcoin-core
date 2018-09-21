@@ -42,6 +42,7 @@ module.exports = function (app, passport) {
     app.get(cmPath     + 'getPurchasedCoupons/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath     + 'getCreatedCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getCreatedCoupons);
     app.get(cmPath     + 'getAffordables/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getAffordables);
+    app.get(cmPath     + 'getDistinctAvailables/', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getDistinctCoupons);
     app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.update);
     app.delete(cmPath  + 'delete/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.delete);
     app.post(cmPath    + 'addImage/', multipartyMiddleware, CouponManager.addImage);
