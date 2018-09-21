@@ -5,11 +5,14 @@ const Op = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
-const bcrypt = require('bcrypt-nodejs');
+const crypto = require('crypto');
 
 function generateUniqueToken(title) {
 
-    return bcrypt.hashSync(title);
+    let hash = crypto.createHash('sha256').update(title).digest('hex').substr(0, 8);
+    console.log('COUPON HASH: ' + hash);
+
+    return hash;
 }
 
 exports.createCoupon = function (req, res, next) {
