@@ -1,7 +1,8 @@
 'use strict';
 
-const Coupon = require('../models/index').Coupon;
-const Op = require('../models/index').Sequelize.Op;
+const Coupon     = require('../models/index').Coupon;
+const Sequelize  = require('../models/index').sequelize;
+const Op         = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -148,6 +149,20 @@ exports.getAffordables = function (req, res, next) {
             })
         });
 
+};
+
+exports.getDistinctCoupons = function(req, res, next) {
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL GROUP BY token', { model: Coupon })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons'
+            })
+        })
 };
 
 exports.update = function (req, res, next) {
