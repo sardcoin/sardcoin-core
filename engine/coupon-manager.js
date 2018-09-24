@@ -100,9 +100,12 @@ exports.getCreatedCoupons = function (req, res, next) {
 };
 
 exports.getPurchasedCoupons = function (req, res, next) {
-    Coupon.findAll({
-        where: { consumer: req.user.id }
-    })
+    // Coupon.findAll({
+    //     where: { consumer: req.user.id }
+    // })
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1  GROUP BY title',
+        { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
+        { model: Coupon })
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
         })
