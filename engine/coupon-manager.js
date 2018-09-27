@@ -167,7 +167,21 @@ exports.getDistinctCoupons = function(req, res, next) {
             })
         })
 };
-
+exports.getDistinctCreatedCoupons = function(req, res, next) {
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title',
+        { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
+        { model: Coupon })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons created'
+            })
+        })
+};
 exports.update = function (req, res, next) {
     const data = req.body;
 
