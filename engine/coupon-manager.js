@@ -182,6 +182,36 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
             })
         })
 };
+
+exports.getCouponsCreatedFromToken = function(req, res, next) {
+
+    Coupon.findAll({
+        where: {
+            token: req.params.token,
+            [Op.or]: [
+                {owner: req.user.id},
+                {consumer: req.user.id}
+            ]
+        }
+    }).then(coupons => {
+        if (coupons === null) {
+            return res.status(HttpStatus.OK).json({
+                error: 'No coupon found with the given token and the given user',
+                token: req.params.token,
+                user_id: req.user.id
+            })
+        }
+
+        return res.status(HttpStatus.OK).json(coupons)
+    }).catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons created'
+            })
+        })
+};
+
 exports.update = function (req, res, next) {
     const data = req.body;
 
