@@ -47,7 +47,8 @@ exports.createUser = function (req, res, next) {
                     zip: user.zip,
                     password: password,
                     user_type: user.user_type,
-                    checksum: '0'
+                    checksum: '0',
+                    email_paypal: user.email_paypal
                 })
                     .then(newUser => {
                         return res.status(HttpStatus.CREATED).send({
@@ -98,7 +99,9 @@ exports.updateUser = function (req, res, next) {
         province: user.province,
         city: user.city,
         zip: user.zip,
-        password: password
+        password: password,
+        email_paypal: user.email_paypal
+
     }, {
         where: {
             id: req.user.id
