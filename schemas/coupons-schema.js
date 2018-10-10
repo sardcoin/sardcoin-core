@@ -37,7 +37,19 @@ const updateCouponSchema = {
     params: {}
 };
 
+
+const validateCouponSchema = {
+    query: {},
+    body: {
+        token:             Joi.string().required(),
+        consumer:       Joi.number().integer().required(),
+    },
+    params: {}
+};
+
+
 module.exports = {
     createCouponSchema,
-    updateCouponSchema
+    updateCouponSchema,
+    validateCouponSchema
 };

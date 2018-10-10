@@ -10,7 +10,13 @@ const crypto = require('crypto');
 
 function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
-    let hash = crypto.createHash('sha256').update(title + password).digest('hex').substr(0, 8).toUpperCase();
+    const min = Math.ceil(1);
+    const max = Math.floor(1000000);
+    const total =  Math.floor(Math.random() * (max - min)) + min;
+
+    // console.log('total', total);
+
+    let hash = crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
     // console.log('COUPON HASH: ' + hash);
 
     return hash;
@@ -155,7 +161,7 @@ exports.getAffordables = function (req, res, next) {
 };
 
 exports.getDistinctCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL GROUP BY token', { model: Coupon })
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL GROUP BY title, description, price', { model: Coupon })
         .then(coupons => {
             return res.status(HttpStatus.OK).send(coupons);
         })
@@ -168,7 +174,7 @@ exports.getDistinctCoupons = function(req, res, next) {
         })
 };
 exports.getDistinctCreatedCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title',
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
         { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
         { model: Coupon })
         .then(coupons => {
@@ -182,6 +188,8 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
             })
         })
 };
+
+
 
 exports.getCouponsCreatedFromToken = function(req, res, next) {
 
@@ -332,4 +340,35 @@ exports.buyCoupon = function (req, res, next) {
               error: 'Cannot buy the coupon'
           })
       });
+};
+
+
+exports.validate = function (req, res, next) {
+    const data = req.body;
+
+    Coupon.update({
+        consumer: req.user.id,
+        token:data.token,
+    }, {
+        where: {
+            [Op.and]: [
+                {token:data.token},
+            ]
+        }
+    })
+        .then(couponUpdated => {
+            return res.status(HttpStatus.OK).json({
+                validate: true,
+                coupon_id: data.id
+            })
+        })
+        .catch(err => {
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                validate: false,
+                coupon_id: data.id,
+                error: 'Cannot validate the coupon'
+            })
+        });
 };
