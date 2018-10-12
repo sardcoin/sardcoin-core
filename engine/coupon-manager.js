@@ -109,7 +109,7 @@ exports.getPurchasedCoupons = function (req, res, next) {
     // Coupon.findAll({
     //     where: { consumer: req.user.id }
     // })
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1  GROUP BY title',
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1  GROUP BY title, description, price',
         { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
         { model: Coupon })
         .then(coupons => {
@@ -191,20 +191,32 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
 
 
 
-exports.getCouponsCreatedFromToken = function(req, res, next) {
+exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
 
+    console.log('dati arrivati:', req.params.title, req.params.description, req.params.price)
+    let description;
+    if(req.params.description == 'null'){
+        description = null;
+    } else {
+        description = req.params.description;
+    }
     Coupon.findAll({
         where: {
-            token: req.params.token,
-            [Op.or]: [
-                {owner: req.user.id},
-                {consumer: req.user.id}
-            ]
+            title: req.params.title,
+            description: description,
+
+            // [Op.or]: [
+            //     {owner: req.user.id},
+            //
+            // ]
+        },
+        like: {
+            price: Number(req.params.price),
         }
     }).then(coupons => {
         if (coupons === null) {
             return res.status(HttpStatus.OK).json({
-                error: 'No coupon found with the given token and the given user',
+                error: 'No coupon found with the data and the given user',
                 token: req.params.token,
                 user_id: req.user.id
             })
