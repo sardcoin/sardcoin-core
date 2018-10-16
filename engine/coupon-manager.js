@@ -173,6 +173,7 @@ exports.getDistinctCoupons = function(req, res, next) {
             })
         })
 };
+
 exports.getDistinctCreatedCoupons = function(req, res, next) {
     Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
         { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
@@ -188,8 +189,6 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
             })
         })
 };
-
-
 
 exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
 
@@ -354,8 +353,7 @@ exports.buyCoupon = function (req, res, next) {
       });
 };
 
-
-exports.validate = function (req, res, next) {
+exports.importCoupon = function (req, res, next) {
     const data = req.body;
 
     Coupon.update({
@@ -380,7 +378,7 @@ exports.validate = function (req, res, next) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 validate: false,
                 coupon_id: data.id,
-                error: 'Cannot validate the coupon'
+                error: 'Cannot importCoupon the coupon'
             })
         });
 };
