@@ -4,9 +4,9 @@ const Coupon     = require('../models/index').Coupon;
 const Sequelize  = require('../models/index').sequelize;
 const Op         = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
-const fs = require('file-system');
-const path = require('path');
-const crypto = require('crypto');
+const fs         = require('file-system');
+const path       = require('path');
+const crypto     = require('crypto');
 
 function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
@@ -60,6 +60,71 @@ exports.createCoupon = function (req, res, next) {
 
 };
 
+/**
+ * @api {get} /coupons/getById/:id Get By ID
+ * @apiName GetById
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiParam {Number} id Coupon unique ID.
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the Coupon.
+ * @apiSuccess {String} title Title of the Coupon.
+ * @apiSuccess {String} description Description of the Coupon.
+ * @apiSuccess {String} image Path of the image associated with the Coupon.
+ * @apiSuccess {Timestamp} timestamp Timestamp of the Coupon creation instant.
+ * @apiSuccess {Number} price Price of the Coupon.
+ * @apiSuccess {Date} valid_from Date where Coupon starts to be valid.
+ * @apiSuccess {Date} valid_until Date where the Coupon ends its validity.
+ * @apiSuccess {Number} state State of the Coupon.
+ * @apiSuccess {String} constraints Various contraints of the Coupon.
+ * @apiSuccess {Number} owner ID of the user who created the Coupon.
+ * @apiSuccess {Number} consumer ID of the client who bought the Coupon.
+ * @apiSuccess {String} token Token needed for identify the Coupon.
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          "id": 914,
+ *          "title": "Restaurant Schick",
+ *          "description": "Pizza for everyone",
+ *          "image": "pizzeria-maccheroni.jpg",
+ *          "timestamp": "2018-08-04T07:04:27.000Z",
+ *          "price": 19.95,
+ *          "valid_from": "2018-09-04T10:22:00.000Z",
+ *          "valid_until": null,
+ *          "state": 0,
+ *          "constraints": "Ocala, CA, USA",
+ *          "owner": 150,
+ *          "consumer": null,
+ *          "token": "sdaklfjòslfjd"
+ *     }
+ *
+ * @apiError CouponNotFound The id of the User was not found.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+ *          "error": "No coupon found with the given id and the given user.",
+ *          "coupon_id": 1,
+ *          "user_id": 1
+ *     }
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
 exports.getFromId = function (req, res, next) {
 
     Coupon.findOne({
@@ -73,9 +138,9 @@ exports.getFromId = function (req, res, next) {
     })
         .then(coupon => {
             if (coupon === null) {
-                return res.status(HttpStatus.OK).json({
-                    error: 'No coupon found with the given id and the given user',
-                    coupon_id: req.params.coupon_id,
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    error: 'No coupon found with the given id and the given user.',
+                    coupon_id: parseInt(req.params.coupon_id),
                     user_id: req.user.id
                 })
             }
@@ -85,7 +150,8 @@ exports.getFromId = function (req, res, next) {
         .catch(err => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: err
+                error: true,
+                message: 'Cannot GET the information about the coupon.'
             })
         });
 };
