@@ -161,7 +161,7 @@ exports.getAffordables = function (req, res, next) {
 };
 
 exports.getDistinctCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL GROUP BY title, description, price', { model: Coupon })
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL AND state = 0 GROUP BY title, description, price', { model: Coupon })
         .then(coupons => {
             return res.status(HttpStatus.OK).send(coupons);
         })
@@ -233,6 +233,7 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
 
 exports.update = function (req, res, next) {
     const data = req.body;
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
 
     Coupon.update({
         title: data.title,
@@ -240,7 +241,7 @@ exports.update = function (req, res, next) {
         image: data.image,
         price: data.price,
         valid_from: Number(data.valid_from),
-        valid_until: Number(data.valid_until),
+        valid_until: valid_until,
         state: data.state,
         constraints: data.constraints,
         quantity: data.quantity,
@@ -330,7 +331,8 @@ exports.buyCoupon = function (req, res, next) {
   console.log("coupon id: " + couponID);
 
   Coupon.update({
-      consumer: req.user.id
+      consumer: req.user.id,
+      state: 1,
   }, {
       where: {
           id: couponID
@@ -359,10 +361,12 @@ exports.importCoupon = function (req, res, next) {
     Coupon.update({
         consumer: req.user.id,
         token:data.token,
+        state:data.state,
     }, {
         where: {
             [Op.and]: [
-                {token:data.token},
+                {token:data.token,
+                state: 3},
             ]
         }
     })
