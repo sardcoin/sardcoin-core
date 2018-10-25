@@ -80,6 +80,31 @@ exports.getUserById = function (req, res, next) {
         })
 };
 
+exports.getProducerFromId = function (req, res, next) {
+    Users.findOne({
+        where: {
+            id: req.params.producer_id,
+        }
+    })
+        .then(user => {
+            if (user === null) {
+                return res.status(HttpStatus.OK).json({
+                    error: 'No user found with the given id and the given coupon',
+                    producer_id: req.params.producer_id,
+                    user_id: req.user.id
+                })
+            }
+            // console.log('userForimId', user);
+            return res.status(HttpStatus.OK).json(user)
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: err
+            })
+        });
+};
+
 exports.updateUser = function (req, res, next) {
 
     const user = req.body;

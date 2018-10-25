@@ -43,6 +43,7 @@ const validateCouponSchema = {
     body: {
         token:             Joi.string().required(),
         consumer:       Joi.number().integer().required(),
+        state:           Joi.number().integer().required(),
     },
     params: {}
 };
