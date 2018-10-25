@@ -124,7 +124,6 @@ exports.createCoupon = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */
-
 exports.getFromId = function (req, res, next) {
 
     Coupon.findOne({
