@@ -168,6 +168,42 @@ exports.deleteUser = function (req, res, next) {
         })
 };
 
+
+
+
+/**
+ * @api {post} /login login user
+ * @apiName Login
+ * @apiGroup Login
+ * @apiSuccess {Number} id Identifier of the User.
+ * @apiSuccess {String} username Username of the User.
+ * @apiSuccess {String} email Email of the User.
+ * @apiSuccess {String} first_name First Name of the User.
+ * @apiSuccess {String} last_name Last Name of the User.
+ * @apiSuccess {String} user_type Type of the User.
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *  "user": {
+ *       "id": 3,
+ *       "username": "consumer",
+ *       "email": "serusi@gmail.com",
+ *       "first_name": "Sergio",
+ *       "last_name": "Serusi",
+ *       "user_type": "1"
+ *       },
+ *   "token": "vSE1L8ng-dVJaDlmnmi2JlbMvudkaIeDqvJ-zBjk0Uk"
+ *   }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          {
+ *  "logged": false,
+ *   "error": "unauthorized"
+ *   }
+ */
 exports.basicLogin = function (req, res, next) {
     passport.authenticate('basic', {session: false}, function (err, user, info) {
         if (err) {
@@ -180,7 +216,14 @@ exports.basicLogin = function (req, res, next) {
             })
         } else {
             const token = jwt.sign(user.dataValues, 'your_jwt_secret');
-            return res.status(HttpStatus.OK).json({user, token});
+            return res.status(HttpStatus.OK).json({'user': {
+                    'id': user.id,
+                    'username': user.username,
+                    'email': user.email,
+                    'first_name': user.first_name,
+                    'last_name': user.last_name,
+                    "user_type": user.user_type,
+                }, token});
         }
     })(req, res, next);
 };

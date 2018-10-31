@@ -21,9 +21,57 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
 
     return hash;
 }
+/**
+ * @api {post} /coupons/create Create coupon
+ * @apiName CreateCoupon
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiParam {String} title title of coupon (required) (into body).
+ * @apiParam {String} description description of the coupon (into body).
+ * @apiParam {String} image image of the coupon (into body json).
+ * @apiParam {String} price price of the coupon (into body json).
+ * @apiParam {String} valid_from Valid from of the coupon (required) (into body).
+ * @apiParam {String} valid_until Valid until of the coupon (into body).
+ * @apiParam {String} constraints constraints of the coupon (into body).
+ * @apiParam {String} owner owner of the coupon (required) (into body).
+ * @apiParam {String} consumer consumer of the coupon (into body).
+ * @apiParam {String} constraints constraints of the coupon (into body).
 
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the Coupon.
+ * @apiSuccess {String} title Title of the Coupon.
+ * @apiSuccess {String} description Description of the Coupon.
+
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          "id": 914,
+ *          "title": "Restaurant Schick",
+ *          "description": "Pizza for everyone",
+ *
+ *     }
+ *
+ * @apiErrorExample
+ *      HTTP/1.1 500 Internal Server Error
+ *      Error: child "body" fails because [child "title" fails because ["title" is required]].....
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 exports.createCoupon = function (req, res, next) {
-
+    console.log('dentro');
     const data = req.body;
 
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
@@ -55,7 +103,9 @@ exports.createCoupon = function (req, res, next) {
         })
         .catch(err => {
             console.log("The coupon cannot be created.");
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The coupon cannot be created.', err);
+
+
         })
 
 };
@@ -155,6 +205,104 @@ exports.getFromId = function (req, res, next) {
         });
 };
 
+/**
+ * @api {get} /coupons/getCreatedCoupons Get Created Coupons from Token
+ * @apiName GetCreatedCoupons
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Created Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ *{
+ *    "id": 14,
+ *    "title": "Pizzeria Baccu Mandara",
+ *    "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+ *    "image": "pizzeria.jpg",
+ *    "timestamp": "2018-08-04T07:04:27.000Z",
+ *    "price": 19.95,
+ *    "valid_from": "2018-09-03T20:22:00.000Z",
+ *    "valid_until": "1970-01-01T00:00:00.000Z",
+ *    "state": 0,
+ *    "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+ *    "owner": 1,
+ *    "consumer": 23,
+ *    "token": "eeeeeeee"
+ *},
+ *{
+ *    "id": 19,
+ *    "title": "Porta galleggiante gonfiabile",
+ *    "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+ *    "image": "piscina.jpg",
+ *    "timestamp": "2018-09-04T11:24:47.000Z",
+ *    "price": 27.95,
+ *    "valid_from": "2018-09-02T09:25:00.000Z",
+ *     "valid_until": null,
+ *    "state": 0,
+ *    "constraints": "Nuoro (NU)",
+ *    "owner": 1,
+ *    "consumer": null,
+ *    "token": "gggggggg"
+ *},
+ *{
+ *    "id": 95,
+ *    "title": "Ghetto Quarantasette ",
+ *    "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+ *    "image": "resort.jpg",
+ *    "timestamp": "2018-10-01T09:42:28.000Z",
+ *    "price": 21.95,
+ *    "valid_from": "2018-09-03T01:00:00.000Z",
+ *    "valid_until": null,
+ *    "state": 0,
+ *    "constraints": "Oristano (OR), Viale Dei Principi 22",
+ *    "owner": 1,
+ *    "consumer": 23,
+ *    "token": "50DFA03A2"
+ *},
+ *{
+ *    "id": 96,
+ *    "title": "Ghetto Quarantasette ",
+ *    "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+ *    "image": "resort.jpg",
+ *    "timestamp": "2018-10-01T09:42:28.000Z",
+ *    "price": 21.95,
+ *    "valid_from": "2018-09-03T01:00:00.000Z",
+ *    "valid_until": null,
+ *    "state": 0,
+ *    "constraints": "Oristano (OR), Viale Dei Principi 22",
+ *    "owner": 1,
+ *    "consumer": 23,
+ *    "token": "50DFA03A3"
+ *}
+ *]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
 exports.getCreatedCoupons = function (req, res, next) {
     Coupon.findAll({
         where: { owner: req.user.id }
@@ -169,6 +317,112 @@ exports.getCreatedCoupons = function (req, res, next) {
             return res.send(JSON.stringify(err));
         });
 };
+
+/**
+ * @api {get} /coupons/getPurchasedCoupons Get Purchased Coupons from Token
+ * @apiName GetPurchasedCoupons
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission consumer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Purchased Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "1970-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": 23,
+     "token": "eeeeeeee"
+     "quantity": 1
+
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": 23,
+     "token": "gggggggg",
+     "quantity": 1
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": 23,
+     "token": "50DFA03A2",
+     "quantity": 1
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": 23,
+     "token": "50DFA03A3",
+     "quantity": 1
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ *
+ * * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 
 exports.getPurchasedCoupons = function (req, res, next) {
     // Coupon.findAll({
@@ -187,6 +441,106 @@ exports.getPurchasedCoupons = function (req, res, next) {
             return res.send(JSON.stringify(err));
         });
 };
+
+/**
+ * @api {get} /coupons/getAffordables Get Affordables Coupons
+ * @apiName GetAffordables
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission consumer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Affordables Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "2019-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": null,
+     "token": "eeeeeeee"
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": null,
+     "token": "gggggggg",
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A2",
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A3",
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 
 exports.getAffordables = function (req, res, next) {
     Coupon.findAll({
@@ -225,6 +579,111 @@ exports.getAffordables = function (req, res, next) {
 
 };
 
+/**
+ * @api {get} /coupons/getDistinctAvailables Get Distinct Availables Coupons
+ * @apiName GetDistinctAvailables
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission consumer
+ * @apiPermission producer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Distinct Availables Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "2019-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": null,
+     "token": "eeeeeeee"
+     "quantity": 3
+
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": null,
+     "token": "gggggggg",
+     "quantity": 1
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A2",
+     "quantity": 1
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A3",
+     "quantity": 777
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
 exports.getDistinctCoupons = function(req, res, next) {
     Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL AND state = 0 GROUP BY title, description, price', { model: Coupon })
         .then(coupons => {
@@ -238,6 +697,108 @@ exports.getDistinctCoupons = function(req, res, next) {
             })
         })
 };
+/**
+ * @api {get} /coupons/getDistinctCreatedCoupons Get Distinct Created Coupons
+ * @apiName GetDistinctCreatedCoupons
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Distinct Created Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "2019-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": null,
+     "token": "eeeeeeee"
+     "quantity": 3
+
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": null,
+     "token": "gggggggg",
+     "quantity": 1
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": 23,
+     "token": "50DFA03A2",
+     "quantity": 1
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A3",
+     "quantity": 777
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 
 exports.getDistinctCreatedCoupons = function(req, res, next) {
     Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
@@ -255,6 +816,121 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
         })
 };
 
+
+/**
+ * @api {get} /coupons/getCouponsCreatedFromTitleDescriptionPrice/:title/:description/:price Get Distinct Created Coupons
+ * @apiName GetCouponsCreatedFromTitleDescriptionPrice
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ * @apiPermission consumer
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json Distinct Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "2019-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": null,
+     "token": "eeeeeeee"
+     "quantity": 3
+
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": null,
+     "token": "gggggggg",
+     "quantity": 1
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": 23,
+     "token": "50DFA03A2",
+     "quantity": 1
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A3",
+     "quantity": 777
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 200 OK
+ * {
+    "error": "No coupon found with the data and the given user",
+    "user_id": 23
+}
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
 exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
 
     console.log('dati arrivati:', req.params.title, req.params.description, req.params.price)
@@ -268,7 +944,7 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
         where: {
             title: req.params.title,
             description: description,
-
+            price: Number(req.params.price),
             // [Op.or]: [
             //     {owner: req.user.id},
             //
@@ -278,7 +954,7 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
             price: Number(req.params.price),
         }
     }).then(coupons => {
-        if (coupons === null) {
+        if (coupons.length === 0) {
             return res.status(HttpStatus.OK).json({
                 error: 'No coupon found with the data and the given user',
                 token: req.params.token,
@@ -295,6 +971,56 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
             })
         })
 };
+
+/**
+ * @api {put} /coupons/update Update coupon
+ * @apiName UpdateCoupon
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiParam {Number} id id of coupon (required) (into body).
+ * @apiParam {String} title title of coupon (required) (into body).
+ * @apiParam {String} description description of the coupon (into body).
+ * @apiParam {String} image image of the coupon (into body json).
+ * @apiParam {String} price price of the coupon (into body json).
+ * @apiParam {String} valid_from Valid from of the coupon (required) (into body).
+ * @apiParam {String} valid_until Valid until of the coupon (into body).
+ * @apiParam {String} constraints constraints of the coupon (into body).
+ * @apiParam {String} owner owner of the coupon (required) (into body).
+ * @apiParam {String} consumer consumer of the coupon (into body).
+ * @apiParam {String} constraints constraints of the coupon (into body).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the Coupon.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          updated: true,
+            coupon_id: 12
+ *
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 500 Internal Server Error
+ *      Error: child "body" fails because [child "id" fails because ["id" is required]]......
+ *
+ * @apiErrorExample Error-Response:
+ *      http/1.1 401 Unauthorized
+ *          {"error":"You are not authorized to view this content"}
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 
 exports.update = function (req, res, next) {
     const data = req.body;
@@ -336,6 +1062,53 @@ exports.update = function (req, res, next) {
         });
 };
 
+/**
+ * @api {delete} /coupons/delete Delete coupon
+ * @apiName DeleteCoupon
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission producer
+ *
+ * @apiParam {Number} id id of coupon (required) (into body).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the Coupon.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          deleted: true,
+            coupon: 12,
+            message: "Coupon deleted!!"
+ *
+ *     }
+ *
+ * * @apiErrorExample Error-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          deleted: false,
+            coupon: 12,
+            message: This coupon don't exist!!
+ *
+ *     }
+ *   @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *     {
+            "error": "You are not authorized to view this content"
+        }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
 exports.delete = function (req, res, next) {
     Coupon.destroy({
         where: {
@@ -345,11 +1118,21 @@ exports.delete = function (req, res, next) {
             ]
         }
     })
-        .then(() => {
+        .then((coupon) =>  {
+            if (coupon === 0){
             return res.status(HttpStatus.OK).json({
-                deleted: true,
-                coupon: parseInt(req.body.id)
-            })
+                deleted: false,
+                coupon: parseInt(req.body.id),
+                message: "This coupon don't exist!!"
+            })}
+            else if (coupon === 1) {
+                return res.status(HttpStatus.OK).json({
+                    deleted: true,
+                    coupon: parseInt(req.body.id),
+                    message: "Coupon deleted!!"
+
+                })
+            }
         })
         .catch(err => {
             console.log(err);
@@ -361,6 +1144,8 @@ exports.delete = function (req, res, next) {
             })
         })
 };
+
+
 
 exports.addImage = function (req, res, next) {
     // console.log(req);
@@ -390,6 +1175,51 @@ exports.addImage = function (req, res, next) {
     });
 };
 
+/**
+ * @api {post} /coupons/buyCoupon Buy coupon
+ * @apiName BuyCoupon
+ * @apiGroup Coupon
+ * @apiPermission consumer
+ *
+ * @apiParam {Number} id id of coupon (required) (into body).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the Coupon.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          updated: true,
+ *          coupon_id: 12
+ *          message: "Coupon bought!!!"
+ *     }
+ *
+ * * @apiErrorExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          updated: false,
+ *          coupon_id: 12
+ *          message: "Coupon don't exist!!!"
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          {
+ *              "error": "You are not authorized to view this content"
+ *           }
+ */
+
 exports.buyCoupon = function (req, res, next) {
   let couponID = req.body.coupon_id;
 
@@ -404,10 +1234,20 @@ exports.buyCoupon = function (req, res, next) {
       }
   })
       .then(bought => {
+          if (bought[0] === 0){
           return res.status(HttpStatus.OK).json({
-              updated: true,
-              coupon_id: couponID
-          })
+              buy: false,
+              coupon_id: couponID,
+              message: "Coupon don't exist!!!"
+          })}
+          else if (bought[0] === 1) {
+              return res.status(HttpStatus.OK).json({
+                  buy: true,
+                  coupon_id: couponID,
+                  message: "Coupon bought!!!"
+
+              })
+          }
       })
       .catch(err => {
           console.log(err);
@@ -420,6 +1260,47 @@ exports.buyCoupon = function (req, res, next) {
       });
 };
 
+
+/**
+ * @api {put} /coupons/importCoupon Import coupon
+ * @apiName ImportCoupon
+ * @apiGroup Coupon
+ * @apiPermission consumer
+ * @apiPermission producer
+ * @apiPermission admin
+ *
+ * @apiParam {String} token token of coupon (required) (into body).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {String} Token token Identifier of the Coupon.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          validate: true,
+ *          token: xdx200QW
+ *
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ *
+ * @apiErrorExample Error-Response:
+        HTTP/1.1 200 OK
+ *     {
+ *        validate: false,
+ *        token: DX200DT,
+ *         error: 'Cannot import coupon'
+ *     }
+ */
 exports.importCoupon = function (req, res, next) {
     const data = req.body;
 
@@ -430,24 +1311,33 @@ exports.importCoupon = function (req, res, next) {
     }, {
         where: {
             [Op.and]: [
-                {token:data.token,
-                state: 3},
+                {token:data.token},
+                {state: 3},
             ]
         }
     })
-        .then(couponUpdated => {
+        .then(couponUpdated =>  { if (couponUpdated[0] === 0){
             return res.status(HttpStatus.OK).json({
-                validate: true,
-                coupon_id: data.id
-            })
+                validate: false,
+                token: data.token,
+                error: 'Cannot import coupon'
+            })}
+            else if (couponUpdated[0] === 1) {
+
+            {
+                return res.status(HttpStatus.OK).json({
+                    validate: true,
+                    token: data.token
+                })}
+        }
         })
         .catch(err => {
             console.log(err);
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 validate: false,
-                coupon_id: data.id,
-                error: 'Cannot importCoupon the coupon'
+                token: data.token,
+                error: 'Cannot import coupon'
             })
         });
 };
