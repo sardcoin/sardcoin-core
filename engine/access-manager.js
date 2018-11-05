@@ -6,7 +6,44 @@ const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
+/**
+ * @api {post} /users/create Create user
+ * @apiName CreateUser
+ * @apiGroup User
+ *
+ * @apiParam {String} username username of user (into body).
+ * @apiParam {String} email email of the user (into body).
+ * @apiParam {String} company_name Company name of the user  (into body json).
+ * @apiParam {String} vat_number Vat number of the user  (into body json).
+ * @apiParam {String} first_name First name of the user  ( (into body).
+ * @apiParam {String} last_name Last name of the user  (into body).
+ * @apiParam {String} birth_place Birth place of the user  (into body).
+ * @apiParam {String} birth_date Birth date of the user  (into body).
+ * @apiParam {String} zip Zip code of the user  (into body).
+ * @apiParam {String} email_paypal email paypal of the user (into body).
+ * @apiParam {String} password password of the user  (into body).
 
+
+
+ * @apiSuccess {String} first_name first name of the User request.
+ * @apiSuccess {String} last_name last name of the User request.
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          "first_name":"Alessio",
+ *          "last_name":"Delrio"
+ *     }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *          {
+ *              "created":false,
+ *              "error":"Username or email already exists"
+ *           }
+ *
+ */
 exports.createUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
@@ -67,8 +104,72 @@ exports.createUser = function (req, res, next) {
         })
     ;
 };
+/**
+ * @api {get} /users/getFromToken Get User from token bearer
+ * @apiName getFromToken
+ * @apiGroup User
+ * @apiPermission admin
+ * @apiPermission producer
+ * @apiPermission consumer
+ *
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the User request.
+ * @apiSuccess {String} username username of the User request.
+ * @apiSuccess {String} email email of the User request.
+ * @apiSuccess {String} company_name company name of the User request.
+ * @apiSuccess {String} vat_number vat number of the User request.
+ * @apiSuccess {String} first_name first name of the User request.
+ * @apiSuccess {String} last_name last name of the User request.
+ * @apiSuccess {String} birth_place birth place of the User request.
+ * @apiSuccess {String} birth_date birth date of the User request.
+ * @apiSuccess {String} fiscal_code fiscal code of the User request.
+ * @apiSuccess {String} address address of the User request.
+ * @apiSuccess {String} province province of the User request.
+ * @apiSuccess {String} city city of the User request.
+ * @apiSuccess {String} zip zip code of the User request.
+ * @apiSuccess {String} password password (crypto) of the User request.
+ * @apiSuccess {String} user_type user type of the User request.
+ * @apiSuccess {String} checksum checksum of the User request.
+ * @apiSuccess {String} email_paypal email paypal of the User request.
 
-exports.getUserById = function (req, res, next) {
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          "id":2,
+ *          "username":"admin",
+ *          "email":"email@email.com",
+ *          "company_name":"company_name",
+ *          "vat_number":"100",
+ *          "first_name":"Alessio",
+ *          "last_name":"Delrio",
+ *          "birth_place":"Gesturi",
+ *          "birth_date":"2000-01-01",
+ *          "fiscal_code":"psveindoven79c4412dsfdf",
+ *          "address":"address",
+ *          "province":"CA",
+ *          "city":"city",
+ *          "zip":"09100",
+ *          "password":"$2a$10$uVPr7u7bhuiWLWg8pbUx6.rLbPz6wTMjlC1au3V.6P2beduRrr3ma",
+ *          "user_type":"0",
+ *          "checksum":"0",
+ *          "email_paypal":"email_paypal@libero.it"
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ *
+ *
+ */
+exports.getUserFromToken = function (req, res, next) {
     Users.findById(req.user.id)
         .then(user => {
             return res.status(HttpStatus.OK).send(user);
@@ -79,7 +180,80 @@ exports.getUserById = function (req, res, next) {
             });
         })
 };
+/**
+ * @api {get} /users/getProducerFromId/:producer_id Get producer
+ * @apiName getProducerFromId
+ * @apiGroup User
+ * @apiPermission admin
+ * @apiPermission producer
+ * @apiPermission consumer
+ *
+ *
+ * @apiParam {Number} id id of user request(into body).
 
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the User request.
+ * @apiSuccess {String} username username of the User request.
+ * @apiSuccess {String} email email of the User request.
+ * @apiSuccess {String} company_name company name of the User request.
+ * @apiSuccess {String} vat_number vat number of the User request.
+ * @apiSuccess {String} first_name first name of the User request.
+ * @apiSuccess {String} last_name last name of the User request.
+ * @apiSuccess {String} birth_place birth place of the User request.
+ * @apiSuccess {String} birth_date birth date of the User request.
+ * @apiSuccess {String} fiscal_code fiscal code of the User request.
+ * @apiSuccess {String} address address of the User request.
+ * @apiSuccess {String} province province of the User request.
+ * @apiSuccess {String} city city of the User request.
+ * @apiSuccess {String} zip zip code of the User request.
+ * @apiSuccess {String} password password (crypto) of the User request.
+ * @apiSuccess {String} user_type user type of the User request.
+ * @apiSuccess {String} checksum checksum of the User request.
+ * @apiSuccess {String} email_paypal email paypal of the User request.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          "id":2,
+ *          "username":"admin",
+ *          "email":"email@email.com",
+ *          "company_name":"company_name",
+ *          "vat_number":"100",
+ *          "first_name":"Alessio",
+ *          "last_name":"Delrio",
+ *          "birth_place":"Gesturi",
+ *          "birth_date":"2000-01-01",
+ *          "fiscal_code":"psveindoven79c4412dsfdf",
+ *          "address":"address",
+ *          "province":"CA",
+ *          "city":"city",
+ *          "zip":"09100",
+ *          "password":"$2a$10$uVPr7u7bhuiWLWg8pbUx6.rLbPz6wTMjlC1au3V.6P2beduRrr3ma",
+ *          "user_type":"0",
+ *          "checksum":"0",
+ *          "email_paypal":"email_paypal@libero.it"
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 200 OK
+ *
+ *          {
+ *              "error":"No user found with the given id and the given coupon","producer_id":"100"
+ *          }
+ *
+ */
 exports.getProducerFromId = function (req, res, next) {
     Users.findOne({
         where: {
@@ -104,6 +278,49 @@ exports.getProducerFromId = function (req, res, next) {
             })
         });
 };
+/**
+ * @api {put} /users/update Update user
+ * @apiName UpdateUser
+ * @apiGroup User
+ * @apiPermission admin
+ * @apiPermission producer
+ * @apiPermission consumer
+ *
+ *
+ * @apiParam {String} username username of user (into body).
+ * @apiParam {String} email email of the user (into body).
+ * @apiParam {String} company_name Company name of the user  (into body json).
+ * @apiParam {String} vat_number Vat number of the user  (into body json).
+ * @apiParam {String} first_name First name of the user  ( (into body).
+ * @apiParam {String} last_name Last name of the user  (into body).
+ * @apiParam {String} birth_place Birth place of the user  (into body).
+ * @apiParam {String} birth_date Birth date of the user  (into body).
+ * @apiParam {String} zip Zip code of the user  (into body).
+ * @apiParam {String} email_paypal email paypal of the user (into body).
+ * @apiParam {String} password password of the user  (into body).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Number} id Identifier of the User.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          updated: true,
+            user_id: 12
+ *
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
 
 exports.updateUser = function (req, res, next) {
 
@@ -148,15 +365,83 @@ exports.updateUser = function (req, res, next) {
             })
         });
 };
+/**
+ * @api {delete} /users/delete delete user
+ * @apiName Delete
+ * @apiGroup User
+ *
+ * @apiParam {String} username username of user (required) (into body).
+ *
+ * @apiSuccess {String} username Username of the User Deleted.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *
+ *     {
+ *          "deleted":true,
+ *          "username":"lele"
+ *     }
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *         Unauthorized
+ *
+ *
+ * * @apiErrorExample Error-Response:
+ *     HTTP/1.1 200 OK
+ {
+ *          "deleted":false,
+ *          "username":"lele",
+ *          "message": "User don't exist!!"
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *         {
+                "error": "You are not authorized to view this content"
+            }
+
+ *
+ *
+ * * @apiErrorExample Error-Response:
+ *     HTTP/1.1 500 Internal Server Error
+ *         {
+                "deleted": false,
+                "error": "Cannot delete the user"
+            }
+ *
+ *
+ * * * @apiErrorExample Error-Response:
+ *     HTTP/1.1 500 Internal Server Error
+ *         {
+                "deleted": false,
+                "user": "Girolandia"
+                "error": "Cannot delete the user"
+            }
+ *
+ */
 
 exports.deleteUser = function (req, res, next) {
-    Users.destroy({where: {user: req.body.username}})
-        .then(() => {
+    Users.destroy({
+        where: {[Op.and]: [
+                {username: req.body.username}
+            ]}})
+        .then((user) => {
+            if(user == 0){
             return res.status(HttpStatus.OK).json({
-                deleted: true,
-                service: parseInt(req.body.username)
+                deleted: false,
+                username: req.body.username,
+                message: "user don't exist!!"
+            })}
+            else {
+                return res.status(HttpStatus.OK).json({
+                    deleted: true,
+                    username: req.body.username
+
             })
-        })
+        }})
         .catch(err => {
             console.log(err);
 
@@ -181,7 +466,10 @@ exports.deleteUser = function (req, res, next) {
  * @apiSuccess {String} first_name First Name of the User.
  * @apiSuccess {String} last_name Last Name of the User.
  * @apiSuccess {String} user_type Type of the User.
-
+ *
+ *  @apiParam {String} username username of user (required) (into body).
+ *  @apiParam {String} password password of user (required) (into body).
+ *
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
  *     {
