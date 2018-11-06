@@ -28,16 +28,16 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  * @apiPermission admin
  * @apiPermission producer
  *
- * @apiParam {String} title title of coupon (required) (into body).
- * @apiParam {String} description description of the coupon (into body).
- * @apiParam {String} image image of the coupon (into body json).
- * @apiParam {String} price price of the coupon (into body json).
- * @apiParam {String} valid_from Valid from of the coupon (required) (into body).
- * @apiParam {String} valid_until Valid until of the coupon (into body).
- * @apiParam {String} constraints constraints of the coupon (into body).
- * @apiParam {String} owner owner of the coupon (required) (into body).
- * @apiParam {String} consumer consumer of the coupon (into body).
- * @apiParam {String} constraints constraints of the coupon (into body).
+ * @apiParam {String} title title of coupon (required) .
+ * @apiParam {String} description description of the coupon .
+ * @apiParam {String} image image of the coupon .
+ * @apiParam {String} price price of the coupon .
+ * @apiParam {String} valid_from Valid from of the coupon (required) .
+ * @apiParam {String} valid_until Valid until of the coupon .
+ * @apiParam {String} constraints constraints of the coupon .
+ * @apiParam {String} owner owner of the coupon (required) .
+ * @apiParam {String} consumer consumer of the coupon .
+ * @apiParam {String} constraints constraints of the coupon .
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -62,9 +62,12 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  *     }
  *
  * @apiErrorExample
- *      HTTP/1.1 500 Internal Server Error
- *      Error: child "body" fails because [child "title" fails because ["title" is required]].....
- *
+ *      HTTP/1.1 400 Bad request
+ *      {
+            "Status Code": 400,
+            "Type error": "Bad Request",
+            "message": "the title must be between 5 and 40 characters long, is required "
+        }
  *
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
@@ -167,6 +170,14 @@ exports.createCoupon = function (req, res, next) {
  *          "coupon_id": 1,
  *          "user_id": 1
  *     }
+ *
+ *     @apiErrorExample Error-Response:
+ *     HTTP/1.1 400 Bad Request
+ *     {
+            "Status Code": 400,
+            "Type error": "Bad Request",
+            "message": "Id is required"
+        }
  *
  * @apiError Unauthorized The user is not authorized to do the request.
  *
@@ -825,6 +836,11 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
  * @apiPermission producer
  * @apiPermission consumer
  *
+ *
+ * @apiParam {String} Title title of coupons.
+ * @apiParam {String} Description description of coupons.
+ * @apiParam {Number} Price price of coupons.
+ *
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  *
  * @apiHeaderExample {json} Header-Example:
@@ -979,17 +995,17 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
  * @apiPermission admin
  * @apiPermission producer
  *
- * @apiParam {Number} id id of coupon (required) (into body).
- * @apiParam {String} title title of coupon (required) (into body).
- * @apiParam {String} description description of the coupon (into body).
- * @apiParam {String} image image of the coupon (into body json).
- * @apiParam {String} price price of the coupon (into body json).
- * @apiParam {String} valid_from Valid from of the coupon (required) (into body).
- * @apiParam {String} valid_until Valid until of the coupon (into body).
- * @apiParam {String} constraints constraints of the coupon (into body).
- * @apiParam {String} owner owner of the coupon (required) (into body).
- * @apiParam {String} consumer consumer of the coupon (into body).
- * @apiParam {String} constraints constraints of the coupon (into body).
+ * @apiParam {Number} id id of coupon (required) .
+ * @apiParam {String} title title of coupon (required) .
+ * @apiParam {String} description description of the coupon .
+ * @apiParam {String} image image of the coupon .
+ * @apiParam {String} price price of the coupon .
+ * @apiParam {String} valid_from Valid from of the coupon (required) .
+ * @apiParam {String} valid_until Valid until of the coupon .
+ * @apiParam {String} constraints constraints of the coupon .
+ * @apiParam {String} owner owner of the coupon (required) .
+ * @apiParam {String} consumer consumer of the coupon .
+ * @apiParam {String} constraints constraints of the coupon .
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -1009,10 +1025,28 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
  *
  *     }
  *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 500 Internal Server Error
- *      Error: child "body" fails because [child "id" fails because ["id" is required]]......
  *
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 200 Ok
+ *              {
+                    updated: false,
+                    coupon_id: 12,
+                    message: "This coupon don't exist"
+                }
+
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 400 Bad request
+ *      {
+            "Status Code": 400,
+            "Type error": "Bad Request",
+            "message": "the title must be between 5 and 40 characters long, is required "
+        }
+
+
  * @apiErrorExample Error-Response:
  *      http/1.1 401 Unauthorized
  *          {"error":"You are not authorized to view this content"}
@@ -1046,10 +1080,20 @@ exports.update = function (req, res, next) {
         }
     })
         .then(couponUpdated => {
-            return res.status(HttpStatus.OK).json({
-                updated: true,
-                coupon_id: data.id
-            })
+            console.log('couponUpdated', couponUpdated);
+            if(couponUpdated[0] == 0){
+                return res.status(HttpStatus.OK).json({
+                    updated: false,
+                    coupon_id: data.id,
+                    message: "This coupon don't exist"
+                })
+            }
+            else {
+                return res.status(HttpStatus.OK).json({
+                    updated: true,
+                    coupon_id: data.id
+                })
+            }
         })
         .catch(err => {
             console.log(err);

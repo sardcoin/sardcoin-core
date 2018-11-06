@@ -1,6 +1,5 @@
 const joi = require('joi');
 const expressJoi = require('express-joi-validator');
-
 const multiparty = require('connect-multiparty');
 const multipartyMiddleware = multiparty();
 const fs = require('file-system');
@@ -29,7 +28,6 @@ module.exports = function (app, passport) {
 
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AccessManager.basicLogin);
-
     /****************** CRUD USERS ************************/
     app.post(amPath   + 'create/', AccessManager.createUser);        // Create
     app.get(amPath    + 'getFromToken', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getUserFromToken);     // Read by ID
@@ -38,7 +36,7 @@ module.exports = function (app, passport) {
     app.get(amPath    + 'getProducerFromId/:producer_id', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getProducerFromId);     // Read by ID
 
     /****************** CRUD COUPONS **********************/
-    app.post(cmPath    + 'create/', expressJoi(Schemas.createCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
+    app.post(cmPath    + 'create/', expressJoi(Schemas.createCouponSchema, {abortEarly: false}), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
     app.get(cmPath     + 'getById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
     app.get(cmPath     + 'getPurchasedCoupons/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath     + 'getCreatedCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getCreatedCoupons);
@@ -55,4 +53,18 @@ module.exports = function (app, passport) {
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
     // app.use(ErrorHandler.fun404);
+
+
+    app.use(function (err, req, res, next) {
+        if (err.isBoom) {
+
+            return res.status(err.output.statusCode).json(
+                {
+                    "Status Code": err.output.payload.statusCode,
+                    "Type error": err.output.payload.error,
+                    "message":  err.data[0].context.label
+                }
+                );
+        }
+    });
 };

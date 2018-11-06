@@ -11,17 +11,17 @@ const HttpStatus = require('http-status-codes');
  * @apiName CreateUser
  * @apiGroup User
  *
- * @apiParam {String} username username of user (into body).
- * @apiParam {String} email email of the user (into body).
- * @apiParam {String} company_name Company name of the user  (into body json).
- * @apiParam {String} vat_number Vat number of the user  (into body json).
- * @apiParam {String} first_name First name of the user  ( (into body).
- * @apiParam {String} last_name Last name of the user  (into body).
- * @apiParam {String} birth_place Birth place of the user  (into body).
- * @apiParam {String} birth_date Birth date of the user  (into body).
- * @apiParam {String} zip Zip code of the user  (into body).
- * @apiParam {String} email_paypal email paypal of the user (into body).
- * @apiParam {String} password password of the user  (into body).
+ * @apiParam {String} username username of user .
+ * @apiParam {String} email email of the user .
+ * @apiParam {String} company_name Company name of the user .
+ * @apiParam {String} vat_number Vat number of the user  .
+ * @apiParam {String} first_name First name of the user.
+ * @apiParam {String} last_name Last name of the user.
+ * @apiParam {String} birth_place Birth place of the user.
+ * @apiParam {String} birth_date Birth date of the user.
+ * @apiParam {String} zip Zip code of the user.
+ * @apiParam {String} email_paypal email paypal of the user.
+ * @apiParam {String} password password of the user.
 
 
 
@@ -189,7 +189,7 @@ exports.getUserFromToken = function (req, res, next) {
  * @apiPermission consumer
  *
  *
- * @apiParam {Number} id id of user request(into body).
+ * @apiParam {Number} id id of user request.
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -287,17 +287,17 @@ exports.getProducerFromId = function (req, res, next) {
  * @apiPermission consumer
  *
  *
- * @apiParam {String} username username of user (into body).
- * @apiParam {String} email email of the user (into body).
- * @apiParam {String} company_name Company name of the user  (into body json).
- * @apiParam {String} vat_number Vat number of the user  (into body json).
- * @apiParam {String} first_name First name of the user  ( (into body).
- * @apiParam {String} last_name Last name of the user  (into body).
- * @apiParam {String} birth_place Birth place of the user  (into body).
- * @apiParam {String} birth_date Birth date of the user  (into body).
- * @apiParam {String} zip Zip code of the user  (into body).
- * @apiParam {String} email_paypal email paypal of the user (into body).
- * @apiParam {String} password password of the user  (into body).
+ * @apiParam {String} username username of user.
+ * @apiParam {String} email email of the user.
+ * @apiParam {String} company_name Company name of the user.
+ * @apiParam {String} vat_number Vat number of the user.
+ * @apiParam {String} first_name First name of the user.
+ * @apiParam {String} last_name Last name of the user.
+ * @apiParam {String} birth_place Birth place of the user.
+ * @apiParam {String} birth_date Birth date of the user.
+ * @apiParam {String} zip Zip code of the user.
+ * @apiParam {String} email_paypal email paypal of the user.
+ * @apiParam {String} password password of the user.
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -370,7 +370,7 @@ exports.updateUser = function (req, res, next) {
  * @apiName Delete
  * @apiGroup User
  *
- * @apiParam {String} username username of user (required) (into body).
+ * @apiParam {String} username username of user (required).
  *
  * @apiSuccess {String} username Username of the User Deleted.
 
@@ -467,8 +467,8 @@ exports.deleteUser = function (req, res, next) {
  * @apiSuccess {String} last_name Last Name of the User.
  * @apiSuccess {String} user_type Type of the User.
  *
- *  @apiParam {String} username username of user (required) (into body).
- *  @apiParam {String} password password of user (required) (into body).
+ *  @apiParam {String} username username of user (required).
+ *  @apiParam {String} password password of user (required).
  *
  * @apiSuccessExample Success-Response:
  *     HTTP/1.1 200 OK
