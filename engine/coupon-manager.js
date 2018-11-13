@@ -1467,8 +1467,8 @@ exports.verifierCoupon = function (req, res, next) {
 };
 
 /**
- * @api {get} /coupons/getAllCoupons Get All Coupons
- * @apiName getAllCoupons
+ * @api {get} /coupons/getAllCouponsStateOne Get All Coupons valid and state = 1
+ * @apiName getAllCouponsStateOne
  * @apiGroup Coupon
  * @apiPermission admin
  * @apiPermission verifier
@@ -1496,10 +1496,10 @@ exports.verifierCoupon = function (req, res, next) {
      "price": 19.95,
      "valid_from": "2018-09-03T20:22:00.000Z",
      "valid_until": "2019-01-01T00:00:00.000Z",
-     "state": 0,
+     "state": 1,
      "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
      "owner": 1,
-     "consumer": null,
+     "consumer": 12,
      "token": "eeeeeeee"
  },
  {
@@ -1511,10 +1511,10 @@ exports.verifierCoupon = function (req, res, next) {
      "price": 27.95,
      "valid_from": "2018-09-02T09:25:00.000Z",
      "valid_until": null,
-     "state": 0,
+     "state": 1,
      "constraints": "Nuoro (NU)",
      "owner": 1,
-     "consumer": null,
+     "consumer": 11,
      "token": "gggggggg",
 
  },
@@ -1527,10 +1527,10 @@ exports.verifierCoupon = function (req, res, next) {
      "price": 21.95,
      "valid_from": "2018-09-03T01:00:00.000Z",
      "valid_until": null,
-     "state": 0,
+     "state": 1,
      "constraints": "Oristano (OR), Viale Dei Principi 22",
      "owner": 1,
-     "consumer": null,
+     "consumer": 1,
      "token": "50DFA03A2",
 
  },
@@ -1543,10 +1543,10 @@ exports.verifierCoupon = function (req, res, next) {
      "price": 21.95,
      "valid_from": "2018-09-03T01:00:00.000Z",
      "valid_until": null,
-     "state": 0,
+     "state": 1,
      "constraints": "Oristano (OR), Viale Dei Principi 22",
      "owner": 1,
-     "consumer": null,
+     "consumer": 1,
      "token": "50DFA03A3",
  }
  ]
@@ -1566,12 +1566,12 @@ exports.verifierCoupon = function (req, res, next) {
  *          Unauthorized
  */
 
-exports.getAllCoupons = function (req, res, next) {
+exports.getAllCouponsStateOne = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.and]: [
                 {  consumer: {
-                        [Op.gt]: 1
+                        [Op.gt]: 0
                     },
 
                     state: {

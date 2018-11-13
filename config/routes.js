@@ -50,7 +50,7 @@ module.exports = function (app, passport) {
     app.get(cmPath     + 'getCouponsCreatedFromTitleDescriptionPrice/:title/:description/:price', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getCouponsCreatedFromTitleDescriptionPrice); //
     app.put(cmPath     + 'importCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, consumer, admin]), CouponManager.importCoupon);
     app.put(cmPath     + 'verifierCoupon/', expressJoi(Schemas.verifierCouponSchema), requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.verifierCoupon);
-    app.get(cmPath     + 'getAllCoupons/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCoupons);
+    app.get(cmPath     + 'getAllCouponsStateOne/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCouponsStateOne);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
