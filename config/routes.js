@@ -22,8 +22,8 @@ module.exports = function (app, passport) {
     const admin     = '0';
     const producer  = '1';
     const consumer  = '2';
-    const broker    = '3';
-    const verifier  = '4';
+    const verifier  = '3';
+    const broker    = '4';
     const all       = [admin, producer, consumer, broker, verifier];
 
     /****************** ACCESS MANAGER ********************/
@@ -37,10 +37,10 @@ module.exports = function (app, passport) {
 
     /****************** CRUD COUPONS **********************/
     app.post(cmPath    + 'create/', expressJoi(Schemas.createCouponSchema, {abortEarly: false}), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
-    app.get(cmPath     + 'getById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
+    app.get(cmPath     + 'getById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, producer,admin]), CouponManager.getFromId); // Get a coupon by his ID
     app.get(cmPath     + 'getPurchasedCoupons/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath     + 'getCreatedCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getCreatedCoupons);
-    app.get(cmPath     + 'getAffordables/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getAffordables);
+    app.get(cmPath     + 'getAffordables/', requireAuth, AccessManager.roleAuthorization([consumer, admin, verifier]), CouponManager.getAffordables);
     app.get(cmPath     + 'getDistinctAvailables/', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getDistinctCoupons);
     app.get(cmPath     + 'getDistinctCreatedCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getDistinctCreatedCoupons);
     app.put(cmPath     + 'update/', expressJoi(Schemas.updateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.update);
@@ -49,6 +49,8 @@ module.exports = function (app, passport) {
     app.post(cmPath    + 'buyCoupon/', requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.buyCoupon);
     app.get(cmPath     + 'getCouponsCreatedFromTitleDescriptionPrice/:title/:description/:price', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getCouponsCreatedFromTitleDescriptionPrice); //
     app.put(cmPath     + 'importCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, consumer, admin]), CouponManager.importCoupon);
+    app.put(cmPath     + 'verifierCoupon/', expressJoi(Schemas.verifierCouponSchema), requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.verifierCoupon);
+    app.get(cmPath     + 'getAllCoupons/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCoupons);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);

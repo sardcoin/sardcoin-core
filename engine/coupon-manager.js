@@ -74,12 +74,12 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  *          Unauthorized
  */
 exports.createCoupon = function (req, res, next) {
-    console.log('dentro');
+    // console.log('dentro');
     const data = req.body;
 
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
 
-    console.log(data.valid_until);
+    // console.log(data.valid_until);
 
     Coupon.create({
         title: data.title,
@@ -949,7 +949,7 @@ exports.getDistinctCreatedCoupons = function(req, res, next) {
 
 exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
 
-    console.log('dati arrivati:', req.params.title, req.params.description, req.params.price)
+    // console.log('dati arrivati:', req.params.title, req.params.description, req.params.price)
     let description;
     if(req.params.description == 'null'){
         description = null;
@@ -1080,7 +1080,7 @@ exports.update = function (req, res, next) {
         }
     })
         .then(couponUpdated => {
-            console.log('couponUpdated', couponUpdated);
+            // console.log('couponUpdated', couponUpdated);
             if(couponUpdated[0] == 0){
                 return res.status(HttpStatus.OK).json({
                     updated: false,
@@ -1384,4 +1384,200 @@ exports.importCoupon = function (req, res, next) {
                 error: 'Cannot import coupon'
             })
         });
+};
+
+/**
+ * @api {put} /coupons/verifierCoupon Verifier coupon
+ * @apiName VerifierCoupon
+ * @apiGroup Coupon
+ * @apiPermission verifier
+ * @apiPermission admin
+ *
+ * @apiParam {String} token token of coupon (required).
+
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {String} Token token Identifier of the Coupon.
+
+
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     {
+ *          validate: true,
+ *          token: xdx200QW
+ *
+ *     }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ *
+ * @apiErrorExample Error-Response:
+ HTTP/1.1 200 OK
+ *     {
+ *        validate: false,
+ *        token: DX200DT,
+ *         error: 'Cannot verifier coupon'
+ *     }
+ */
+exports.verifierCoupon = function (req, res, next) {
+    const data = req.body;
+
+    Coupon.update({
+        verifier: req.user.id,
+        token: data.token,
+        state: 2,
+    }, {
+        where: {
+            [Op.and]: [
+                {token:data.token},
+                {state: 1},
+            ]
+        }
+    })
+        .then(couponUpdated =>  { if (couponUpdated[0] === 0){
+            return res.status(HttpStatus.OK).json({
+                validate: false,
+                token: data.token,
+                error: 'Cannot import coupon'
+            })}
+        else if (couponUpdated[0] === 1) {
+
+            {
+                return res.status(HttpStatus.OK).json({
+                    validate: true,
+                    token: data.token
+                })}
+        }
+        })
+        .catch(err => {
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                validate: false,
+                token: data.token,
+                error: 'Cannot import coupon'
+            })
+        });
+};
+
+/**
+ * @api {get} /coupons/getAllCoupons Get All Coupons
+ * @apiName getAllCoupons
+ * @apiGroup Coupon
+ * @apiPermission admin
+ * @apiPermission verifier
+ *
+ * @apiHeader {String} Authorization Json Web Token retrieved from login request.
+ *
+ * @apiHeaderExample {json} Header-Example:
+ *     {
+ *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
+ *     }
+ *
+ *
+ * @apiSuccess {Object} ArrayJsonCoupons Array of Json All Coupons
+
+ *
+ * @apiSuccessExample Success-Response:
+ *     HTTP/1.1 200 OK
+ *     [
+ {
+     "id": 14,
+     "title": "Pizzeria Baccu Mandara",
+     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
+     "image": "pizzeria.jpg",
+     "timestamp": "2018-08-04T07:04:27.000Z",
+     "price": 19.95,
+     "valid_from": "2018-09-03T20:22:00.000Z",
+     "valid_until": "2019-01-01T00:00:00.000Z",
+     "state": 0,
+     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
+     "owner": 1,
+     "consumer": null,
+     "token": "eeeeeeee"
+ },
+ {
+     "id": 19,
+     "title": "Porta galleggiante gonfiabile",
+     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
+     "image": "piscina.jpg",
+     "timestamp": "2018-09-04T11:24:47.000Z",
+     "price": 27.95,
+     "valid_from": "2018-09-02T09:25:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Nuoro (NU)",
+     "owner": 1,
+     "consumer": null,
+     "token": "gggggggg",
+
+ },
+ {
+     "id": 95,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A2",
+
+ },
+ {
+     "id": 96,
+     "title": "Ghetto Quarantasette ",
+     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
+     "image": "resort.jpg",
+     "timestamp": "2018-10-01T09:42:28.000Z",
+     "price": 21.95,
+     "valid_from": "2018-09-03T01:00:00.000Z",
+     "valid_until": null,
+     "state": 0,
+     "constraints": "Oristano (OR), Viale Dei Principi 22",
+     "owner": 1,
+     "consumer": null,
+     "token": "50DFA03A3",
+ }
+ ]
+ *
+ *
+ * @apiError Unauthorized The user is not authorized to do the request.
+ *
+ *
+ * @apiErrorExample Error-Response:
+ *      HTTP/1.1 401 Unauthorized
+ *          {
+                "error": "You are not authorized to view this content"
+            }
+ *
+ * @apiErrorExample Error-Response:
+ *     HTTP/1.1 401 Unauthorized
+ *          Unauthorized
+ */
+
+exports.getAllCoupons = function (req, res, next) {
+    Coupon.findAll({
+
+    })
+        .then(coupons => {
+            return res.status(HttpStatus.OK).json(coupons)
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: 'Cannot GET coupons'
+            })
+        });
+
 };
