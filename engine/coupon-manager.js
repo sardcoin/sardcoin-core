@@ -1113,7 +1113,7 @@ exports.update = function (req, res, next) {
  * @apiPermission admin
  * @apiPermission producer
  *
- * @apiParam {Number} id id of coupon (required) (into body).
+ * @apiParam {Number} id id of coupon (required).
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -1225,7 +1225,7 @@ exports.addImage = function (req, res, next) {
  * @apiGroup Coupon
  * @apiPermission consumer
  *
- * @apiParam {Number} id id of coupon (required) (into body).
+ * @apiParam {Number} id id of coupon (required).
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
@@ -1313,7 +1313,7 @@ exports.buyCoupon = function (req, res, next) {
  * @apiPermission producer
  * @apiPermission admin
  *
- * @apiParam {String} token token of coupon (required) (into body).
+ * @apiParam {String} token token of coupon (required).
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:
