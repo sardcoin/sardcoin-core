@@ -1568,7 +1568,31 @@ exports.verifierCoupon = function (req, res, next) {
 
 exports.getAllCoupons = function (req, res, next) {
     Coupon.findAll({
+        where: {
+            [Op.and]: [
+                {  consumer: {
+                        [Op.gt]: 1
+                    },
 
+                    state: {
+                        [Op.eq]:  1
+                    }
+                },
+                {
+                    valid_from: {
+                        [Op.lte]: new Date()
+                    }
+                },
+                {
+                    valid_until: {
+                        [Op.or]: [
+                            { [Op.gte]: new Date() },
+                            { [Op.eq]: null }
+                        ]
+                    }
+                }
+            ]
+        }
     })
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
