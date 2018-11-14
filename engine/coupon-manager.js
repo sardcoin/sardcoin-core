@@ -439,7 +439,7 @@ exports.getPurchasedCoupons = function (req, res, next) {
     // Coupon.findAll({
     //     where: { consumer: req.user.id }
     // })
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1  GROUP BY token',
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1 AND state = 1 OR state = 2  GROUP BY token',
         { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
         { model: Coupon })
         .then(coupons => {
