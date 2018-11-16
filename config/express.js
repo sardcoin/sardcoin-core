@@ -16,10 +16,11 @@ const bodyParser =   require('body-parser');
 module.exports = function (app, passport) {
 
     const corsOpt = {
-        origin: ['http://localhost:4200', 'http://localhost:443', 'http://platform.sardcoin.eu'],
+        origin: ['http://localhost:4200', 'http://localhost:443', 'http://192.168.1.39:4200', 'http://platform.sardcoin.eu'],
         credentials: true,
         methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'], // to works well with web app, OPTIONS is required
-        allowedHeaders: ['Content-Type', 'Authorization'] // allow json and token in the headers
+        allowedHeaders: ['Content-Type', 'Authorization'], // allow json and token in the headers,
+        AccessControlAllowOrigin: '*',
     };
 
     // use bodyParser

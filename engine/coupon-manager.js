@@ -93,7 +93,9 @@ exports.createCoupon = function (req, res, next) {
         constraints: data.constraints,
         owner: data.owner,
         consumer: data.consumer,
+        purchasable: data.purchasable,
         quantity: data.quantity,
+
         token: generateUniqueToken(data.title, req.user.password),
     })
         .then(newCoupon => {
@@ -1071,6 +1073,8 @@ exports.update = function (req, res, next) {
         constraints: data.constraints,
         quantity: data.quantity,
         token:data.token,
+        purchasable: data.purchasable,
+
     }, {
         where: {
             [Op.and]: [
@@ -1267,7 +1271,7 @@ exports.addImage = function (req, res, next) {
 exports.buyCoupon = function (req, res, next) {
   let couponID = req.body.coupon_id;
 
-  console.log("coupon id: " + couponID);
+  // console.log("coupon id: " + couponID);
 
   Coupon.update({
       consumer: req.user.id,

@@ -524,7 +524,7 @@ exports.roleAuthorization = function(roles){
 
         Users.findById(user.id)
             .then(userFound => {
-                console.log(roles);
+                // console.log(roles);
 
                 if(roles.indexOf(userFound.user_type) > -1){
                     return next();
