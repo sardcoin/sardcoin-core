@@ -814,7 +814,7 @@ exports.getDistinctCoupons = function(req, res, next) {
  */
 
 exports.getDistinctCreatedCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
+    Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
         { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
         { model: Coupon })
         .then(coupons => {
