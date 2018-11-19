@@ -27,9 +27,9 @@ module.exports = (sequelize, DataType) => {
         tableName: 'users'
     });
 
-    /*  Users.associate = function (models) {
-        // Users.hasMany(models.User_keys, {foreignKey: 'id', sourceKey: models.User_keys.})
-      };*/
+      User.associate = function (models) {
+        // User.belongsTo(models.Coupon, {foreignKey: 'owner'});
+      };
 
     // Instance method
     User.prototype.verifyPassword = function(password) {

@@ -109,8 +109,6 @@ exports.createCoupon = function (req, res, next) {
         .catch(err => {
             console.log("The coupon cannot be created.");
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The coupon cannot be created.', err);
-
-
         })
 
 };
@@ -1074,7 +1072,6 @@ exports.update = function (req, res, next) {
         quantity: data.quantity,
         token:data.token,
         purchasable: data.purchasable,
-
     }, {
         where: {
             [Op.and]: [

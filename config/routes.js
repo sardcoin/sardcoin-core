@@ -4,10 +4,11 @@ const multiparty = require('connect-multiparty');
 const multipartyMiddleware = multiparty();
 const fs = require('file-system');
 
-const Schemas           = require('../schemas/coupons-schema');
-const AccessManager     = require('../engine/access-manager');
-const CouponManager     = require('../engine/coupon-manager');
-const ErrorHandler      = require('../engine/error-handler');
+const Schemas            = require('../schemas/coupons-schema');
+const AccessManager      = require('../engine/access-manager');
+const CouponManager      = require('../engine/coupon-manager');
+const CouponTokenManager = require('../engine/coupon-token-manager');
+const ErrorHandler       = require('../engine/error-handler');
 
 
 module.exports = function (app, passport) {
@@ -51,6 +52,9 @@ module.exports = function (app, passport) {
     app.put(cmPath     + 'importCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, consumer, admin]), CouponManager.importCoupon);
     app.put(cmPath     + 'verifierCoupon/', expressJoi(Schemas.verifierCouponSchema), requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.verifierCoupon);
     app.get(cmPath     + 'getAllCouponsStateOne/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCouponsStateOne);
+
+    /****************** CRUD COUPON TOKEN *****************/
+    app.get(cmPath + 'get/:cid', requireAuth, AccessManager.roleAuthorization(all), CouponTokenManager.updateCouponToken);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);

@@ -14,17 +14,19 @@ module.exports = (sequelize, DataType) => {
         price:       DataType.INTEGER(10),
         valid_from:  DataType.DATE,
         valid_until: DataType.DATE,
-        state:       DataType.INTEGER(11),
+        purchasable: DataType.INTEGER(11),
         constraints: DataType.STRING(255),
         owner:       DataType.INTEGER(11),
-        consumer:    DataType.INTEGER(11),
-        purchasable: DataType.INTEGER(255), // non esiste più
-        token:       DataType.STRING(255),
     }, {
         freezeTableName: true,
         timestamps: false,
         tableName: 'coupons'
     });
+
+    Coupon.associate = function (models) {
+        Coupon.hasMany(models.User, {foreignKey: 'id', sourceKey: 'owner'});
+        Coupon.hasMany(models.CouponToken, {foreignKey: 'coupon_id', sourceKey: 'id'});
+    };
 
     return Coupon;
 };
