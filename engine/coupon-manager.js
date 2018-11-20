@@ -1,18 +1,18 @@
 'use strict';
 
-const Coupon     = require('../models/index').Coupon;
-const Sequelize  = require('../models/index').sequelize;
-const Op         = require('../models/index').Sequelize.Op;
+const Coupon = require('../models/index').Coupon;
+const Sequelize = require('../models/index').sequelize;
+const Op = require('../models/index').Sequelize.Op;
 const HttpStatus = require('http-status-codes');
-const fs         = require('file-system');
-const path       = require('path');
-const crypto     = require('crypto');
+const fs = require('file-system');
+const path = require('path');
+const crypto = require('crypto');
 
 function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
-    const total =  Math.floor(Math.random() * (max - min)) + min;
+    const total = Math.floor(Math.random() * (max - min)) + min;
 
     // console.log('total', total);
 
@@ -21,6 +21,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
 
     return hash;
 }
+
 /**
  * @api {post} /coupons/create Create coupon
  * @apiName CreateCoupon
@@ -111,7 +112,7 @@ exports.createCoupon = function (req, res, next) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The coupon cannot be created.', err);
         })
 
-};
+}; // TODO adattare
 
 /**
  * @api {get} /coupons/getById/:id Get By ID
@@ -184,7 +185,7 @@ exports.createCoupon = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
+ */ // TODO adattare
 exports.getFromId = function (req, res, next) {
 
     Coupon.findOne({
@@ -217,7 +218,7 @@ exports.getFromId = function (req, res, next) {
 };
 
 /**
- * @api {get} /coupons/getCreatedCoupons Get Created Coupons from Token
+ * @api {get} /coupons/getProducerCoupons Get Created Coupons from Token
  * @apiName GetCreatedCoupons
  * @apiGroup Coupon
  * @apiPermission admin
@@ -312,11 +313,10 @@ exports.getFromId = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
-exports.getCreatedCoupons = function (req, res, next) {
+ */ // TODO adattare errori
+exports.getProducerCoupons = function (req, res, next) {
     Coupon.findAll({
-        where: { owner: req.user.id }
+        where: {owner: req.user.id}
     })
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
@@ -433,15 +433,11 @@ exports.getCreatedCoupons = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
+ */ // TODO adattare query e errori (rende coupon e numero di coupon venduti)
 exports.getPurchasedCoupons = function (req, res, next) {
-    // Coupon.findAll({
-    //     where: { consumer: req.user.id }
-    // })
     Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1 AND state = 1 OR state = 2  GROUP BY token',
-        { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
-        { model: Coupon })
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
         })
@@ -454,7 +450,7 @@ exports.getPurchasedCoupons = function (req, res, next) {
 };
 
 /**
- * @api {get} /coupons/getAffordables Get Affordables Coupons
+ * @api {get} /coupons/getAvailableCoupons Get Affordables Coupons
  * @apiName GetAffordables
  * @apiGroup Coupon
  * @apiPermission admin
@@ -551,9 +547,8 @@ exports.getPurchasedCoupons = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
-exports.getAffordables = function (req, res, next) {
+ */ // TODO adattare e rendere coupon validi e disponibili
+exports.getAvailableCoupons = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.and]: [
@@ -570,8 +565,8 @@ exports.getAffordables = function (req, res, next) {
                 {
                     valid_until: {
                         [Op.or]: [
-                            { [Op.gte]: new Date() },
-                            { [Op.eq]: null }
+                            {[Op.gte]: new Date()},
+                            {[Op.eq]: null}
                         ]
                     }
                 }
@@ -590,128 +585,6 @@ exports.getAffordables = function (req, res, next) {
 
 };
 
-/**
- * @api {get} /coupons/getDistinctAvailables Get Distinct Availables Coupons
- * @apiName GetDistinctAvailables
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission consumer
- * @apiPermission producer
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json Distinct Availables Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- {
-     "id": 14,
-     "title": "Pizzeria Baccu Mandara",
-     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
-     "image": "pizzeria.jpg",
-     "timestamp": "2018-08-04T07:04:27.000Z",
-     "price": 19.95,
-     "valid_from": "2018-09-03T20:22:00.000Z",
-     "valid_until": "2019-01-01T00:00:00.000Z",
-     "state": 0,
-     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
-     "owner": 1,
-     "consumer": null,
-     "token": "eeeeeeee"
-     "quantity": 3
-
- },
- {
-     "id": 19,
-     "title": "Porta galleggiante gonfiabile",
-     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
-     "image": "piscina.jpg",
-     "timestamp": "2018-09-04T11:24:47.000Z",
-     "price": 27.95,
-     "valid_from": "2018-09-02T09:25:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Nuoro (NU)",
-     "owner": 1,
-     "consumer": null,
-     "token": "gggggggg",
-     "quantity": 1
-
- },
- {
-     "id": 95,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": null,
-     "token": "50DFA03A2",
-     "quantity": 1
-
- },
- {
-     "id": 96,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": null,
-     "token": "50DFA03A3",
-     "quantity": 777
- }
- ]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
-
-exports.getDistinctCoupons = function(req, res, next) {
-    // Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL AND state = 0 GROUP BY title, description, price', { model: Coupon })
-    Sequelize.query('SELECT * ,' +
-        'COUNT(coupon_tokens.coupon_id) AS quantity FROM `coupons`LEFT JOIN coupon_tokens ON coupons.id = ' +
-        'coupon_tokens.coupon_id GROUP BY coupons.title, coupons.description, coupons.price', { model: Coupon })
-
-        .then(coupons => {
-            return res.status(HttpStatus.OK).send(coupons);
-        })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Cannot get the distinct coupons'
-            })
-        })
-};
 /**
  * @api {get} /coupons/getDistinctCreatedCoupons Get Distinct Created Coupons
  * @apiName GetDistinctCreatedCoupons
@@ -813,181 +686,19 @@ exports.getDistinctCoupons = function(req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
-exports.getDistinctCreatedCoupons = function(req, res, next) {
+ */ // TODO (PRODUCER tutti i coupon, numero totale e numero venduti)
+exports.getDistinctCreatedCoupons = function (req, res, next) {
     // Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
     Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons LEFT JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
         'GROUP BY title, description, price',
 
-            { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
-        { model: Coupon })
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
         .then(coupons => {
             return res.status(HttpStatus.OK).send(coupons);
         })
         .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Cannot get the distinct coupons created'
-            })
-        })
-};
-
-
-/**
- * @api {get} /coupons/getCouponsCreatedFromTitleDescriptionPrice/:title/:description/:price Get Distinct Created Coupons
- * @apiName GetCouponsCreatedFromTitleDescriptionPrice
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- * @apiPermission consumer
- *
- *
- * @apiParam {String} Title title of coupons.
- * @apiParam {String} Description description of coupons.
- * @apiParam {Number} Price price of coupons.
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json Distinct Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- {
-     "id": 14,
-     "title": "Pizzeria Baccu Mandara",
-     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
-     "image": "pizzeria.jpg",
-     "timestamp": "2018-08-04T07:04:27.000Z",
-     "price": 19.95,
-     "valid_from": "2018-09-03T20:22:00.000Z",
-     "valid_until": "2019-01-01T00:00:00.000Z",
-     "state": 0,
-     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
-     "owner": 1,
-     "consumer": null,
-     "token": "eeeeeeee"
-     "quantity": 3
-
- },
- {
-     "id": 19,
-     "title": "Porta galleggiante gonfiabile",
-     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
-     "image": "piscina.jpg",
-     "timestamp": "2018-09-04T11:24:47.000Z",
-     "price": 27.95,
-     "valid_from": "2018-09-02T09:25:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Nuoro (NU)",
-     "owner": 1,
-     "consumer": null,
-     "token": "gggggggg",
-     "quantity": 1
-
- },
- {
-     "id": 95,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": 23,
-     "token": "50DFA03A2",
-     "quantity": 1
-
- },
- {
-     "id": 96,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": null,
-     "token": "50DFA03A3",
-     "quantity": 777
- }
- ]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 200 OK
- * {
-    "error": "No coupon found with the data and the given user",
-    "user_id": 23
-}
- *
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
-
-exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
-
-    // console.log('dati arrivati:', req.params.title, req.params.description, req.params.price)
-    let description;
-    if(req.params.description == 'null'){
-        description = null;
-    } else {
-        description = req.params.description;
-    }
-    Coupon.findAll({
-        where: {
-            title: req.params.title,
-            description: description,
-            price: Number(req.params.price),
-            // [Op.or]: [
-            //     {owner: req.user.id},
-            //
-            // ]
-        },
-        like: {
-            price: Number(req.params.price),
-        }
-    }).then(coupons => {
-        if (coupons.length === 0) {
-            return res.status(HttpStatus.OK).json({
-                error: 'No coupon found with the data and the given user',
-                token: req.params.token,
-                user_id: req.user.id
-            })
-        }
-
-        return res.status(HttpStatus.OK).json(coupons)
-    }).catch(err => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
@@ -1062,8 +773,7 @@ exports.getCouponsCreatedFromTitleDescriptionPrice = function(req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
+ */ // TODO adattare
 exports.update = function (req, res, next) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
@@ -1078,7 +788,7 @@ exports.update = function (req, res, next) {
         state: data.state,
         constraints: data.constraints,
         quantity: data.quantity,
-        token:data.token,
+        token: data.token,
         purchasable: data.purchasable,
     }, {
         where: {
@@ -1090,7 +800,7 @@ exports.update = function (req, res, next) {
     })
         .then(couponUpdated => {
             // console.log('couponUpdated', couponUpdated);
-            if(couponUpdated[0] == 0){
+            if (couponUpdated[0] == 0) {
                 return res.status(HttpStatus.OK).json({
                     updated: false,
                     coupon_id: data.id,
@@ -1160,8 +870,7 @@ exports.update = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
+ */ // TODO OK
 exports.delete = function (req, res, next) {
     Coupon.destroy({
         where: {
@@ -1171,19 +880,18 @@ exports.delete = function (req, res, next) {
             ]
         }
     })
-        .then((coupon) =>  {
-            if (coupon === 0){
-            return res.status(HttpStatus.OK).json({
-                deleted: false,
-                coupon: parseInt(req.body.id),
-                message: "This coupon don't exist!!"
-            })}
-            else if (coupon === 1) {
+        .then(coupon => {
+            if (coupon === 0) {
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    deleted: false,
+                    coupon: parseInt(req.body.id),
+                    message: "This coupon doesn't exist or you doesn't own the coupon!"
+                })
+            } else {
                 return res.status(HttpStatus.OK).json({
                     deleted: true,
                     coupon: parseInt(req.body.id),
-                    message: "Coupon deleted!!"
-
+                    message: "Coupon deleted!"
                 })
             }
         })
@@ -1196,36 +904,6 @@ exports.delete = function (req, res, next) {
                 error: 'Cannot delete the coupon'
             })
         })
-};
-
-
-
-exports.addImage = function (req, res, next) {
-    // console.log(req);
-
-    fs.readFile(req.files.file.path, function (err, data) {
-        // set the correct path for the file not the temporary one from the API:
-        const file = req.files.file;
-        file.path = path.join(__dirname, "../media/images/" + file.name);
-
-        // copy the data from the req.files.file.path and paste it to file.path
-        fs.writeFile(file.path, data, function (err) {
-            if (err) {
-                console.warn(err);
-
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    name: 'Upload Image Error',
-                    message: 'A problem occurred during upload of the image'
-                })
-            }
-
-            return res.status(HttpStatus.CREATED).send({
-                inserted: true,
-                image: file.name,
-                path: file.path
-            });
-        });
-    });
 };
 
 /**
@@ -1271,48 +949,47 @@ exports.addImage = function (req, res, next) {
  *          {
  *              "error": "You are not authorized to view this content"
  *           }
- */
-
+ */ // TODO eliminabile
 exports.buyCoupon = function (req, res, next) {
-  let couponID = req.body.coupon_id;
+    let couponID = req.body.coupon_id;
 
-  // console.log("coupon id: " + couponID);
+    // console.log("coupon id: " + couponID);
 
-  Coupon.update({
-      consumer: req.user.id,
-      state: 1,
-  }, {
-      where: {
-          id: couponID
-      }
-  })
-      .then(bought => {
-          if (bought[0] === 0){
-          return res.status(HttpStatus.OK).json({
-              buy: false,
-              coupon_id: couponID,
-              message: "Coupon don't exist!!!"
-          })}
-          else if (bought[0] === 1) {
-              return res.status(HttpStatus.OK).json({
-                  buy: true,
-                  coupon_id: couponID,
-                  message: "Coupon bought!!!"
+    Coupon.update({
+        consumer: req.user.id,
+        state: 1,
+    }, {
+        where: {
+            id: couponID
+        }
+    })
+        .then(bought => {
+            if (bought[0] === 0) {
+                return res.status(HttpStatus.OK).json({
+                    buy: false,
+                    coupon_id: couponID,
+                    message: "Coupon don't exist!!!"
+                })
+            }
+            else if (bought[0] === 1) {
+                return res.status(HttpStatus.OK).json({
+                    buy: true,
+                    coupon_id: couponID,
+                    message: "Coupon bought!!!"
 
-              })
-          }
-      })
-      .catch(err => {
-          console.log(err);
+                })
+            }
+        })
+        .catch(err => {
+            console.log(err);
 
-          return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-              updated: false,
-              coupon_id: couponID,
-              error: 'Cannot buy the coupon'
-          })
-      });
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                updated: false,
+                coupon_id: couponID,
+                error: 'Cannot buy the coupon'
+            })
+        });
 };
-
 
 /**
  * @api {put} /coupons/importCoupon Import coupon
@@ -1347,42 +1024,45 @@ exports.buyCoupon = function (req, res, next) {
  *          Unauthorized
  *
  * @apiErrorExample Error-Response:
-        HTTP/1.1 200 OK
+ HTTP/1.1 200 OK
  *     {
  *        validate: false,
  *        token: DX200DT,
  *         error: 'Cannot import coupon'
  *     }
- */
+ */ // TODO eliminabile, sbagliata
 exports.importCoupon = function (req, res, next) {
     const data = req.body;
 
     Coupon.update({
         consumer: req.user.id,
-        token:data.token,
-        state:data.state,
+        token: data.token,
+        state: data.state,
     }, {
         where: {
             [Op.and]: [
-                {token:data.token},
+                {token: data.token},
                 {state: 3},
             ]
         }
     })
-        .then(couponUpdated =>  { if (couponUpdated[0] === 0){
-            return res.status(HttpStatus.OK).json({
-                validate: false,
-                token: data.token,
-                error: 'Cannot import coupon'
-            })}
+        .then(couponUpdated => {
+            if (couponUpdated[0] === 0) {
+                return res.status(HttpStatus.OK).json({
+                    validate: false,
+                    token: data.token,
+                    error: 'Cannot import coupon'
+                })
+            }
             else if (couponUpdated[0] === 1) {
 
-            {
-                return res.status(HttpStatus.OK).json({
-                    validate: true,
-                    token: data.token
-                })}
-        }
+                {
+                    return res.status(HttpStatus.OK).json({
+                        validate: true,
+                        token: data.token
+                    })
+                }
+            }
         })
         .catch(err => {
             console.log(err);
@@ -1433,36 +1113,36 @@ exports.importCoupon = function (req, res, next) {
  *        token: DX200DT,
  *         error: 'Cannot verifier coupon'
  *     }
- */
+ */ // TODO eliminabile
 exports.verifierCoupon = function (req, res, next) {
     const data = req.body;
 
     Coupon.update({
-        verifier: req.user.id,
-        token: data.token,
         state: 2,
     }, {
         where: {
             [Op.and]: [
-                {token:data.token},
                 {state: 1},
             ]
         }
     })
-        .then(couponUpdated =>  { if (couponUpdated[0] === 0){
-            return res.status(HttpStatus.OK).json({
-                validate: false,
-                token: data.token,
-                error: 'Cannot import coupon'
-            })}
-        else if (couponUpdated[0] === 1) {
-
-            {
+        .then(couponUpdated => {
+            if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.OK).json({
-                    validate: true,
-                    token: data.token
-                })}
-        }
+                    validate: false,
+                    token: data.token,
+                    error: 'Cannot import coupon'
+                })
+            }
+            else if (couponUpdated[0] === 1) {
+
+                {
+                    return res.status(HttpStatus.OK).json({
+                        validate: true,
+                        token: data.token
+                    })
+                }
+            }
         })
         .catch(err => {
             console.log(err);
@@ -1573,18 +1253,18 @@ exports.verifierCoupon = function (req, res, next) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
-
+ */ // TODO eliminabile
 exports.getAllCouponsStateOne = function (req, res, next) {
     Coupon.findAll({
         where: {
             [Op.and]: [
-                {  consumer: {
+                {
+                    consumer: {
                         [Op.gt]: 0
                     },
 
                     state: {
-                        [Op.eq]:  1
+                        [Op.eq]: 1
                     }
                 },
                 {
@@ -1595,8 +1275,8 @@ exports.getAllCouponsStateOne = function (req, res, next) {
                 {
                     valid_until: {
                         [Op.or]: [
-                            { [Op.gte]: new Date() },
-                            { [Op.eq]: null }
+                            {[Op.gte]: new Date()},
+                            {[Op.eq]: null}
                         ]
                     }
                 }
@@ -1613,4 +1293,32 @@ exports.getAllCouponsStateOne = function (req, res, next) {
             })
         });
 
+};
+
+exports.addImage = function (req, res, next) {
+    // console.log(req);
+
+    fs.readFile(req.files.file.path, function (err, data) {
+        // set the correct path for the file not the temporary one from the API:
+        const file = req.files.file;
+        file.path = path.join(__dirname, "../media/images/" + file.name);
+
+        // copy the data from the req.files.file.path and paste it to file.path
+        fs.writeFile(file.path, data, function (err) {
+            if (err) {
+                console.warn(err);
+
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    name: 'Upload Image Error',
+                    message: 'A problem occurred during upload of the image'
+                })
+            }
+
+            return res.status(HttpStatus.CREATED).send({
+                inserted: true,
+                image: file.name,
+                path: file.path
+            });
+        });
+    });
 };

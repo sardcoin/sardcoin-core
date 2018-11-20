@@ -76,7 +76,7 @@ exports.insertCouponToken = function (req, res, next) {
         })
 };
 
-exports.updateCouponToken = function (req, res, next) {
+exports.updateCouponToken = function (req, res, next) { // TODO Pensare in ottica acquisto e verifica
     const coupon_token = req.body;
 
     // Verifica se il coupon che si vuole modificare appartiene all'utente che sta facendo la chiamata
@@ -85,9 +85,7 @@ exports.updateCouponToken = function (req, res, next) {
             {
                 model: Coupon, required: true,
                 include: [{
-                    model: User,
-                    required: true
-
+                    model: User, required: true
                 }],
                 where: {
                     [Op.and]: [
@@ -97,7 +95,6 @@ exports.updateCouponToken = function (req, res, next) {
                 }
             },
         ],
-
     })
         .then(userCoupons => {
             if (userCoupons) { // Se viene reso un coupon, allora si può procedere alla modifica
