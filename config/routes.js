@@ -17,6 +17,7 @@ module.exports = function (app, passport) {
     let indexPath = "/";
     let amPath    = indexPath + 'users/';
     let cmPath    = indexPath + 'coupons/';
+    let ctPath    = indexPath + 'couponToken/';
 
     /* AUTH */
     const requireAuth = passport.authenticate('jwt', {session: false});
@@ -54,7 +55,8 @@ module.exports = function (app, passport) {
     app.get(cmPath     + 'getAllCouponsStateOne/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCouponsStateOne);
 
     /****************** CRUD COUPON TOKEN *****************/
-    app.get(cmPath + 'get/:cid', requireAuth, AccessManager.roleAuthorization(all), CouponTokenManager.updateCouponToken);
+    app.put(ctPath + 'update/', requireAuth, AccessManager.roleAuthorization(all), CouponTokenManager.updateCouponToken);
+    app.post(ctPath + 'create/', requireAuth, AccessManager.roleAuthorization(all), CouponTokenManager.insertCouponToken);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
