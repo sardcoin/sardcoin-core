@@ -76,7 +76,7 @@ exports.insertCouponToken = function (req, res, next) {
         })
 };
 
-// TODO Pensare in ottica acquisto e verifica
+// TODO Pensare in ottica acquisto e redeem (senza req/res)
 exports.updateCouponToken = function (req, res, next) {
     const coupon_token = req.body;
 

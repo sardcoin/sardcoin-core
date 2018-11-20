@@ -958,7 +958,7 @@ exports.importOfflineCoupon = function (req, res, next) {
 };
 
 /**
- * @api {put} /coupons/verifierCoupon Verifier coupon
+ * @api {put} /coupons/redeemCoupon Verifier coupon
  * @apiName VerifierCoupon
  * @apiGroup Coupon
  * @apiPermission verifier
@@ -995,8 +995,8 @@ exports.importOfflineCoupon = function (req, res, next) {
  *        token: DX200DT,
  *         error: 'Cannot verifier coupon'
  *     }
- */ // TODO eliminabile
-exports.verifierCoupon = function (req, res, next) {
+ */ // TODO adattare chiamando il couponToken
+exports.redeemCoupon = function (req, res, next) {
     const data = req.body;
 
     Coupon.update({
@@ -1035,146 +1035,6 @@ exports.verifierCoupon = function (req, res, next) {
                 error: 'Cannot import coupon'
             })
         });
-};
-
-/**
- * @api {get} /coupons/getAllCouponsStateOne Get All Coupons valid and state = 1
- * @apiName getAllCouponsStateOne
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission verifier
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json All Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- {
-     "id": 14,
-     "title": "Pizzeria Baccu Mandara",
-     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
-     "image": "pizzeria.jpg",
-     "timestamp": "2018-08-04T07:04:27.000Z",
-     "price": 19.95,
-     "valid_from": "2018-09-03T20:22:00.000Z",
-     "valid_until": "2019-01-01T00:00:00.000Z",
-     "state": 1,
-     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
-     "owner": 1,
-     "consumer": 12,
-     "token": "eeeeeeee"
- },
- {
-     "id": 19,
-     "title": "Porta galleggiante gonfiabile",
-     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
-     "image": "piscina.jpg",
-     "timestamp": "2018-09-04T11:24:47.000Z",
-     "price": 27.95,
-     "valid_from": "2018-09-02T09:25:00.000Z",
-     "valid_until": null,
-     "state": 1,
-     "constraints": "Nuoro (NU)",
-     "owner": 1,
-     "consumer": 11,
-     "token": "gggggggg",
-
- },
- {
-     "id": 95,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 1,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": 1,
-     "token": "50DFA03A2",
-
- },
- {
-     "id": 96,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 1,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": 1,
-     "token": "50DFA03A3",
- }
- ]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */ // TODO eliminabile
-exports.getAllCouponsStateOne = function (req, res, next) {
-    Coupon.findAll({
-        where: {
-            [Op.and]: [
-                {
-                    consumer: {
-                        [Op.gt]: 0
-                    },
-
-                    state: {
-                        [Op.eq]: 1
-                    }
-                },
-                {
-                    valid_from: {
-                        [Op.lte]: new Date()
-                    }
-                },
-                {
-                    valid_until: {
-                        [Op.or]: [
-                            {[Op.gte]: new Date()},
-                            {[Op.eq]: null}
-                        ]
-                    }
-                }
-            ]
-        }
-    })
-        .then(coupons => {
-            return res.status(HttpStatus.OK).json(coupons)
-        })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: 'Cannot GET coupons'
-            })
-        });
-
 };
 
 exports.addImage = function (req, res, next) {
