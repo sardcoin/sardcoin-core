@@ -696,7 +696,11 @@ exports.getAffordables = function (req, res, next) {
  */
 
 exports.getDistinctCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL AND state = 0 GROUP BY title, description, price', { model: Coupon })
+    // Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer IS NULL AND state = 0 GROUP BY title, description, price', { model: Coupon })
+    Sequelize.query('SELECT * ,' +
+        'COUNT(coupon_tokens.coupon_id) AS quantity FROM `coupons`LEFT JOIN coupon_tokens ON coupons.id = ' +
+        'coupon_tokens.coupon_id GROUP BY coupons.title, coupons.description, coupons.price', { model: Coupon })
+
         .then(coupons => {
             return res.status(HttpStatus.OK).send(coupons);
         })
@@ -812,8 +816,12 @@ exports.getDistinctCoupons = function(req, res, next) {
  */
 
 exports.getDistinctCreatedCoupons = function(req, res, next) {
-    Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
-        { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
+    // Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
+    Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
+        'FROM coupons LEFT JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
+        'GROUP BY title, description, price',
+
+            { bind: [req.user.id], type: Sequelize.QueryTypes.SELECT },
         { model: Coupon })
         .then(coupons => {
             return res.status(HttpStatus.OK).send(coupons);
