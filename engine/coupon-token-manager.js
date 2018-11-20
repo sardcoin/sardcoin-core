@@ -112,7 +112,7 @@ exports.updateCouponToken = function (req, res, next) { // TODO Pensare in ottic
                             return res.status(HttpStatus.BAD_REQUEST).json({
                                 updated: false,
                                 token: coupon_token.token,
-                                message: "This coupon token doesn't exist or there is nothing to update."
+                                message: "This coupon token doesn't exist or there is nothing to editCoupon."
                             })
                         }
                         else {
@@ -126,7 +126,7 @@ exports.updateCouponToken = function (req, res, next) { // TODO Pensare in ottic
                         console.log(err);
                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                             error: true,
-                            message: 'An error occurred during the update of the coupon token.'
+                            message: 'An error occurred during the editCoupon of the coupon token.'
                         })
                     });
             } else {
