@@ -42,8 +42,8 @@ exports.insertCouponToken = function (req, res, next) {
                 CouponToken.create({
                     token: token,
                     coupon_id: coupon.coupon_id,
-                    state: coupon.state,
-                    consumer: coupon.consumer === '' ? null : coupon.consumer
+                    consumer: coupon.consumer === '' ? null : coupon.consumer,
+                    verifier: null
                 })
                     .then(newCoupon => {
                         return res.status(HttpStatus.CREATED).send({
@@ -76,7 +76,8 @@ exports.insertCouponToken = function (req, res, next) {
         })
 };
 
-exports.updateCouponToken = function (req, res, next) { // TODO Pensare in ottica acquisto e verifica
+// TODO Pensare in ottica acquisto e verifica
+exports.updateCouponToken = function (req, res, next) {
     const coupon_token = req.body;
 
     // Verifica se il coupon che si vuole modificare appartiene all'utente che sta facendo la chiamata
@@ -100,8 +101,8 @@ exports.updateCouponToken = function (req, res, next) { // TODO Pensare in ottic
             if (userCoupons) { // Se viene reso un coupon, allora si può procedere alla modifica
 
                 CouponToken.update({
-                    state: coupon_token.state,
-                    consumer: coupon_token.consumer === '' ? null : coupon_token.consumer
+                    consumer: coupon_token.consumer === '' ? null : coupon_token.consumer,
+                    verifier: coupon_token.verifier === '' ? null : coupon_token.verifier
                 }, {
                     where: {
                         token: coupon_token.token

@@ -6,6 +6,7 @@ const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
+
 /**
  * @api {post} /users/create Create user
  * @apiName CreateUser
@@ -452,9 +453,6 @@ exports.deleteUser = function (req, res, next) {
             })
         })
 };
-
-
-
 
 /**
  * @api {post} /login login user
