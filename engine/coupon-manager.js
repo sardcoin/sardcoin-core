@@ -74,7 +74,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */
-exports.createCoupon = function (req, res, next) {
+exports.createCoupon = function (req, res) {
     // console.log('dentro');
     const data = req.body;
 
@@ -186,7 +186,7 @@ exports.createCoupon = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO adattare
-exports.getFromId = function (req, res, next) {
+exports.getFromId = function (req, res) {
 
     Coupon.findOne({
         where: {
@@ -314,7 +314,7 @@ exports.getFromId = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO rende i coupon del produttore, la quantità totale e la quantità venduta (con JOIN)
-exports.getProducerCoupons = function (req, res, next) {
+exports.getProducerCoupons = function (req, res) {
     // Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
     Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons LEFT JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
@@ -439,7 +439,7 @@ exports.getProducerCoupons = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO adattare query e errori (rende coupon e numero di coupon venduti)
-exports.getPurchasedCoupons = function (req, res, next) {
+exports.getPurchasedCoupons = function (req, res) {
     Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1 AND state = 1 OR state = 2  GROUP BY token',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
@@ -553,7 +553,7 @@ exports.getPurchasedCoupons = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO adattare e rendere coupon validi e disponibili (visibili, non scaduti, non acquistati, non riscattati)
-exports.getAvailableCoupons = function (req, res, next) {
+exports.getAvailableCoupons = function (req, res) {
     Coupon.findAll({
         where: {
             [Op.and]: [
@@ -634,7 +634,7 @@ exports.getAvailableCoupons = function (req, res, next) {
  *              "error": "You are not authorized to view this content"
  *           }
  */ // TODO lasciare richiamando la funzione in coupon-token
-exports.buyCoupon = function (req, res, next) {
+exports.buyCoupon = function (req, res) {
     let couponID = req.body.coupon_id;
 
     // console.log("coupon id: " + couponID);
@@ -741,7 +741,7 @@ exports.buyCoupon = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO adattare
-exports.editCoupon = function (req, res, next) {
+exports.editCoupon = function (req, res) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
 
@@ -838,7 +838,7 @@ exports.editCoupon = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */ // TODO OK
-exports.deleteCoupon = function (req, res, next) {
+exports.deleteCoupon = function (req, res) {
     Coupon.destroy({
         where: {
             [Op.and]: [
@@ -913,7 +913,7 @@ exports.deleteCoupon = function (req, res, next) {
  *         error: 'Cannot import coupon'
  *     }
  */ // TODO adattare: se si trova un token, viene assegnato al consumer che fa la chiamata
-exports.importOfflineCoupon = function (req, res, next) {
+exports.importOfflineCoupon = function (req, res) {
     const data = req.body;
 
     Coupon.update({
@@ -996,7 +996,7 @@ exports.importOfflineCoupon = function (req, res, next) {
  *         error: 'Cannot verifier coupon'
  *     }
  */ // TODO adattare chiamando il couponToken
-exports.redeemCoupon = function (req, res, next) {
+exports.redeemCoupon = function (req, res) {
     const data = req.body;
 
     Coupon.update({
@@ -1037,7 +1037,7 @@ exports.redeemCoupon = function (req, res, next) {
         });
 };
 
-exports.addImage = function (req, res, next) {
+exports.addImage = function (req, res) {
     // console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {

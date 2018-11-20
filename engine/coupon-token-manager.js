@@ -24,7 +24,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
     return hash;
 }
 
-exports.insertCouponToken = function (req, res, next) {
+exports.insertCouponToken = function (req, res) {
     const coupon = req.body;
 
     Coupon.findOne({
@@ -77,7 +77,7 @@ exports.insertCouponToken = function (req, res, next) {
 };
 
 // TODO Pensare in ottica acquisto e redeem (senza req/res)
-exports.updateCouponToken = function (req, res, next) {
+exports.updateCouponToken = function (req, res) {
     const coupon_token = req.body;
 
     // Verifica se il coupon che si vuole modificare appartiene all'utente che sta facendo la chiamata
