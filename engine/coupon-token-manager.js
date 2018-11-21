@@ -11,7 +11,7 @@ const path = require('path');
 const crypto = require('crypto');
 
 // Private function: it takes the coupon_id and the token and create a new CouponToken
-exports.insertCouponToken = async function (coupon_id, token) {
+exports.insertCouponToken = function (coupon_id, token) {
 
     CouponToken.create({
         token: token,
@@ -33,7 +33,33 @@ exports.insertCouponToken = async function (coupon_id, token) {
 
 };
 
+exports.updateCouponToken = function(token, coupon_id, consumer=null, verifier=null){
+    CouponToken.update({
+        consumer: consumer,
+        verifier: verifier
+    }, {
+        where: {
+            [Op.and]: [
+                {token: token}, {coupon_id: coupon_id}
+            ]
+        }
+    })
+        .then(couponTokenUpdated => {
+            if (couponTokenUpdated[0] === 0) {
+                return false;
+            }
+            return true;
+        })
+        .catch(err => {
+            console.log("The coupon token cannot be created.");
+            console.log(err);
+
+            return false;
+        })
+};
+
 // TODO Pensare in ottica acquisto e redeem (senza req/res)
+/*
 exports.updateCouponToken = function (req, res) {
     const coupon_token = req.body;
 
@@ -101,4 +127,4 @@ exports.updateCouponToken = function (req, res) {
                 message: 'Cannot get the coupons for the user'
             })
         })
-};
+};*/
