@@ -6,6 +6,7 @@ const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
+
 /**
  * @api {post} /users/create Create user
  * @apiName CreateUser
@@ -279,7 +280,7 @@ exports.getProducerFromId = function (req, res, next) {
         });
 };
 /**
- * @api {put} /users/update Update user
+ * @api {put} /users/editCoupon Update user
  * @apiName UpdateUser
  * @apiGroup User
  * @apiPermission admin
@@ -361,12 +362,12 @@ exports.updateUser = function (req, res, next) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 updated: false,
                 user_id: req.user.id,
-                error: 'Cannot update the user'
+                error: 'Cannot editCoupon the user'
             })
         });
 };
 /**
- * @api {delete} /users/delete delete user
+ * @api {deleteCoupon} /users/deleteCoupon deleteCoupon user
  * @apiName Delete
  * @apiGroup User
  *
@@ -409,7 +410,7 @@ exports.updateUser = function (req, res, next) {
  *     HTTP/1.1 500 Internal Server Error
  *         {
                 "deleted": false,
-                "error": "Cannot delete the user"
+                "error": "Cannot deleteCoupon the user"
             }
  *
  *
@@ -418,7 +419,7 @@ exports.updateUser = function (req, res, next) {
  *         {
                 "deleted": false,
                 "user": "Girolandia"
-                "error": "Cannot delete the user"
+                "error": "Cannot deleteCoupon the user"
             }
  *
  */
@@ -448,13 +449,10 @@ exports.deleteUser = function (req, res, next) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 user: req.body.username,
-                error: 'Cannot delete the user'
+                error: 'Cannot deleteCoupon the user'
             })
         })
 };
-
-
-
 
 /**
  * @api {post} /login login user

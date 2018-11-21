@@ -24,7 +24,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
     return hash;
 }
 
-exports.insertCouponToken = function (req, res, next) {
+exports.insertCouponToken = function (req, res) {
     const coupon = req.body;
 
     Coupon.findOne({
@@ -42,8 +42,8 @@ exports.insertCouponToken = function (req, res, next) {
                 CouponToken.create({
                     token: token,
                     coupon_id: coupon.coupon_id,
-                    state: coupon.state,
-                    consumer: coupon.consumer === '' ? null : coupon.consumer
+                    consumer: coupon.consumer === '' ? null : coupon.consumer,
+                    verifier: null
                 })
                     .then(newCoupon => {
                         return res.status(HttpStatus.CREATED).send({
@@ -76,7 +76,8 @@ exports.insertCouponToken = function (req, res, next) {
         })
 };
 
-exports.updateCouponToken = function (req, res, next) {
+// TODO Pensare in ottica acquisto e redeem (senza req/res)
+exports.updateCouponToken = function (req, res) {
     const coupon_token = req.body;
 
     // Verifica se il coupon che si vuole modificare appartiene all'utente che sta facendo la chiamata
@@ -85,9 +86,7 @@ exports.updateCouponToken = function (req, res, next) {
             {
                 model: Coupon, required: true,
                 include: [{
-                    model: User,
-                    required: true
-
+                    model: User, required: true
                 }],
                 where: {
                     [Op.and]: [
@@ -97,14 +96,13 @@ exports.updateCouponToken = function (req, res, next) {
                 }
             },
         ],
-
     })
         .then(userCoupons => {
             if (userCoupons) { // Se viene reso un coupon, allora si può procedere alla modifica
 
                 CouponToken.update({
-                    state: coupon_token.state,
-                    consumer: coupon_token.consumer === '' ? null : coupon_token.consumer
+                    consumer: coupon_token.consumer === '' ? null : coupon_token.consumer,
+                    verifier: coupon_token.verifier === '' ? null : coupon_token.verifier
                 }, {
                     where: {
                         token: coupon_token.token
@@ -115,7 +113,7 @@ exports.updateCouponToken = function (req, res, next) {
                             return res.status(HttpStatus.BAD_REQUEST).json({
                                 updated: false,
                                 token: coupon_token.token,
-                                message: "This coupon token doesn't exist or there is nothing to update."
+                                message: "This coupon token doesn't exist or there is nothing to editCoupon."
                             })
                         }
                         else {
@@ -129,7 +127,7 @@ exports.updateCouponToken = function (req, res, next) {
                         console.log(err);
                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                             error: true,
-                            message: 'An error occurred during the update of the coupon token.'
+                            message: 'An error occurred during the editCoupon of the coupon token.'
                         })
                     });
             } else {
