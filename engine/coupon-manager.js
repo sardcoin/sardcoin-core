@@ -1,8 +1,12 @@
 'use strict';
 
 const Coupon = require('../models/index').Coupon;
+const CouponToken = require('../models/index').CouponToken;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
+
+const CouponTokenManager = require('./coupon-token-manager');
+
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -75,12 +79,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  *          Unauthorized
  */
 exports.createCoupon = function (req, res) {
-    // console.log('dentro');
     const data = req.body;
-
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
-
-    // console.log(data.valid_until);
 
     Coupon.create({
         title: data.title,
@@ -88,18 +87,27 @@ exports.createCoupon = function (req, res) {
         image: data.image,
         timestamp: Number(Date.now()),
         price: data.price,
+        visible_from: data.visible_from === null ? null : Number(data.visible_from),
         valid_from: Number(data.valid_from),
-        valid_until: valid_until,
-        state: data.state,
-        constraints: data.constraints,
-        owner: data.owner,
-        consumer: data.consumer,
+        valid_until: data.valid_until === null ? null : Number(data.valid_until),
         purchasable: data.purchasable,
-        quantity: data.quantity,
-
-        token: generateUniqueToken(data.title, req.user.password),
+        constraints: data.constraints,
+        owner: req.user.id,
     })
         .then(newCoupon => {
+            for (let i=0;i<data.quantity;i++) {
+                const token = generateUniqueToken(newCoupon.get('title'), req.user.password);
+                const result = CouponTokenManager.insertCouponToken(newCoupon.get('id'), token);
+
+                if(!result) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the tokens.',
+                        tokens_created: i
+                    });
+                }
+            }
+
             return res.status(HttpStatus.CREATED).send({
                 created: true,
                 id: newCoupon.get('id'),
@@ -108,11 +116,15 @@ exports.createCoupon = function (req, res) {
             });
         })
         .catch(err => {
-            console.log("The coupon cannot be created.");
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The coupon cannot be created.', err);
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'The coupon cannot be created.'
+            });
         })
 
-}; // TODO adattare
+};
 
 /**
  * @api {get} /coupons/getById/:id Get By ID
@@ -313,14 +325,13 @@ exports.getFromId = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO rende i coupon del produttore, la quantità totale e la quantità venduta (con JOIN)
+ */
 exports.getProducerCoupons = function (req, res) {
-    // Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
-        Sequelize.query('SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        Sequelize.query(
+            'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
             'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
-        'FROM coupons LEFT JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
-        'GROUP BY id',
-
+            'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
+            'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
@@ -333,7 +344,7 @@ exports.getProducerCoupons = function (req, res) {
                 message: 'Cannot get the distinct coupons created'
             })
         })
-}; // TODO query eseguita
+};
 
 /**
  * @api {get} /coupons/getPurchasedCoupons Get Purchased Coupons from Token
@@ -439,21 +450,25 @@ exports.getProducerCoupons = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO adattare query e errori (rende coupon acquistati dal singolo consumer)
+ */
 exports.getPurchasedCoupons = function (req, res) {
-    Sequelize.query('SELECT *  FROM coupon_tokens  LEFT JOIN coupons ON coupons.id = coupon_tokens.coupon_id WHERE consumer = $1  GROUP BY coupon_tokens.token',
-        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
-        {model: Coupon})
+    Coupon.findAll({ // Join con CouponToken
+        include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
+    })
         .then(coupons => {
-            return res.status(HttpStatus.OK).json(coupons)
+            if(coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+            return res.status(HttpStatus.OK).send(coupons);
         })
         .catch(err => {
-            // return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            //     error: err
-            // })
-            return res.send(JSON.stringify(err));
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Error retrieving purchased coupons'
+            })
         });
-};// TODO query eseguita, rende i coupons acquistati dal consumer
+};
 
 /**
  * @api {get} /coupons/getAvailableCoupons Get Affordables Coupons
