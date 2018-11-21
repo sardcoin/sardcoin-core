@@ -4,6 +4,9 @@ const Coupon = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
+
+const CouponTokenManager = require('./coupon-token-manager');
+
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -76,12 +79,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
  *          Unauthorized
  */
 exports.createCoupon = function (req, res) {
-    // console.log('dentro');
     const data = req.body;
-
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
-
-    // console.log(data.valid_until);
 
     Coupon.create({
         title: data.title,
@@ -89,18 +87,27 @@ exports.createCoupon = function (req, res) {
         image: data.image,
         timestamp: Number(Date.now()),
         price: data.price,
+        visible_from: data.visible_from === null ? null : Number(data.visible_from),
         valid_from: Number(data.valid_from),
-        valid_until: valid_until,
-        state: data.state,
-        constraints: data.constraints,
-        owner: data.owner,
-        consumer: data.consumer,
+        valid_until: data.valid_until === null ? null : Number(data.valid_until),
         purchasable: data.purchasable,
-        quantity: data.quantity,
-
-        token: generateUniqueToken(data.title, req.user.password),
+        constraints: data.constraints,
+        owner: req.user.id,
     })
         .then(newCoupon => {
+            for (let i=0;i<data.quantity;i++) {
+                const token = generateUniqueToken(newCoupon.get('title'), req.user.password);
+                const result = CouponTokenManager.insertCouponToken(newCoupon.get('id'), token);
+
+                if(!result) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the tokens.',
+                        tokens_created: i
+                    });
+                }
+            }
+
             return res.status(HttpStatus.CREATED).send({
                 created: true,
                 id: newCoupon.get('id'),
@@ -109,11 +116,15 @@ exports.createCoupon = function (req, res) {
             });
         })
         .catch(err => {
-            console.log("The coupon cannot be created.");
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send('The coupon cannot be created.', err);
+            console.log(err);
+
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'The coupon cannot be created.'
+            });
         })
 
-}; // TODO adattare
+};
 
 /**
  * @api {get} /coupons/getById/:id Get By ID
