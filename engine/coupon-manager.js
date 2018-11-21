@@ -316,9 +316,10 @@ exports.getFromId = function (req, res) {
  */ // TODO rende i coupon del produttore, la quantità totale e la quantità venduta (con JOIN)
 exports.getProducerCoupons = function (req, res) {
     // Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity FROM coupons WHERE owner = $1 GROUP BY title, description, price',
-    Sequelize.query('SELECT *,COUNT(CASE WHEN state = 1 THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
+        Sequelize.query('SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+            'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons LEFT JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
-        'GROUP BY title, description, price',
+        'GROUP BY id',
 
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
@@ -332,7 +333,7 @@ exports.getProducerCoupons = function (req, res) {
                 message: 'Cannot get the distinct coupons created'
             })
         })
-};
+}; // TODO query eseguita
 
 /**
  * @api {get} /coupons/getPurchasedCoupons Get Purchased Coupons from Token
@@ -438,9 +439,9 @@ exports.getProducerCoupons = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO adattare query e errori (rende coupon e numero di coupon venduti)
+ */ // TODO adattare query e errori (rende coupon acquistati dal singolo consumer)
 exports.getPurchasedCoupons = function (req, res) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupons WHERE consumer = $1 AND state = 1 OR state = 2  GROUP BY token',
+    Sequelize.query('SELECT *  FROM coupon_tokens  LEFT JOIN coupons ON coupons.id = coupon_tokens.coupon_id WHERE consumer = $1  GROUP BY coupon_tokens.token',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
@@ -452,7 +453,7 @@ exports.getPurchasedCoupons = function (req, res) {
             // })
             return res.send(JSON.stringify(err));
         });
-};
+};// TODO query eseguita, rende i coupons acquistati dal consumer
 
 /**
  * @api {get} /coupons/getAvailableCoupons Get Affordables Coupons
@@ -554,30 +555,34 @@ exports.getPurchasedCoupons = function (req, res) {
  *          Unauthorized
  */ // TODO adattare e rendere coupon validi e disponibili (visibili, non scaduti, non acquistati, non riscattati)
 exports.getAvailableCoupons = function (req, res) {
-    Coupon.findAll({
-        where: {
-            [Op.and]: [
-                {
-                    consumer: {
-                        [Op.eq]: null    // coupon is not bought yet
-                    }
-                },
-                {
-                    valid_from: {
-                        [Op.lte]: new Date()
-                    }
-                },
-                {
-                    valid_until: {
-                        [Op.or]: [
-                            {[Op.gte]: new Date()},
-                            {[Op.eq]: null}
-                        ]
-                    }
-                }
-            ]
-        }
-    })
+    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupon_tokens  LEFT JOIN coupons ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null  GROUP BY coupons.id',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+
+    // Coupon.findAll({
+    //     where: {
+    //         [Op.and]: [
+    //             {
+    //                 consumer: {
+    //                     [Op.eq]: null    // coupon is not bought yet
+    //                 }
+    //             },
+    //             {
+    //                 valid_from: {
+    //                     [Op.lte]: new Date()
+    //                 }
+    //             },
+    //             {
+    //                 valid_until: {
+    //                     [Op.or]: [
+    //                         {[Op.gte]: new Date()},
+    //                         {[Op.eq]: null}
+    //                     ]
+    //                 }
+    //             }
+    //         ]
+    //     }
+    // })
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
         })
