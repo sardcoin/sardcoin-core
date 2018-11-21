@@ -555,8 +555,12 @@ exports.getPurchasedCoupons = function (req, res) {
  *          Unauthorized
  */ // TODO adattare e rendere coupon validi e disponibili (visibili, non scaduti, non acquistati, non riscattati)
 exports.getAvailableCoupons = function (req, res) {
-    Sequelize.query('SELECT *, COUNT(*) AS quantity FROM coupon_tokens  LEFT JOIN coupons ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null  GROUP BY coupons.id',
-        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+    Sequelize.query('SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        ' COUNT(*) AS quantity FROM coupon_tokens  LEFT JOIN coupons ' +
+        'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
+        'AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
+        'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
+        {type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
 
     // Coupon.findAll({
@@ -593,7 +597,7 @@ exports.getAvailableCoupons = function (req, res) {
             })
         });
 
-};
+};// TODO
 
 /**
  * @api {post} /coupons/buyCoupon Buy coupon
