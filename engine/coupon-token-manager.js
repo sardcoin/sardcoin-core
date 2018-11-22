@@ -50,7 +50,7 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null, veri
                 resolve(result);
             })
             .catch(err => {
-                console.log("The coupon token cannot be created.");
+                console.log("The coupon token cannot be updated.");
                 console.log(err);
 
                 resolve(false);

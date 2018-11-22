@@ -189,7 +189,6 @@ exports.getFromId = function (req, res) {
     Coupon.findOne({
         where: {
             [Op.and]: [
-                {owner: req.user.id},
                 {id: req.params.coupon_id}
             ]
         }
@@ -865,7 +864,7 @@ exports.deleteCoupon = function (req, res) {
     })
         .then(coupon => {
             if (coupon === 0) {
-                return res.status(HttpStatus.BAD_REQUEST).json({
+                return res.status(HttpStatus.NO_CONTENT).json({
                     deleted: false,
                     coupon: parseInt(req.body.id),
                     message: "This coupon doesn't exist or you doesn't own the coupon!"
@@ -932,21 +931,19 @@ exports.deleteCoupon = function (req, res) {
 exports.importOfflineCoupon = function (req, res) {
     const data = req.body;
 
-    Coupon.update({
+    CouponToken.update({
         consumer: req.user.id,
-        token: data.token,
-        state: data.state,
+
     }, {
         where: {
             [Op.and]: [
                 {token: data.token},
-                {state: 3},
             ]
         }
     })
         .then(couponUpdated => {
             if (couponUpdated[0] === 0) {
-                return res.status(HttpStatus.OK).json({
+                return res.status(HttpStatus.NO_CONTENT).json({
                     validate: false,
                     token: data.token,
                     error: 'Cannot import coupon'
