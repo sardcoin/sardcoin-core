@@ -67,13 +67,32 @@ const crypto = require('crypto');
  */
 exports.createCoupon = async function (req, res) {
     const data = req.body;
+    let result;
 
-    const result = await insertCoupon(data, req.user.id);
+    try {
+        result = await insertCoupon(data, req.user.id);
+    } catch (e) {
+        console.log(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Error inserting the new coupon.',
+        });
+    }
 
     if(result) { // If the coupon has been created
         for (let i = 0; i < data.quantity; i++) {
             const token = generateUniqueToken(data.title, req.user.password);
-            const newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
+            let newToken;
+
+            try {
+                newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
+            } catch (e) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Error creating the tokens.',
+                    tokens_created: (i + 1)
+                });
+            }
 
             if (!newToken) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -96,6 +115,7 @@ exports.createCoupon = async function (req, res) {
             message: 'Error inserting the new coupon.',
         });
     }
+
 };
 
 /**
@@ -610,8 +630,26 @@ exports.buyCoupon = async function (req, res) {
     const coupon_id = req.body.coupon_id;
     const user_id = req.user.id;
 
-    const isNotExpired = await isCouponNotExpired(coupon_id);
-    const isPurchasable = await isCouponPurchasable(coupon_id, user_id);
+    let isNotExpired = await isCouponNotExpired(coupon_id);
+    let isPurchasable = await isCouponPurchasable(coupon_id, user_id);
+
+    try {
+        isNotExpired = await isCouponNotExpired(coupon_id);
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Some problem occurred checking if the coupon is expired.'
+        })
+    }
+
+    try {
+        isPurchasable = await isCouponPurchasable(coupon_id, user_id);
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Some problem occurred checking if the coupon is purchasable.'
+        })
+    }
 
     // If the coupon is not expired and is purchasable
     if (isNotExpired) {
@@ -770,7 +808,7 @@ exports.editCoupon = function (req, res) {
     })
         .then(couponUpdated => {
             // console.log('couponUpdated', couponUpdated);
-            if (couponUpdated[0] == 0) {
+            if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
                     coupon_id: data.id,
