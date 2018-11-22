@@ -41,8 +41,6 @@ const validateCouponSchema = {
     query: {},
     body: {
         token:    Joi.string().required().label("Token is required"),
-        consumer: Joi.number().integer().required().label("Consumer is required"),
-        state:    Joi.number().integer().required().label("State is required"),
     },
     params: {}
 };
