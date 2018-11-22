@@ -189,7 +189,6 @@ exports.getFromId = function (req, res) {
     Coupon.findOne({
         where: {
             [Op.and]: [
-                {owner: req.user.id},
                 {id: req.params.coupon_id}
             ]
         }
