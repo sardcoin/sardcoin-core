@@ -318,9 +318,11 @@ exports.getProducerCoupons = function (req, res) {
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
         'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
-        {model: Coupon}
-    )
+        {model: Coupon})
         .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
             return res.status(HttpStatus.OK).send(coupons);
         })
         .catch(err => {
@@ -558,7 +560,7 @@ exports.getPurchasedCoupons = function (req, res) {
 exports.getAvailableCoupons = function (req, res) {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
-        ' COUNT(*) AS quantity FROM coupon_tokens  LEFT JOIN coupons ' +
+        ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
         'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
         'AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
         'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
@@ -566,6 +568,9 @@ exports.getAvailableCoupons = function (req, res) {
         {model: Coupon}
     )
         .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
             return res.status(HttpStatus.OK).send(coupons)
         })
         .catch(err => {
@@ -757,7 +762,7 @@ exports.buyCoupon = async function (req, res) {
 exports.editCoupon = function (req, res) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
-
+    let visible_from = data.valid_until === null ? null : Number(data.visible_from);
     Coupon.update({
         title: data.title,
         description: data.description,
@@ -765,11 +770,10 @@ exports.editCoupon = function (req, res) {
         price: data.price,
         valid_from: Number(data.valid_from),
         valid_until: valid_until,
-        state: data.state,
+        visible_from: visible_from,
         constraints: data.constraints,
-        quantity: data.quantity,
-        token: data.token,
         purchasable: data.purchasable,
+        owner: req.user.id,
     }, {
         where: {
             [Op.and]: [
@@ -781,7 +785,7 @@ exports.editCoupon = function (req, res) {
         .then(couponUpdated => {
             // console.log('couponUpdated', couponUpdated);
             if (couponUpdated[0] == 0) {
-                return res.status(HttpStatus.OK).json({
+                return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
                     coupon_id: data.id,
                     message: "This coupon don't exist"
@@ -800,7 +804,7 @@ exports.editCoupon = function (req, res) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 updated: false,
                 coupon_id: data.id,
-                error: 'Cannot editCoupon the coupon'
+                error: 'Cannot edit the coupon'
             })
         });
 };
@@ -850,7 +854,7 @@ exports.editCoupon = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */
+ */ // TODO OK
 exports.deleteCoupon = function (req, res) {
     Coupon.destroy({
         where: {
