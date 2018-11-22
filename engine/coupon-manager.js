@@ -12,20 +12,6 @@ const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
 
-function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
-
-    const min = Math.ceil(1);
-    const max = Math.floor(1000000);
-    const total = Math.floor(Math.random() * (max - min)) + min;
-
-    // console.log('total', total);
-
-    let hash = crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
-    // console.log('COUPON HASH: ' + hash);
-
-    return hash;
-}
-
 /**
  * @api {post} /coupons/create Create coupon
  * @apiName CreateCoupon
@@ -95,11 +81,11 @@ exports.createCoupon = function (req, res) {
         owner: req.user.id,
     })
         .then(newCoupon => {
-            for (let i=0;i<data.quantity;i++) {
+            for (let i = 0; i < data.quantity; i++) {
                 const token = generateUniqueToken(newCoupon.get('title'), req.user.password);
                 const result = CouponTokenManager.insertCouponToken(newCoupon.get('id'), token);
 
-                if(!result) {
+                if (!result) {
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'Error creating the tokens.',
@@ -202,16 +188,15 @@ exports.getFromId = function (req, res) {
 
     Coupon.findOne({
         where: {
-            id: req.params.coupon_id,
-            [Op.or]: [
+            [Op.and]: [
                 {owner: req.user.id},
-                {consumer: req.user.id}
+                {id: req.params.coupon_id}
             ]
         }
     })
         .then(coupon => {
             if (coupon === null) {
-                return res.status(HttpStatus.BAD_REQUEST).json({
+                return res.status(HttpStatus.NO_CONTENT).json({
                     error: 'No coupon found with the given id and the given user.',
                     coupon_id: parseInt(req.params.coupon_id),
                     user_id: req.user.id
@@ -327,11 +312,11 @@ exports.getFromId = function (req, res) {
  *          Unauthorized
  */
 exports.getProducerCoupons = function (req, res) {
-        Sequelize.query(
-            'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
-            'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
-            'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
-            'GROUP BY id',
+    Sequelize.query(
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
+        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
+        'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
@@ -456,7 +441,7 @@ exports.getPurchasedCoupons = function (req, res) {
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
     })
         .then(coupons => {
-            if(coupons.length === 0) {
+            if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }
             return res.status(HttpStatus.OK).send(coupons);
@@ -570,38 +555,15 @@ exports.getPurchasedCoupons = function (req, res) {
  *          Unauthorized
  */ // TODO adattare e rendere coupon validi e disponibili (visibili, non scaduti, non acquistati, non riscattati)
 exports.getAvailableCoupons = function (req, res) {
-    Sequelize.query('SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+    Sequelize.query(
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
         ' COUNT(*) AS quantity FROM coupon_tokens  LEFT JOIN coupons ' +
         'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
         'AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
         'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
         {type: Sequelize.QueryTypes.SELECT},
-        {model: Coupon})
-
-    // Coupon.findAll({
-    //     where: {
-    //         [Op.and]: [
-    //             {
-    //                 consumer: {
-    //                     [Op.eq]: null    // coupon is not bought yet
-    //                 }
-    //             },
-    //             {
-    //                 valid_from: {
-    //                     [Op.lte]: new Date()
-    //                 }
-    //             },
-    //             {
-    //                 valid_until: {
-    //                     [Op.or]: [
-    //                         {[Op.gte]: new Date()},
-    //                         {[Op.eq]: null}
-    //                     ]
-    //                 }
-    //             }
-    //         ]
-    //     }
-    // })
+        {model: Coupon}
+    )
         .then(coupons => {
             return res.status(HttpStatus.OK).json(coupons)
         })
@@ -659,43 +621,61 @@ exports.getAvailableCoupons = function (req, res) {
  *           }
  */ // TODO lasciare richiamando la funzione in coupon-token
 exports.buyCoupon = function (req, res) {
-    let couponID = req.body.coupon_id;
+    let coupon = req.body;
 
-    // console.log("coupon id: " + couponID);
+    // Controllare se non è scaduto
+    // Controllare che non ne abbia già comprati altri
 
-    Coupon.update({
-        consumer: req.user.id,
-    }, {
-        where: {
-            id: couponID
-        }
-    })
-        .then(bought => {
-            if (bought[0] === 0) {
-                return res.status(HttpStatus.OK).json({
-                    buy: false,
-                    coupon_id: couponID,
-                    message: "Coupon don't exist!!!"
-                })
-            }
-            else if (bought[0] === 1) {
-                return res.status(HttpStatus.OK).json({
-                    buy: true,
-                    coupon_id: couponID,
-                    message: "Coupon bought!!!"
+    // CouponToken.findOne({
+    //     where: {
+    //         id: couponID
+    //     }
+    // })
+    //     .then(bought => {
+    //         if (bought[0] === 0) {
+    //             return res.status(HttpStatus.OK).json({
+    //                 buy: false,
+    //                 coupon_id: couponID,
+    //                 message: "Coupon don't exist!!!"
+    //             })
+    //         }
+    //         else if (bought[0] === 1) {
+    //             return res.status(HttpStatus.OK).json({
+    //                 buy: true,
+    //                 coupon_id: couponID,
+    //                 message: "Coupon bought!!!"
+    //
+    //             })
+    //         }
+    //     })
+    //     .catch(err => {
+    //         console.log(err);
+    //
+    //         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    //             updated: false,
+    //             coupon_id: couponID,
+    //             error: 'Cannot buy the coupon'
+    //         })
+    //     });
 
-                })
-            }
+
+    Sequelize.query('SELECT id, purchasable, ' + // TODO FIX
+        'COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NOT NULL THEN 1 END) AS availables, ' +
+        'COUNT(CASE WHEN consumer = :user_id THEN 1 END) AS buyed ' +
+        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = :coupon_id GROUP BY id' ,
+        { replacements: { user_id: req.user.id, coupon_id: coupon.coupon_id },
+            type: sequelize.QueryTypes.SELECT,
+            model: Coupon })
+        .then(infos => {
+            return res.send(infos);
         })
         .catch(err => {
             console.log(err);
+            return res.send(err);
+        })
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                updated: false,
-                coupon_id: couponID,
-                error: 'Cannot buy the coupon'
-            })
-        });
+
+
 };
 
 /**
@@ -1088,3 +1068,57 @@ exports.addImage = function (req, res) {
         });
     });
 };
+
+function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
+
+    const min = Math.ceil(1);
+    const max = Math.floor(1000000);
+    const total = Math.floor(Math.random() * (max - min)) + min;
+
+    // console.log('total', total);
+
+    let hash = crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
+    // console.log('COUPON HASH: ' + hash);
+
+    return hash;
+}
+
+function isCouponExpired(coupon_id) {
+    Coupon.findOne({
+        attributes: ['valid_from', 'valid_until'],
+        where: {id: coupon_id}
+    })
+        .then(coupon => {
+            if (coupon) { // If coupon exists
+                if (Date.now() >= coupon.get('valid_from') && coupon.get('valid_until') <= Date.now()) {
+                    return false;
+                }
+            }
+
+            return true; // Coupon not found == expired
+        })
+        .catch(err => {
+            console.log(err);
+            return true;
+        })
+}
+
+function isCouponPurchasable(coupon_id, user_id, res) {
+    // La query rende id, purchasable, quantity, buyed
+
+    console.log(coupon_id + ' ' + user_id );
+
+    Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NOT NULL THEN 1 END) AS availables, ' +
+        'COUNT(CASE WHEN consumer = :user_id THEN 1 END) AS buyed ' +
+        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = :coupon_id',
+        { replacements: { user_id: user_id, coupon_id: coupon_id },
+            type: sequelize.QueryTypes.SELECT,
+            model: Coupon })
+        .then(infos => {
+            return res.send(infos);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.send(err);
+        })
+}

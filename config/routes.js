@@ -49,11 +49,8 @@ module.exports = function (app, passport) {
     app.post(cmPath    + 'buyCoupon/', requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.buyCoupon);
     app.put(cmPath     + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.importOfflineCoupon);
     app.put(cmPath     + 'redeemCoupon/', expressJoi(Schemas.verifierCouponSchema), requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.redeemCoupon);
-    // app.get(cmPath     + 'getAllCouponsStateOne/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.getAllCouponsStateOne);
 
     /****************** CRUD COUPON TOKEN *****************/
-    app.put(ctPath + 'editCoupon/', requireAuth, AccessManager.roleAuthorization([consumer, producer, verifier]), CouponTokenManager.updateCouponToken);
-    app.post(ctPath + 'create/', requireAuth, AccessManager.roleAuthorization(all), CouponTokenManager.insertCouponToken);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
