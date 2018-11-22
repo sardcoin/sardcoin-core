@@ -850,7 +850,7 @@ exports.editCoupon = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ 
+ */
 exports.deleteCoupon = function (req, res) {
     Coupon.destroy({
         where: {
