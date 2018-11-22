@@ -10,7 +10,7 @@ const createCouponSchema = {
         visible_from:   Joi.number().allow(null),
         valid_from:     Joi.number().required().label("Valid From is required"),
         valid_until:    Joi.number().allow(null),
-        purchasable:    Joi.number().required().integer(),
+        purchasable:    Joi.number().allow(null),
         constraints:    Joi.string().allow(null),
         quantity:       Joi.number().integer().required().label("The quantity is required"),
     },

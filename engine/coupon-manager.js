@@ -65,52 +65,37 @@ const crypto = require('crypto');
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */
-exports.createCoupon = function (req, res) {
+exports.createCoupon = async function (req, res) {
     const data = req.body;
 
-    Coupon.create({
-        title: data.title,
-        description: data.description,
-        image: data.image,
-        timestamp: Number(Date.now()),
-        price: data.price,
-        visible_from: data.visible_from === null ? null : Number(data.visible_from),
-        valid_from: Number(data.valid_from),
-        valid_until: data.valid_until === null ? null : Number(data.valid_until),
-        purchasable: data.purchasable,
-        constraints: data.constraints,
-        owner: req.user.id,
-    })
-        .then(newCoupon => {
-            for (let i = 0; i < data.quantity; i++) {
-                const token = generateUniqueToken(newCoupon.get('title'), req.user.password);
-                const result = CouponTokenManager.insertCouponToken(newCoupon.get('id'), token);
+    const result = await insertCoupon(data, req.user.id);
 
-                if (!result) {
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Error creating the tokens.',
-                        tokens_created: i
-                    });
-                }
+    if(result) { // If the coupon has been created
+        for (let i = 0; i < data.quantity; i++) {
+            const token = generateUniqueToken(data.title, req.user.password);
+            const newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
+
+            if (!newToken) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Error creating the tokens.',
+                    tokens_created: (i + 1)
+                });
             }
+        }
 
-            return res.status(HttpStatus.CREATED).send({
-                created: true,
-                id: newCoupon.get('id'),
-                title: newCoupon.get('title'),
-                description: newCoupon.get('description')
-            });
-        })
-        .catch(err => {
-            console.log(err);
+        return res.status(HttpStatus.CREATED).send({
+            created: true,
+            title: data.title,
+            quantity: data.quantity
+        });
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'The coupon cannot be created.'
-            });
-        })
-
+    } else {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Error inserting the new coupon.',
+        });
+    }
 };
 
 /**
@@ -193,9 +178,8 @@ exports.getFromId = function (req, res) {
         .then(coupon => {
             if (coupon === null) {
                 return res.status(HttpStatus.NO_CONTENT).send({
-                    error: 'No coupon found with the given id and the given user.',
+                    error: 'No coupon found with the given id.',
                     coupon_id: parseInt(req.params.coupon_id),
-                    user_id: req.user.id
                 })
             }
 
@@ -1205,5 +1189,30 @@ async function isVerifierAuthorized(producer_id, verifier_id){
                console.log(err);
                reject(err);
            })
+    });
+}
+
+async function insertCoupon(coupon, owner) {
+    return new Promise((resolve, reject) => {
+        Coupon.create({
+            title: coupon.title,
+            description: coupon.description,
+            image: coupon.image,
+            timestamp: Number(Date.now()),
+            price: coupon.price,
+            visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from),
+            valid_from: Number(coupon.valid_from),
+            valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until),
+            purchasable: coupon.purchasable,
+            constraints: coupon.constraints,
+            owner: owner,
+        })
+            .then(newCoupon => { // TODO check if it's created
+                resolve(newCoupon);
+            })
+            .catch(err => {
+                console.log(err);
+                reject(err);
+            })
     });
 }
