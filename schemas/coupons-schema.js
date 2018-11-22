@@ -44,20 +44,8 @@ const validateCouponSchema = {
     params: {}
 };
 
-const verifierCouponSchema = {
-    query: {},
-    body: {
-        token:    Joi.string().required().label("Token is required"),
-        verifier: Joi.number().integer().required().label("Verifier is required"),
-        state:    Joi.number().integer().required().label("State is required"),
-    },
-    params: {}
-};
-
-
 module.exports = {
     createCouponSchema,
     updateCouponSchema,
-    validateCouponSchema,
-    verifierCouponSchema
+    validateCouponSchema
 };

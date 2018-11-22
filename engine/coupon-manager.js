@@ -2,6 +2,7 @@
 
 const Coupon = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
+const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
 
@@ -183,26 +184,22 @@ exports.createCoupon = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO adattare
+ */
 exports.getFromId = function (req, res) {
 
     Coupon.findOne({
-        where: {
-            [Op.and]: [
-                {id: req.params.coupon_id}
-            ]
-        }
+        where: { id: req.params.coupon_id }
     })
         .then(coupon => {
             if (coupon === null) {
-                return res.status(HttpStatus.NO_CONTENT).json({
+                return res.status(HttpStatus.NO_CONTENT).send({
                     error: 'No coupon found with the given id and the given user.',
                     coupon_id: parseInt(req.params.coupon_id),
                     user_id: req.user.id
                 })
             }
 
-            return res.status(HttpStatus.OK).json(coupon)
+            return res.status(HttpStatus.OK).send(coupon)
         })
         .catch(err => {
             console.log(err);
@@ -633,8 +630,8 @@ exports.buyCoupon = async function (req, res) {
     const isPurchasable = await isCouponPurchasable(coupon_id, user_id);
 
     // If the coupon is not expired and is purchasable
-    if(isNotExpired) {
-        if(isPurchasable) {
+    if (isNotExpired) {
+        if (isPurchasable) {
             CouponToken.findOne({
                 where: {
                     [Op.and]: [
@@ -667,6 +664,13 @@ exports.buyCoupon = async function (req, res) {
                                     message: 'Some problem occurred during the buy of the coupon.'
                                 })
                             }
+                        })
+                        .catch(err => {
+                            console.log(err);
+                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                error: true,
+                                message: 'Error while buying the coupon.'
+                            })
                         });
                 })
                 .catch(err => {
@@ -927,47 +931,49 @@ exports.deleteCoupon = function (req, res) {
  *        token: DX200DT,
  *         error: 'Cannot import coupon'
  *     }
- */ // TODO adattare: se si trova un token, viene assegnato al consumer che fa la chiamata
+ */
 exports.importOfflineCoupon = function (req, res) {
     const data = req.body;
 
-    CouponToken.update({
-        consumer: req.user.id,
-
-    }, {
+    CouponToken.findOne({
         where: {
             [Op.and]: [
-                {token: data.token},
+                {consumer: {[Op.is]: null}},
+                {token: data.token}
             ]
         }
     })
-        .then(couponUpdated => {
-            if (couponUpdated[0] === 0) {
-                return res.status(HttpStatus.NO_CONTENT).json({
-                    validate: false,
-                    token: data.token,
-                    error: 'Cannot import coupon'
+        .then(coupon => {
+            if (coupon === null) {
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    error: 'No coupon found with the given token.',
+                    token: parseInt(data.token),
                 })
             }
-            else if (couponUpdated[0] === 1) {
 
-                {
-                    return res.status(HttpStatus.OK).json({
-                        validate: true,
-                        token: data.token
+            CouponTokenManager.updateCouponToken(data.token, coupon.dataValues.coupon_id, req.user.id)
+                .then(update => {
+                    if (update) {
+                        return res.status(HttpStatus.OK).send({
+                            imported: true,
+                            token: data.token,
+                            coupon_id: coupon.dataValues.coupon_id
+                        });
+                    }
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Some problem occurred during the import of the offline coupon.'
                     })
-                }
-            }
+                });
         })
         .catch(err => {
             console.log(err);
-
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                validate: false,
-                token: data.token,
-                error: 'Cannot import coupon'
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Some problem occurred during the import of the offline coupon.'
             })
-        });
+        })
 };
 
 /**
@@ -1008,46 +1014,87 @@ exports.importOfflineCoupon = function (req, res) {
  *        token: DX200DT,
  *         error: 'Cannot verifier coupon'
  *     }
- */ // TODO adattare chiamando il couponToken
+ */
 exports.redeemCoupon = function (req, res) {
     const data = req.body;
+    const verifier_id = req.user.id;
 
-    Coupon.update({
-        state: 2,
-    }, {
+    // Join between CouponToken and Coupon where token = givenToken and consumer is not null
+    CouponToken.findOne({
+        include: [{model: Coupon, required: true}],
         where: {
             [Op.and]: [
-                {state: 1},
+                { token: data.token }, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
             ]
         }
     })
-        .then(couponUpdated => {
-            if (couponUpdated[0] === 0) {
-                return res.status(HttpStatus.OK).json({
-                    validate: false,
-                    token: data.token,
-                    error: 'Cannot import coupon'
+        .then(result => {
+            if(result === null) {
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    error: true,
+                    message: 'Either the coupon is not found, unsold or already redeemed.',
                 })
             }
-            else if (couponUpdated[0] === 1) {
 
-                {
-                    return res.status(HttpStatus.OK).json({
-                        validate: true,
-                        token: data.token
+            const couponTkn = {
+                token: data.token,
+                coupon_id: result.dataValues.coupon_id,
+                consumer: result.dataValues.consumer
+            };
+            const producer_id = result.dataValues.Coupons[0].dataValues.owner;
+
+            isVerifierAuthorized(producer_id, verifier_id)
+                .then(authorization => {
+                    if(authorization) { // If the verifier is authorized, it redeems the coupon
+                        console.log('I can redeem the coupon');
+
+                        CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, verifier_id)
+                            .then(update => {
+                                console.log(update);
+                                if (update) {
+                                    return res.status(HttpStatus.OK).send({
+                                        redeemed: true,
+                                        token: data.token,
+                                    });
+                                } else {
+                                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                        error: true,
+                                        message: 'Some problem occurred during the operation of redeeming.'
+                                    });
+                                }
+                            })
+                            .catch(err => {
+                                console.log(err);
+
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the operation of redeeming.'
+                                })
+                            })
+                    } else {
+                        return res.status(HttpStatus.BAD_REQUEST).send({
+                            error: true,
+                            message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
+                        })
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Some problem occurred during the operation of redeeming.'
                     })
-                }
-            }
+                })
         })
         .catch(err => {
             console.log(err);
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                validate: false,
-                token: data.token,
-                error: 'Cannot import coupon'
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Some problem occurred during the redeem of the coupon.'
             })
-        });
+        })
 };
 
 exports.addImage = function (req, res) {
@@ -1093,7 +1140,7 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
 }
 
 async function isCouponNotExpired(coupon_id) {
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         Coupon.findOne({
             attributes: ['valid_until'],
             where: {id: coupon_id}
@@ -1109,7 +1156,7 @@ async function isCouponNotExpired(coupon_id) {
             })
             .catch(err => {
                 console.log(err);
-                resolve(false);
+                reject(err);
             })
     });
 }
@@ -1117,7 +1164,7 @@ async function isCouponNotExpired(coupon_id) {
 async function isCouponPurchasable(coupon_id, user_id) {
     // It returns id, purchasable, quantity, available and buyed
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
 
         Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, ' +
             'COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS availables, ' +
@@ -1137,7 +1184,26 @@ async function isCouponPurchasable(coupon_id, user_id) {
             })
             .catch(err => {
                 console.log(err);
-                resolve(false); // Error == couponNotPurchasable
+                reject(err); // Error == couponNotPurchasable
             })
+    });
+}
+
+async function isVerifierAuthorized(producer_id, verifier_id){
+    return new Promise((resolve, reject) => {
+       Verifier.findOne({
+           where: {
+               [Op.and]: [
+                   {producer: producer_id}, {verifier: verifier_id}
+               ]
+           }
+       })
+           .then(result => { // If result !== null, there is not a couple producer/verifier ==> verifier not authorized
+               resolve(result !== null);
+           })
+           .catch(err => {
+               console.log(err);
+               reject(err);
+           })
     });
 }

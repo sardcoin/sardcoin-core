@@ -10,7 +10,6 @@ const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
 
-// Private function: it takes the coupon_id and the token and create a new CouponToken
 exports.insertCouponToken = function (coupon_id, token) {
 
     CouponToken.create({
@@ -34,7 +33,7 @@ exports.insertCouponToken = function (coupon_id, token) {
 };
 
 exports.updateCouponToken = async function(token, coupon_id, consumer=null, verifier=null){
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
         CouponToken.update({
             consumer: consumer,
             verifier: verifier
@@ -46,14 +45,14 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null, veri
             }
         })
             .then(couponTokenUpdated => {
-                const result = !(couponTokenUpdated[0] === 0);
+                const result = !(couponTokenUpdated[0] === 0); // If the update is fine, it returns true
                 resolve(result);
             })
             .catch(err => {
                 console.log("The coupon token cannot be updated.");
                 console.log(err);
 
-                resolve(false);
+                reject(err);
             })
     });
 };
