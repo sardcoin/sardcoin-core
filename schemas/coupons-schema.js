@@ -27,10 +27,8 @@ const updateCouponSchema = {
         price:          Joi.number().required().label("Price is required"),
         valid_from:     Joi.number().required().label("Valid From is required"),
         valid_until:    Joi.number().allow(null),
-        state:          Joi.number().integer(),
+        visible_from:   Joi.number().allow(null),
         constraints:    Joi.string().allow(null),
-        owner:          Joi.number().integer().required().label("Owner is required"),
-        consumer:       Joi.number().integer().allow(null),
         quantity:       Joi.number().integer(),
         purchasable:    Joi.number().integer().required()
 

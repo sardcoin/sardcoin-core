@@ -51,7 +51,7 @@ exports.updateCouponToken = function(token, coupon_id, consumer=null, verifier=n
             return true;
         })
         .catch(err => {
-            console.log("The coupon token cannot be created.");
+            console.log("The coupon token cannot be edited.");
             console.log(err);
 
             return false;
