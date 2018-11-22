@@ -571,7 +571,7 @@ exports.getAvailableCoupons = function (req, res) {
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }
-            return res.status(HttpStatus.OK).json(coupons)
+            return res.status(HttpStatus.OK).send(coupons)
         })
         .catch(err => {
             console.log(err);
@@ -580,7 +580,7 @@ exports.getAvailableCoupons = function (req, res) {
             })
         });
 
-};// TODO
+};
 
 /**
  * @api {post} /coupons/buyCoupon Buy coupon
@@ -625,63 +625,71 @@ exports.getAvailableCoupons = function (req, res) {
  *          {
  *              "error": "You are not authorized to view this content"
  *           }
- */ // TODO lasciare richiamando la funzione in coupon-token
-exports.buyCoupon = function (req, res) {
-    let coupon = req.body;
+ */
+exports.buyCoupon = async function (req, res) {
+    const coupon_id = req.body.coupon_id;
+    const user_id = req.user.id;
 
-    // Controllare se non è scaduto
-    // Controllare che non ne abbia già comprati altri
+    const isNotExpired = await isCouponNotExpired(coupon_id);
+    const isPurchasable = await isCouponPurchasable(coupon_id, user_id);
 
-    // CouponToken.findOne({
-    //     where: {
-    //         id: couponID
-    //     }
-    // })
-    //     .then(bought => {
-    //         if (bought[0] === 0) {
-    //             return res.status(HttpStatus.OK).json({
-    //                 buy: false,
-    //                 coupon_id: couponID,
-    //                 message: "Coupon don't exist!!!"
-    //             })
-    //         }
-    //         else if (bought[0] === 1) {
-    //             return res.status(HttpStatus.OK).json({
-    //                 buy: true,
-    //                 coupon_id: couponID,
-    //                 message: "Coupon bought!!!"
-    //
-    //             })
-    //         }
-    //     })
-    //     .catch(err => {
-    //         console.log(err);
-    //
-    //         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-    //             updated: false,
-    //             coupon_id: couponID,
-    //             error: 'Cannot buy the coupon'
-    //         })
-    //     });
+    // If the coupon is not expired and is purchasable
+    if(isNotExpired) {
+        if(isPurchasable) {
+            CouponToken.findOne({
+                where: {
+                    [Op.and]: [
+                        {consumer: {[Op.is]: null}},
+                        {coupon_id: coupon_id}
+                    ]
+                }
+            })
+                .then(coupon => {
+                    if (coupon === null) {
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                            error: 'No coupon found with the given id.',
+                            coupon_id: parseInt(coupon_id),
+                        })
+                    }
 
+                    const token = coupon.dataValues.token;
 
-    Sequelize.query('SELECT id, purchasable, ' + // TODO FIX
-        'COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NOT NULL THEN 1 END) AS availables, ' +
-        'COUNT(CASE WHEN consumer = :user_id THEN 1 END) AS buyed ' +
-        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = :coupon_id GROUP BY id' ,
-        { replacements: { user_id: req.user.id, coupon_id: coupon.coupon_id },
-            type: sequelize.QueryTypes.SELECT,
-            model: Coupon })
-        .then(infos => {
-            return res.send(infos);
+                    CouponTokenManager.updateCouponToken(token, coupon_id, user_id)
+                        .then(update => {
+                            if (update) {
+                                return res.status(HttpStatus.OK).send({
+                                    bought: true,
+                                    token: token,
+                                    coupon_id: coupon_id
+                                });
+                            } else {
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the buy of the coupon.'
+                                })
+                            }
+                        });
+                })
+                .catch(err => {
+                    console.log(err);
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error while buying the coupon.'
+                    })
+                })
+        } else {
+            return res.status(HttpStatus.BAD_REQUEST).send({
+                error: true,
+                message: 'Cannot buy the chosen coupon: either the maximum quantity for user has been already reached ' +
+                    'or no coupons are available anymore.'
+            })
+        }
+    } else {
+        return res.status(HttpStatus.BAD_REQUEST).send({
+            error: true,
+            message: 'Cannot buy the chosen coupon: it is already expired.'
         })
-        .catch(err => {
-            console.log(err);
-            return res.send(err);
-        })
-
-
-
+    }
 };
 
 /**
@@ -1086,42 +1094,52 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
     return hash;
 }
 
-function isCouponExpired(coupon_id) {
-    Coupon.findOne({
-        attributes: ['valid_from', 'valid_until'],
-        where: {id: coupon_id}
-    })
-        .then(coupon => {
-            if (coupon) { // If coupon exists
-                if (Date.now() >= coupon.get('valid_from') && coupon.get('valid_until') <= Date.now()) {
-                    return false;
-                }
-            }
+async function isCouponNotExpired(coupon_id) {
+    return new Promise((resolve) => {
+        Coupon.findOne({
+            attributes: ['valid_until'],
+            where: {id: coupon_id}
+        })
+            .then(coupon => {
+                // If the coupon exists, it check if is expired or not.
+                // If the coupon is not found, it returns true (such as expired)
+                const result = coupon !== null
+                    ? (coupon.get('valid_until') >= Date.now() || coupon.get('valid_until') === null)
+                    : false;
 
-            return true; // Coupon not found == expired
-        })
-        .catch(err => {
-            console.log(err);
-            return true;
-        })
+                resolve(result);
+            })
+            .catch(err => {
+                console.log(err);
+                resolve(false);
+            })
+    });
 }
 
-function isCouponPurchasable(coupon_id, user_id, res) {
-    // La query rende id, purchasable, quantity, buyed
+async function isCouponPurchasable(coupon_id, user_id) {
+    // It returns id, purchasable, quantity, available and buyed
 
-    console.log(coupon_id + ' ' + user_id );
+    return new Promise((resolve) => {
 
-    Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NOT NULL THEN 1 END) AS availables, ' +
-        'COUNT(CASE WHEN consumer = :user_id THEN 1 END) AS buyed ' +
-        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = :coupon_id',
-        { replacements: { user_id: user_id, coupon_id: coupon_id },
-            type: sequelize.QueryTypes.SELECT,
-            model: Coupon })
-        .then(infos => {
-            return res.send(infos);
-        })
-        .catch(err => {
-            console.log(err);
-            return res.send(err);
-        })
+        Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, ' +
+            'COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS availables, ' +
+            'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS buyed ' +
+            'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = $2 GROUP BY id',
+            {bind: [user_id, coupon_id], type: Sequelize.QueryTypes.SELECT},
+            {model: Coupon}
+        )
+            .then(infos => {
+                const queryResult = infos[0];
+
+                // If purchasable is not null, then it checks only for availability, else it checks if you can buy the coupon
+                const result = queryResult.purchasable === null // null == infinite availability
+                    ? queryResult.availables > 0
+                    : queryResult.availables > 0 && queryResult.buyed < queryResult.purchasable;
+                resolve(result);
+            })
+            .catch(err => {
+                console.log(err);
+                resolve(false); // Error == couponNotPurchasable
+            })
+    });
 }
