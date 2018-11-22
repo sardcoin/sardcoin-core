@@ -556,7 +556,7 @@ exports.getPurchasedCoupons = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO adattare e rendere coupon validi e disponibili (visibili, non scaduti, non acquistati, non riscattati)
+ */
 exports.getAvailableCoupons = function (req, res) {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -758,7 +758,7 @@ exports.buyCoupon = async function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO adattare
+ */
 exports.editCoupon = function (req, res) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
@@ -768,12 +768,11 @@ exports.editCoupon = function (req, res) {
         description: data.description,
         image: data.image,
         price: data.price,
+        visible_from: visible_from,
         valid_from: Number(data.valid_from),
         valid_until: valid_until,
-        visible_from: visible_from,
         constraints: data.constraints,
         purchasable: data.purchasable,
-        owner: req.user.id,
     }, {
         where: {
             [Op.and]: [
@@ -788,7 +787,7 @@ exports.editCoupon = function (req, res) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
                     coupon_id: data.id,
-                    message: "This coupon don't exist"
+                    message: "This coupon doesn't exist"
                 })
             }
             else {
@@ -854,7 +853,7 @@ exports.editCoupon = function (req, res) {
  * @apiErrorExample Error-Response:
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
- */ // TODO OK
+ */
 exports.deleteCoupon = function (req, res) {
     Coupon.destroy({
         where: {

@@ -25,13 +25,12 @@ const updateCouponSchema = {
         description:    Joi.string().min(5).max(255).allow(null).label("The description must be between 5 and 255 characters long "),
         image:          Joi.string().required().label("Image is required"),
         price:          Joi.number().required().label("Price is required"),
+        visible_from:   Joi.number().allow(null),
         valid_from:     Joi.number().required().label("Valid From is required"),
         valid_until:    Joi.number().allow(null),
-        visible_from:   Joi.number().allow(null),
         constraints:    Joi.string().allow(null),
         quantity:       Joi.number().integer(),
         purchasable:    Joi.number().integer().required()
-
     },
     params: {}
 };
