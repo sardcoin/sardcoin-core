@@ -958,7 +958,6 @@ exports.importOfflineCoupon = function (req, res) {
     const data = req.body;
 
     CouponToken.findOne({
-        include: [{model: Coupon, where: {visible_from:  null}}],
         where: {
 
 
