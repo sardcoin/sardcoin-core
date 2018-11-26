@@ -630,8 +630,8 @@ exports.buyCoupon = async function (req, res) {
     const coupon_id = req.body.coupon_id;
     const user_id = req.user.id;
 
-    let isNotExpired = await isCouponNotExpired(coupon_id);
-    let isPurchasable = await isCouponPurchasable(coupon_id, user_id);
+    let isNotExpired;
+    let isPurchasable;
 
     try {
         isNotExpired = await isCouponNotExpired(coupon_id);
@@ -894,13 +894,12 @@ exports.deleteCoupon = function (req, res) {
                     deleted: false,
                     coupon: parseInt(req.body.id),
                     message: "This coupon doesn't exist or you doesn't own the coupon!"
-                })
+                });
             } else {
                 return res.status(HttpStatus.OK).json({
                     deleted: true,
                     coupon: parseInt(req.body.id),
-                    message: "Coupon deleted!"
-                })
+                });
             }
         })
         .catch(err => {
@@ -1245,7 +1244,7 @@ async function insertCoupon(coupon, owner) {
             constraints: coupon.constraints,
             owner: owner,
         })
-            .then(newCoupon => { // TODO check if it's created
+            .then(newCoupon => {
                 resolve(newCoupon);
             })
             .catch(err => {
