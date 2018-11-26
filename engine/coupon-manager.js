@@ -964,6 +964,7 @@ exports.importOfflineCoupon = function (req, res) {
 
         [Op.and]: [
                 {consumer: {[Op.is]: null}},
+                {verifier: {[Op.is]: null}},
                 {token: data.token},
             ]
         }
