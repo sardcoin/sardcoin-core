@@ -970,7 +970,7 @@ exports.importOfflineCoupon = function (req, res) {
     })
         .then(coupon => {
             if (coupon === null) {
-                return res.status(HttpStatus.BAD_REQUEST).json({
+                return res.status(HttpStatus.NO_CONTENT).json({
                     error: 'No coupon found with the given token.',
                     token: data.token,
                 })
