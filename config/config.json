@@ -9,7 +9,7 @@
   },
   "production": {
     "username": "root",
-    "password": process.env.PASSWORD,
+    "password": "",
     "database": "sardcoin",
     "host": "127.0.0.1",
     "port": 3306,
