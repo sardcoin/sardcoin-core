@@ -8,7 +8,8 @@ var env       = process.env.NODE_ENV || 'development';
 var config    = require(__dirname + '/../config/config.json')[env];
 var db        = {};
 
-let password = process.env.PASSWORD ? process.env.PASSWORD : config.password;
+let password = process.env.PASSWORD || config.password;
+console.log("USING PASSWORD = ", password);
 let sequelize = new Sequelize(config.database, config.username, password, config);
 
 fs
