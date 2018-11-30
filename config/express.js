@@ -33,7 +33,7 @@ module.exports = function (app, passport) {
     app.set('views', config.root + '/views');
     app.set('view engine', 'jade');
 
-    app.use(compressor);
+    //app.use(compressor);
     app.use(logger('dev'));
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
