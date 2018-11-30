@@ -47,5 +47,5 @@ module.exports = function (app, passport) {
     app.use(cors(corsOpt)); // cors for all the routes of the application
     app.options('*', cors(corsOpt));
 
-    console.log(process.env.PASS);
+    process.env.PASS
 };
