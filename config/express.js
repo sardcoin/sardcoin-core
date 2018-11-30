@@ -1,22 +1,18 @@
 'use strict';
 
-/**
- * Module dependencies.
- */
-
 const express =      require('express');
 const cookieParser = require('cookie-parser');
 const cors =         require('cors');
-let path   =         require('path');
 let helmet =         require('helmet');
 let logger =         require('morgan');
 let config =         require('./index');
 const bodyParser =   require('body-parser');
+let compressor =     require('compression');
 
 module.exports = function (app, passport) {
 
     const corsOpt = {
-        origin: ['http://localhost:4200', 'http://localhost:443', 'http://192.168.1.39:4200', 'http://platform.sardcoin.eu'],
+        origin: ['http://localhost:4200', 'http://localhost:443', 'http://platform.sardcoin.eu'],
         credentials: true,
         methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'], // to works well with web app, OPTIONS is required
         allowedHeaders: ['Content-Type', 'Authorization'], // allow json and token in the headers,
@@ -36,7 +32,9 @@ module.exports = function (app, passport) {
     // view engine setup
     app.set('views', config.root + '/views');
     app.set('view engine', 'jade');
+    app.set('port', 8080);
 
+    app.use(compressor);
     app.use(logger('dev'));
     app.use(express.json());
     app.use(express.urlencoded({extended: false}));
@@ -47,7 +45,7 @@ module.exports = function (app, passport) {
 
     // enabling cors
     app.use(cors(corsOpt)); // cors for all the routes of the application
-    app.options('*', cors(corsOpt)); // automatic cors gen for HTTP verbs in all routes, This can be redundant but I kept to be sure that will always work.
-    //app.use(cors());
+    app.options('*', cors(corsOpt));
 
+    console.log(process.env.NODE_ENV);
 };

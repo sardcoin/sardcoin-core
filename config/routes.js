@@ -1,14 +1,10 @@
-const joi = require('joi');
 const expressJoi = require('express-joi-validator');
 const multiparty = require('connect-multiparty');
 const multipartyMiddleware = multiparty();
-const fs = require('file-system');
 
 const Schemas            = require('../schemas/coupons-schema');
 const AccessManager      = require('../engine/access-manager');
 const CouponManager      = require('../engine/coupon-manager');
-const CouponTokenManager = require('../engine/coupon-token-manager');
-const ErrorHandler       = require('../engine/error-handler');
 
 
 module.exports = function (app, passport) {
@@ -17,7 +13,6 @@ module.exports = function (app, passport) {
     let indexPath = "/";
     let amPath    = indexPath + 'users/';
     let cmPath    = indexPath + 'coupons/';
-    let ctPath    = indexPath + 'couponToken/';
 
     /* AUTH */
     const requireAuth = passport.authenticate('jwt', {session: false});
