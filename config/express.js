@@ -32,7 +32,6 @@ module.exports = function (app, passport) {
     // view engine setup
     app.set('views', config.root + '/views');
     app.set('view engine', 'jade');
-    app.set('port', 8080);
 
     app.use(compressor);
     app.use(logger('dev'));

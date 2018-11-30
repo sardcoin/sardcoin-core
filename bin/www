@@ -8,6 +8,7 @@ let port = '8080';
 
 let server = http.createServer(app);
 
+app.set('port', port);
 server.listen(port);
 server.on('error', onError);
 server.on('listening', onListening);
