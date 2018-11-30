@@ -4,7 +4,7 @@ let app = require('../app').app;
 let debug = require('debug')('sardcoin-core:server');
 let http = require('http');
 
-let port = '8080';
+let port = 8080;
 
 let server = http.createServer(app);
 
