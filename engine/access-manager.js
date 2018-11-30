@@ -181,6 +181,7 @@ exports.getUserFromToken = function (req, res, next) {
             });
         })
 };
+
 /**
  * @api {get} /users/getProducerFromId/:producer_id Get producer
  * @apiName getProducerFromId
@@ -279,6 +280,7 @@ exports.getProducerFromId = function (req, res, next) {
             })
         });
 };
+
 /**
  * @api {put} /users/editCoupon Update user
  * @apiName UpdateUser
@@ -322,7 +324,6 @@ exports.getProducerFromId = function (req, res, next) {
  *     HTTP/1.1 401 Unauthorized
  *          Unauthorized
  */
-
 exports.updateUser = function (req, res, next) {
 
     const user = req.body;
