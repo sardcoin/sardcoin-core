@@ -30,7 +30,7 @@ const updateCouponSchema = {
         valid_until:    Joi.number().allow(null),
         constraints:    Joi.string().allow(null),
         quantity:       Joi.number().integer(),
-        purchasable:    Joi.number().integer().required()
+        purchasable:    Joi.number().allow(null)
     },
     params: {}
 };

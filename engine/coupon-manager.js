@@ -787,7 +787,7 @@ exports.buyCoupon = async function (req, res) {
 exports.editCoupon = function (req, res) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
-    let visible_from = data.valid_until === null ? null : Number(data.visible_from);
+    let visible_from = data.visible_from === null ? null : Number(data.visible_from);
     Coupon.update({
         title: data.title,
         description: data.description,
