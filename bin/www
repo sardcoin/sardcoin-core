@@ -3,19 +3,24 @@
 let app = require('../app').app;
 let debug = require('debug')('sardcoin-core:server');
 let https = require('https');
+let http = require('http');
 let fs = require('fs');
 
-
-console.log(process.env.PEM_PATH);
-
-const options = {
-    key: fs.readFileSync(process.env.PEM_PATH + 'privkey2.pem').toString(),
-    cert: fs.readFileSync(process.env.PEM_PATH + 'cert2.pem').toString()
-}
-
+let options;
+let server;
 let port = 8080;
 
-let server = https.createServer(options, app);
+if(process.env.PEM_PATH) { // If using certificates, enable SSL
+    options = {
+        key: fs.readFileSync(process.env.PEM_PATH + 'privkey2.pem').toString(),
+        cert: fs.readFileSync(process.env.PEM_PATH + 'cert2.pem').toString()
+    }
+
+    server = https.createServer(options, app);
+}
+else {
+    server = http.createServer(app);
+}
 
 server.listen(port);
 server.on('error', onError);
