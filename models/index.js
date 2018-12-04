@@ -9,7 +9,6 @@ var config    = require(__dirname + '/../config/config.json')[env];
 var db        = {};
 
 let password = process.env.PASSWORD || config.password;
-console.log("USING PASSWORD = ", password);
 let sequelize = new Sequelize(config.database, config.username, password, config);
 
 fs
@@ -31,10 +30,10 @@ Object.keys(db).forEach(modelName => {
 sequelize
   .authenticate()
   .then(function(err) {
-    console.log('Database connection has been established successfully.');
+    console.log('===> SARDCOIN BACK-END loaded successfully.');
   })
   .catch(function (err) {
-    console.log('Unable to connect to the database:', err);
+    console.log('===> ERROR: unable to connect to the database.', err);
   });
 
 db.sequelize = sequelize;
