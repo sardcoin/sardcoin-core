@@ -1119,7 +1119,7 @@ exports.redeemCoupon = function (req, res) {
 };
 
 exports.addImage = function (req, res) {
-    // console.log(req);
+    console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
@@ -1144,6 +1144,8 @@ exports.addImage = function (req, res) {
             });
         });
     });
+
+    // return res.send({cacca: 'si'});
 };
 
 function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
