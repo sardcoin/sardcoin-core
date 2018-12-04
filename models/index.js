@@ -8,11 +8,8 @@ var env       = process.env.NODE_ENV || 'development';
 var config    = require(__dirname + '/../config/config.json')[env];
 var db        = {};
 
-if (config.use_env_variable) {
-  var sequelize = new Sequelize(process.env[config.use_env_variable], config);
-} else {
-  var sequelize = new Sequelize(config.database, config.username, config.password, config);
-}
+let password = process.env.PASSWORD || config.password;
+let sequelize = new Sequelize(config.database, config.username, password, config);
 
 fs
   .readdirSync(__dirname)
@@ -33,10 +30,10 @@ Object.keys(db).forEach(modelName => {
 sequelize
   .authenticate()
   .then(function(err) {
-    console.log('Database connection has been established successfully.');
+    console.log('===> SARDCOIN BACK-END loaded successfully.');
   })
   .catch(function (err) {
-    console.log('Unable to connect to the database:', err);
+    console.log('===> ERROR: unable to connect to the database.', err);
   });
 
 db.sequelize = sequelize;
