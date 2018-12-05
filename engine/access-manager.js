@@ -176,8 +176,10 @@ exports.getUserFromToken = function (req, res, next) {
             return res.status(HttpStatus.OK).send(user);
         })
         .catch(err => {
+            console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: err
+                error: true,
+                message: 'Cannot retrieve the personal informations of the user'
             });
         })
 };
