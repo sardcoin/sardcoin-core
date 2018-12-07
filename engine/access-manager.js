@@ -331,9 +331,9 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
+    console.log(user);
+
     Users.update({
-        username: user.username,
-        email: user.email,
         company_name: user.company_name,
         vat_number: user.vat_number,
         first_name: user.first_name,
@@ -347,13 +347,21 @@ exports.updateUser = function (req, res, next) {
         zip: user.zip,
         password: password,
         email_paypal: user.email_paypal
-
     }, {
         where: {
             id: req.user.id
         }
     })
         .then(newUser => {
+            console.log(newUser);
+            if (newUser[0] === 0) {
+                return res.status(HttpStatus.NO_CONTENT).json({
+                    updated: false,
+                    user_id: req.user.id,
+                    message: 'An error occurred while updating the requested user'
+                })
+            }
+
             return res.status(HttpStatus.OK).json({
                 updated: true,
                 user_id: req.user.id

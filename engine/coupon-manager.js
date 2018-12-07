@@ -582,6 +582,12 @@ exports.getAvailableCoupons = function (req, res) {
 
 };
 
+exports.buyCoupons = function(req, res) {
+
+    const coupon_list = req.body.coupon_list;
+
+};
+
 /**
  * @api {post} /coupons/buyCoupon Buy coupon
  * @apiName BuyCoupon
@@ -626,52 +632,36 @@ exports.getAvailableCoupons = function (req, res) {
  *              "error": "You are not authorized to view this content"
  *           }
  */
-exports.buyCoupon = async function (req, res) {
-    const coupon_id = req.body.coupon_id;
-    const user_id = req.user.id;
+async function getBuyCouponQuery(coupon_id, user_id) {
 
     let isNotExpired;
     let isPurchasable;
 
     try {
         isNotExpired = await isCouponNotExpired(coupon_id);
-    } catch (e) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            message: 'Some problem occurred checking if the coupon is expired.'
-        })
-    }
-
-    try {
         isPurchasable = await isCouponPurchasable(coupon_id, user_id);
-    } catch (e) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            message: 'Some problem occurred checking if the coupon is purchasable.'
-        })
+    } catch (err) {
+        console.log('ERROR in COUPON-MANAGER,\nwhen checking if coupon with ID='+ coupon_id +' is expired/purchasable:');
+        console.log(err);
+        return null;
     }
 
     // If the coupon is not expired and is purchasable
-    if (isNotExpired) {
-        if (isPurchasable) {
+    if (isNotExpired && isPurchasable) {
             CouponToken.findOne({
-                where: {
-                    [Op.and]: [
-                        {consumer: {[Op.is]: null}},
-                        {coupon_id: coupon_id}
-                    ]
-                }
+                where: {[Op.and]: [{consumer: {[Op.is]: null}}, {coupon_id: coupon_id}]} // consumer == null AND given coupon_id
             })
                 .then(coupon => {
                     if (coupon === null) {
-                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                            error: 'No coupon found with the given id.',
-                            coupon_id: parseInt(coupon_id),
-                        })
+                        console.log('ERROR in COUPON-MANAGER:');
+                        console.log('USER=' + user_id + ' asked for buying an unknown coupon with ID=' + coupon_id);
+                        return null;
                     }
 
-                    const token = coupon.dataValues.token;
+                    // TODO check the UPDATE query below
 
+                    return 'UPDATE `coupon_tokens` SET `consumer`='+ user_id+' WHERE `coupon_id`=' + coupon_id + ' AND `token`=' + coupon.dataValues.token + ';';
+                    /*
                     CouponTokenManager.updateCouponToken(token, coupon_id, user_id)
                         .then(update => {
                             if (update) {
@@ -694,26 +684,16 @@ exports.buyCoupon = async function (req, res) {
                                 message: 'Error while buying the coupon.'
                             })
                         });
+                        */
                 })
                 .catch(err => {
+                    console.log('ERROR in COUPON-MANAGER,\nwhen retrieving a token for the coupon with ID='+ coupon_id +':');
                     console.log(err);
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Error while buying the coupon.'
-                    })
+                    return null;
                 })
-        } else {
-            return res.status(HttpStatus.BAD_REQUEST).send({
-                error: true,
-                message: 'Cannot buy the chosen coupon: either the maximum quantity for user has been already reached ' +
-                    'or no coupons are available anymore.'
-            })
-        }
     } else {
-        return res.status(HttpStatus.BAD_REQUEST).send({
-            error: true,
-            message: 'Cannot buy the chosen coupon: it is already expired.'
-        })
+        console.log('ERROR in COUPON MANAGER:\nCoupon with ID=' + coupon_id + ' is not purchasable or expired');
+        return null;
     }
 };
 

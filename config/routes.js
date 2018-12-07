@@ -41,7 +41,7 @@ module.exports = function (app, passport) {
     app.put(cmPath     + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.editCoupon);
     app.delete(cmPath  + 'deleteCoupon/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.deleteCoupon);
     app.post(cmPath    + 'addImage/', multipartyMiddleware, requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.addImage);
-    app.post(cmPath    + 'buyCoupon/', requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.buyCoupon);
+    app.post(cmPath    + 'buyCoupon/', requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.buyCoupons);
     app.put(cmPath     + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.importOfflineCoupon);
     app.put(cmPath     + 'redeemCoupon/', requireAuth, AccessManager.roleAuthorization([verifier, admin]), CouponManager.redeemCoupon);
 
