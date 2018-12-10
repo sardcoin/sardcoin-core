@@ -590,6 +590,15 @@ exports.buyCoupons = async function (req, res) {
     let buyCouponQuery;
     let buyQueryResult;
 
+    let lockTable = await lockTable('coupon_tokens');
+
+    if(!lockTable) { // TODO unlock tables
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'An error occurred while finalizing the purchase'
+        });
+    }
+
     for (let i = 0; i < coupon_list.length; i++) {
         try {
             tokenToExclude = [];
@@ -714,7 +723,7 @@ async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded=[]) {
 
                     // TODO check the UPDATE query below
 
-                    resolve(['UPDATE `coupon_tokens` SET consumer=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon.dataValues.token + '"; ', coupon.dataValues.token]);
+                    resolve(['UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon.dataValues.token + '"; ', coupon.dataValues.token]);
                     /*
                     CouponTokenManager.updateCouponToken(token, coupon_id, user_id)
                         .then(update => {
@@ -1290,6 +1299,34 @@ async function insertCoupon(coupon, owner) {
             .catch(err => {
                 console.log(err);
                 reject(err);
+            })
+    });
+}
+
+async function lockTable(table_name) {
+    return new Promise((resolve, reject) => {
+        Sequelize.query(
+            'LOCK TABLE :table_name WRITE', {bind: [table_name]})
+            .then(lock => {
+                resolve(true);
+            })
+            .catch(err => {
+                console.log(err);
+                resolve(false);
+            })
+    });
+}
+
+async function unlockTables() {
+    return new Promise((resolve, reject) => {
+        Sequelize.query(
+            'UNLOCK TABLES')
+            .then(lock => {
+                resolve(true);
+            })
+            .catch(err => {
+                console.log(err);
+                resolve(false);
             })
     });
 }
