@@ -79,7 +79,7 @@ exports.createCoupon = async function (req, res) {
         });
     }
 
-    if(result) { // If the coupon has been created
+    if (result) { // If the coupon has been created
         for (let i = 0; i < data.quantity; i++) {
             const token = generateUniqueToken(data.title, req.user.password);
             let newToken;
@@ -193,7 +193,7 @@ exports.createCoupon = async function (req, res) {
 exports.getFromId = function (req, res) {
 
     Coupon.findOne({
-        where: { id: req.params.coupon_id }
+        where: {id: req.params.coupon_id}
     })
         .then(coupon => {
             if (coupon === null) {
@@ -582,10 +582,63 @@ exports.getAvailableCoupons = function (req, res) {
 
 };
 
-exports.buyCoupons = function(req, res) {
+exports.buyCoupons = async function (req, res) {
 
     const coupon_list = req.body.coupon_list;
+    let query = 'START TRANSACTION; ';
+    let tokenToExclude = [];
+    let buyCouponQuery;
+    let buyQueryResult;
 
+    for (let i = 0; i < coupon_list.length; i++) {
+        try {
+            tokenToExclude = [];
+
+            for (let j=0;j < coupon_list[i].quantity; j++) {
+                buyQueryResult = await getBuyCouponQuery(coupon_list[i].id, req.user.id, tokenToExclude);
+                buyCouponQuery = buyQueryResult[0];
+                tokenToExclude.push(buyQueryResult[1]);
+
+                if (buyCouponQuery !== null) {
+                    query += buyCouponQuery;
+                } else {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'An error occurred while finalizing the purchase'
+                    })
+                }
+            }
+        } catch (e) {
+            return res.status(e[0]).send({
+                error: true,
+                message: 'An error occurred while finalizing the purchase'
+            })
+        }
+    }
+
+    query += 'COMMIT';
+
+    Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
+        .then(result => {
+            if (result[0] === 0) { // The database has not been updated
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'An error occured while finalizing the purchase'
+                });
+            }
+
+            return res.status(HttpStatus.OK).send({
+                success: true,
+                message: 'The purchase has been finalized'
+            })
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'An error occured while finalizing the purchase'
+            });
+        });
 };
 
 /**
@@ -632,7 +685,7 @@ exports.buyCoupons = function(req, res) {
  *              "error": "You are not authorized to view this content"
  *           }
  */
-async function getBuyCouponQuery(coupon_id, user_id) {
+async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded=[]) {
 
     let isNotExpired;
     let isPurchasable;
@@ -641,26 +694,27 @@ async function getBuyCouponQuery(coupon_id, user_id) {
         isNotExpired = await isCouponNotExpired(coupon_id);
         isPurchasable = await isCouponPurchasable(coupon_id, user_id);
     } catch (err) {
-        console.log('ERROR in COUPON-MANAGER,\nwhen checking if coupon with ID='+ coupon_id +' is expired/purchasable:');
+        console.log('ERROR in COUPON-MANAGER,\nwhen checking if coupon with ID=' + coupon_id + ' is expired/purchasable:');
         console.log(err);
         return null;
     }
 
     // If the coupon is not expired and is purchasable
-    if (isNotExpired && isPurchasable) {
+    return new Promise((resolve, reject) => {
+        if (isNotExpired && isPurchasable) {
             CouponToken.findOne({
-                where: {[Op.and]: [{consumer: {[Op.is]: null}}, {coupon_id: coupon_id}]} // consumer == null AND given coupon_id
+                where: {[Op.and]: [{consumer: {[Op.is]: null}}, {coupon_id: coupon_id}, {token: {[Op.notIn]: tokenExcluded}}]} // consumer == null AND given coupon_id
             })
                 .then(coupon => {
                     if (coupon === null) {
                         console.log('ERROR in COUPON-MANAGER:');
                         console.log('USER=' + user_id + ' asked for buying an unknown coupon with ID=' + coupon_id);
-                        return null;
+                        reject([HttpStatus.BAD_REQUEST, null]);
                     }
 
                     // TODO check the UPDATE query below
 
-                    return 'UPDATE `coupon_tokens` SET `consumer`='+ user_id+' WHERE `coupon_id`=' + coupon_id + ' AND `token`=' + coupon.dataValues.token + ';';
+                    resolve(['UPDATE `coupon_tokens` SET consumer=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon.dataValues.token + '"; ', coupon.dataValues.token]);
                     /*
                     CouponTokenManager.updateCouponToken(token, coupon_id, user_id)
                         .then(update => {
@@ -687,14 +741,15 @@ async function getBuyCouponQuery(coupon_id, user_id) {
                         */
                 })
                 .catch(err => {
-                    console.log('ERROR in COUPON-MANAGER,\nwhen retrieving a token for the coupon with ID='+ coupon_id +':');
+                    console.log('ERROR in COUPON-MANAGER,\nwhen retrieving a token for the coupon with ID=' + coupon_id + ':');
                     console.log(err);
-                    return null;
+                    reject([HttpStatus.INTERNAL_SERVER_ERROR, null]);
                 })
-    } else {
-        console.log('ERROR in COUPON MANAGER:\nCoupon with ID=' + coupon_id + ' is not purchasable or expired');
-        return null;
-    }
+        } else {
+            console.log('ERROR in COUPON MANAGER:\nCoupon with ID=' + coupon_id + ' is not purchasable or expired');
+            reject([HttpStatus.BAD_REQUEST, null]);
+        }
+    });
 };
 
 /**
@@ -940,7 +995,7 @@ exports.importOfflineCoupon = function (req, res) {
         where: {
 
 
-        [Op.and]: [
+            [Op.and]: [
                 {consumer: {[Op.is]: null}},
                 {verifier: {[Op.is]: null}},
                 {token: data.token},
@@ -1028,12 +1083,12 @@ exports.redeemCoupon = function (req, res) {
         include: [{model: Coupon, required: true}],
         where: {
             [Op.and]: [
-                { token: data.token }, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
+                {token: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
             ]
         }
     })
         .then(result => {
-            if(result === null) {
+            if (result === null) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     error: true,
                     message: 'Either the coupon is not found, unsold or already redeemed.',
@@ -1049,7 +1104,7 @@ exports.redeemCoupon = function (req, res) {
 
             isVerifierAuthorized(producer_id, verifier_id)
                 .then(authorization => {
-                    if(authorization) { // If the verifier is authorized, it redeems the coupon
+                    if (authorization) { // If the verifier is authorized, it redeems the coupon
                         console.log('I can redeem the coupon');
 
                         CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, verifier_id)
@@ -1195,22 +1250,22 @@ async function isCouponPurchasable(coupon_id, user_id) {
     });
 }
 
-async function isVerifierAuthorized(producer_id, verifier_id){
+async function isVerifierAuthorized(producer_id, verifier_id) {
     return new Promise((resolve, reject) => {
-       Verifier.findOne({
-           where: {
-               [Op.and]: [
-                   {producer: producer_id}, {verifier: verifier_id}
-               ]
-           }
-       })
-           .then(result => { // If result !== null, there is not a couple producer/verifier ==> verifier not authorized
-               resolve(result !== null);
-           })
-           .catch(err => {
-               console.log(err);
-               reject(err);
-           })
+        Verifier.findOne({
+            where: {
+                [Op.and]: [
+                    {producer: producer_id}, {verifier: verifier_id}
+                ]
+            }
+        })
+            .then(result => { // If result !== null, there is not a couple producer/verifier ==> verifier not authorized
+                resolve(result !== null);
+            })
+            .catch(err => {
+                console.log(err);
+                reject(err);
+            })
     });
 }
 

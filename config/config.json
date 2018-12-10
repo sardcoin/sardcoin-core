@@ -5,7 +5,10 @@
     "database": "sardcoin",
     "host": "127.0.0.1",
     "port": 3306,
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "dialectOptions": {
+      "multipleStatements": true
+    }
   },
   "production": {
     "username": "root",
@@ -13,6 +16,9 @@
     "database": "sardcoin",
     "host": "127.0.0.1",
     "port": 3306,
-    "dialect": "mysql"
+    "dialect": "mysql",
+    "dialectOptions": {
+      "multipleStatements": true
+    }
   }
 }
