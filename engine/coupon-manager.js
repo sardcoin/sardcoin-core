@@ -13,58 +13,6 @@ const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
 
-/**
- * @api {post} /coupons/create Create coupon
- * @apiName CreateCoupon
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- *
- * @apiParam {String} title title of coupon (required) .
- * @apiParam {String} description description of the coupon .
- * @apiParam {String} image image of the coupon .
- * @apiParam {String} price price of the coupon .
- * @apiParam {String} valid_from Valid from of the coupon (required) .
- * @apiParam {String} valid_until Valid until of the coupon .
- * @apiParam {String} constraints constraints of the coupon .
- * @apiParam {String} owner owner of the coupon (required) .
- * @apiParam {String} consumer consumer of the coupon .
- * @apiParam {String} constraints constraints of the coupon .
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Number} id Identifier of the Coupon.
- * @apiSuccess {String} title Title of the Coupon.
- * @apiSuccess {String} description Description of the Coupon.
-
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          "id": 914,
- *          "title": "Restaurant Schick",
- *          "description": "Pizza for everyone",
- *
- *     }
- *
- * @apiErrorExample
- *      HTTP/1.1 400 Bad request
- *      {
-            "Status Code": 400,
-            "Type error": "Bad Request",
-            "message": "the title must be between 5 and 40 characters long, is required "
-        }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.createCoupon = async function (req, res) {
     const data = req.body;
     let result;
@@ -118,78 +66,6 @@ exports.createCoupon = async function (req, res) {
 
 };
 
-/**
- * @api {get} /coupons/getById/:id Get By ID
- * @apiName GetById
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- *
- * @apiParam {Number} id Coupon unique ID.
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Number} id Identifier of the Coupon.
- * @apiSuccess {String} title Title of the Coupon.
- * @apiSuccess {String} description Description of the Coupon.
- * @apiSuccess {String} image Path of the image associated with the Coupon.
- * @apiSuccess {Timestamp} timestamp Timestamp of the Coupon creation instant.
- * @apiSuccess {Number} price Price of the Coupon.
- * @apiSuccess {Date} valid_from Date where Coupon starts to be valid.
- * @apiSuccess {Date} valid_until Date where the Coupon ends its validity.
- * @apiSuccess {Number} state State of the Coupon.
- * @apiSuccess {String} constraints Various contraints of the Coupon.
- * @apiSuccess {Number} owner ID of the user who created the Coupon.
- * @apiSuccess {Number} consumer ID of the client who bought the Coupon.
- * @apiSuccess {String} token Token needed for identify the Coupon.
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          "id": 914,
- *          "title": "Restaurant Schick",
- *          "description": "Pizza for everyone",
- *          "image": "pizzeria-maccheroni.jpg",
- *          "timestamp": "2018-08-04T07:04:27.000Z",
- *          "price": 19.95,
- *          "valid_from": "2018-09-04T10:22:00.000Z",
- *          "valid_until": null,
- *          "state": 0,
- *          "constraints": "Ocala, CA, USA",
- *          "owner": 150,
- *          "consumer": null,
- *          "token": "sdaklfjòslfjd"
- *     }
- *
- * @apiError CouponNotFound The id of the User was not found.
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Bad Request
- *     {
- *          "error": "No coupon found with the given id and the given user.",
- *          "coupon_id": 1,
- *          "user_id": 1
- *     }
- *
- *     @apiErrorExample Error-Response:
- *     HTTP/1.1 400 Bad Request
- *     {
-            "Status Code": 400,
-            "Type error": "Bad Request",
-            "message": "Id is required"
-        }
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.getFromId = function (req, res) {
 
     Coupon.findOne({
@@ -214,103 +90,6 @@ exports.getFromId = function (req, res) {
         });
 };
 
-/**
- * @api {get} /coupons/getProducerCoupons Get Created Coupons from Token
- * @apiName GetCreatedCoupons
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json Created Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- *{
- *    "id": 14,
- *    "title": "Pizzeria Baccu Mandara",
- *    "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
- *    "image": "pizzeria.jpg",
- *    "timestamp": "2018-08-04T07:04:27.000Z",
- *    "price": 19.95,
- *    "valid_from": "2018-09-03T20:22:00.000Z",
- *    "valid_until": "1970-01-01T00:00:00.000Z",
- *    "state": 0,
- *    "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
- *    "owner": 1,
- *    "consumer": 23,
- *    "token": "eeeeeeee"
- *},
- *{
- *    "id": 19,
- *    "title": "Porta galleggiante gonfiabile",
- *    "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
- *    "image": "piscina.jpg",
- *    "timestamp": "2018-09-04T11:24:47.000Z",
- *    "price": 27.95,
- *    "valid_from": "2018-09-02T09:25:00.000Z",
- *     "valid_until": null,
- *    "state": 0,
- *    "constraints": "Nuoro (NU)",
- *    "owner": 1,
- *    "consumer": null,
- *    "token": "gggggggg"
- *},
- *{
- *    "id": 95,
- *    "title": "Ghetto Quarantasette ",
- *    "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
- *    "image": "resort.jpg",
- *    "timestamp": "2018-10-01T09:42:28.000Z",
- *    "price": 21.95,
- *    "valid_from": "2018-09-03T01:00:00.000Z",
- *    "valid_until": null,
- *    "state": 0,
- *    "constraints": "Oristano (OR), Viale Dei Principi 22",
- *    "owner": 1,
- *    "consumer": 23,
- *    "token": "50DFA03A2"
- *},
- *{
- *    "id": 96,
- *    "title": "Ghetto Quarantasette ",
- *    "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
- *    "image": "resort.jpg",
- *    "timestamp": "2018-10-01T09:42:28.000Z",
- *    "price": 21.95,
- *    "valid_from": "2018-09-03T01:00:00.000Z",
- *    "valid_until": null,
- *    "state": 0,
- *    "constraints": "Oristano (OR), Viale Dei Principi 22",
- *    "owner": 1,
- *    "consumer": 23,
- *    "token": "50DFA03A3"
- *}
- *]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.getProducerCoupons = function (req, res) {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -334,111 +113,6 @@ exports.getProducerCoupons = function (req, res) {
         })
 };
 
-/**
- * @api {get} /coupons/getPurchasedCoupons Get Purchased Coupons from Token
- * @apiName GetPurchasedCoupons
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission consumer
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json Purchased Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- {
-     "id": 14,
-     "title": "Pizzeria Baccu Mandara",
-     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
-     "image": "pizzeria.jpg",
-     "timestamp": "2018-08-04T07:04:27.000Z",
-     "price": 19.95,
-     "valid_from": "2018-09-03T20:22:00.000Z",
-     "valid_until": "1970-01-01T00:00:00.000Z",
-     "state": 0,
-     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
-     "owner": 1,
-     "consumer": 23,
-     "token": "eeeeeeee"
-     "quantity": 1
-
- },
- {
-     "id": 19,
-     "title": "Porta galleggiante gonfiabile",
-     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
-     "image": "piscina.jpg",
-     "timestamp": "2018-09-04T11:24:47.000Z",
-     "price": 27.95,
-     "valid_from": "2018-09-02T09:25:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Nuoro (NU)",
-     "owner": 1,
-     "consumer": 23,
-     "token": "gggggggg",
-     "quantity": 1
-
- },
- {
-     "id": 95,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": 23,
-     "token": "50DFA03A2",
-     "quantity": 1
-
- },
- {
-     "id": 96,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": 23,
-     "token": "50DFA03A3",
-     "quantity": 1
- }
- ]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- *
- * * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.getPurchasedCoupons = function (req, res) {
     Coupon.findAll({ // Join con CouponToken
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
@@ -458,105 +132,6 @@ exports.getPurchasedCoupons = function (req, res) {
         });
 };
 
-/**
- * @api {get} /coupons/getAvailableCoupons Get Affordables Coupons
- * @apiName GetAffordables
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission consumer
- *
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- *
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Object} ArrayJsonCoupons Array of Json Affordables Coupons
-
- *
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     [
- {
-     "id": 14,
-     "title": "Pizzeria Baccu Mandara",
-     "description": "Pizza all-you-can-eat per 2 persone da Pizzeria Baccu Mandara (sconto fino a 70%). Prenota&Vai!",
-     "image": "pizzeria.jpg",
-     "timestamp": "2018-08-04T07:04:27.000Z",
-     "price": 19.95,
-     "valid_from": "2018-09-03T20:22:00.000Z",
-     "valid_until": "2019-01-01T00:00:00.000Z",
-     "state": 0,
-     "constraints": "Geremeas (CA), Loc. Baccu Mandara snc",
-     "owner": 1,
-     "consumer": null,
-     "token": "eeeeeeee"
- },
- {
-     "id": 19,
-     "title": "Porta galleggiante gonfiabile",
-     "description": "Divertimento assicurato per tutti gli amanti dello sport in riva al mare o in piscina, con pallone Intex incluso.",
-     "image": "piscina.jpg",
-     "timestamp": "2018-09-04T11:24:47.000Z",
-     "price": 27.95,
-     "valid_from": "2018-09-02T09:25:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Nuoro (NU)",
-     "owner": 1,
-     "consumer": null,
-     "token": "gggggggg",
-
- },
- {
-     "id": 95,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": null,
-     "token": "50DFA03A2",
-
- },
- {
-     "id": 96,
-     "title": "Ghetto Quarantasette ",
-     "description": "Menu hamburger con birra artigianale o calice di vino e dolce per 2 al Ghetto Quarantasei (sconto fino a 62%).",
-     "image": "resort.jpg",
-     "timestamp": "2018-10-01T09:42:28.000Z",
-     "price": 21.95,
-     "valid_from": "2018-09-03T01:00:00.000Z",
-     "valid_until": null,
-     "state": 0,
-     "constraints": "Oristano (OR), Viale Dei Principi 22",
-     "owner": 1,
-     "consumer": null,
-     "token": "50DFA03A3",
- }
- ]
- *
- *
- * @apiError Unauthorized The user is not authorized to do the request.
- *
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 401 Unauthorized
- *          {
-                "error": "You are not authorized to view this content"
-            }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.getAvailableCoupons = function (req, res) {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -590,9 +165,11 @@ exports.buyCoupons = async function (req, res) {
     let buyCouponQuery;
     let buyQueryResult;
 
-    let lockTable = await lockTable('coupon_tokens');
+    const lock = await lockTables();
 
-    if(!lockTable) { // TODO unlock tables
+    console.log('Stato di lock: ' + lock);
+
+    if (!lock) { // TODO unlock tables
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while finalizing the purchase'
@@ -603,7 +180,7 @@ exports.buyCoupons = async function (req, res) {
         try {
             tokenToExclude = [];
 
-            for (let j=0;j < coupon_list[i].quantity; j++) {
+            for (let j = 0; j < coupon_list[i].quantity; j++) {
                 buyQueryResult = await getBuyCouponQuery(coupon_list[i].id, req.user.id, tokenToExclude);
                 buyCouponQuery = buyQueryResult[0];
                 tokenToExclude.push(buyQueryResult[1]);
@@ -611,6 +188,7 @@ exports.buyCoupons = async function (req, res) {
                 if (buyCouponQuery !== null) {
                     query += buyCouponQuery;
                 } else {
+                    await unlockTables();
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'An error occurred while finalizing the purchase'
@@ -618,6 +196,7 @@ exports.buyCoupons = async function (req, res) {
                 }
             }
         } catch (e) {
+            await unlockTables();
             return res.status(e[0]).send({
                 error: true,
                 message: 'An error occurred while finalizing the purchase'
@@ -630,12 +209,14 @@ exports.buyCoupons = async function (req, res) {
     Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
         .then(result => {
             if (result[0] === 0) { // The database has not been updated
+                unlockTables();
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'An error occured while finalizing the purchase'
                 });
             }
 
+            unlockTables();
             return res.status(HttpStatus.OK).send({
                 success: true,
                 message: 'The purchase has been finalized'
@@ -643,6 +224,7 @@ exports.buyCoupons = async function (req, res) {
         })
         .catch(err => {
             console.log(err);
+            unlockTables();
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'An error occured while finalizing the purchase'
@@ -650,184 +232,6 @@ exports.buyCoupons = async function (req, res) {
         });
 };
 
-/**
- * @api {post} /coupons/buyCoupon Buy coupon
- * @apiName BuyCoupon
- * @apiGroup Coupon
- * @apiPermission consumer
- *
- * @apiParam {Number} id id of coupon (required).
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Number} id Identifier of the Coupon.
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          updated: true,
- *          coupon_id: 12
- *          message: "Coupon bought!!!"
- *     }
- *
- * * @apiErrorExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          updated: false,
- *          coupon_id: 12
- *          message: "Coupon don't exist!!!"
- *     }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          {
- *              "error": "You are not authorized to view this content"
- *           }
- */
-async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded=[]) {
-
-    let isNotExpired;
-    let isPurchasable;
-
-    try {
-        isNotExpired = await isCouponNotExpired(coupon_id);
-        isPurchasable = await isCouponPurchasable(coupon_id, user_id);
-    } catch (err) {
-        console.log('ERROR in COUPON-MANAGER,\nwhen checking if coupon with ID=' + coupon_id + ' is expired/purchasable:');
-        console.log(err);
-        return null;
-    }
-
-    // If the coupon is not expired and is purchasable
-    return new Promise((resolve, reject) => {
-        if (isNotExpired && isPurchasable) {
-            CouponToken.findOne({
-                where: {[Op.and]: [{consumer: {[Op.is]: null}}, {coupon_id: coupon_id}, {token: {[Op.notIn]: tokenExcluded}}]} // consumer == null AND given coupon_id
-            })
-                .then(coupon => {
-                    if (coupon === null) {
-                        console.log('ERROR in COUPON-MANAGER:');
-                        console.log('USER=' + user_id + ' asked for buying an unknown coupon with ID=' + coupon_id);
-                        reject([HttpStatus.BAD_REQUEST, null]);
-                    }
-
-                    // TODO check the UPDATE query below
-
-                    resolve(['UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon.dataValues.token + '"; ', coupon.dataValues.token]);
-                    /*
-                    CouponTokenManager.updateCouponToken(token, coupon_id, user_id)
-                        .then(update => {
-                            if (update) {
-                                return res.status(HttpStatus.OK).send({
-                                    bought: true,
-                                    token: token,
-                                    coupon_id: coupon_id
-                                });
-                            } else {
-                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                    error: true,
-                                    message: 'Some problem occurred during the buy of the coupon.'
-                                })
-                            }
-                        })
-                        .catch(err => {
-                            console.log(err);
-                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                error: true,
-                                message: 'Error while buying the coupon.'
-                            })
-                        });
-                        */
-                })
-                .catch(err => {
-                    console.log('ERROR in COUPON-MANAGER,\nwhen retrieving a token for the coupon with ID=' + coupon_id + ':');
-                    console.log(err);
-                    reject([HttpStatus.INTERNAL_SERVER_ERROR, null]);
-                })
-        } else {
-            console.log('ERROR in COUPON MANAGER:\nCoupon with ID=' + coupon_id + ' is not purchasable or expired');
-            reject([HttpStatus.BAD_REQUEST, null]);
-        }
-    });
-};
-
-/**
- * @api {put} /coupons/editCoupon Update coupon
- * @apiName UpdateCoupon
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- *
- * @apiParam {Number} id id of coupon (required) .
- * @apiParam {String} title title of coupon (required) .
- * @apiParam {String} description description of the coupon .
- * @apiParam {String} image image of the coupon .
- * @apiParam {String} price price of the coupon .
- * @apiParam {String} valid_from Valid from of the coupon (required) .
- * @apiParam {String} valid_until Valid until of the coupon .
- * @apiParam {String} constraints constraints of the coupon .
- * @apiParam {String} owner owner of the coupon (required) .
- * @apiParam {String} consumer consumer of the coupon .
- * @apiParam {String} constraints constraints of the coupon .
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Number} id Identifier of the Coupon.
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          updated: true,
-            coupon_id: 12
- *
- *     }
- *
- *
- *
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 200 Ok
- *              {
-                    updated: false,
-                    coupon_id: 12,
-                    message: "This coupon don't exist"
-                }
-
- *
- *
- * @apiErrorExample Error-Response:
- *      HTTP/1.1 400 Bad request
- *      {
-            "Status Code": 400,
-            "Type error": "Bad Request",
-            "message": "the title must be between 5 and 40 characters long, is required "
-        }
-
-
- * @apiErrorExample Error-Response:
- *      http/1.1 401 Unauthorized
- *          {"error":"You are not authorized to view this content"}
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.editCoupon = function (req, res) {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
@@ -877,52 +281,6 @@ exports.editCoupon = function (req, res) {
         });
 };
 
-/**
- * @api {deleteCoupon} /coupons/deleteCoupon Delete coupon
- * @apiName DeleteCoupon
- * @apiGroup Coupon
- * @apiPermission admin
- * @apiPermission producer
- *
- * @apiParam {Number} id id of coupon (required).
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {Number} id Identifier of the Coupon.
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          deleted: true,
-            coupon: 12,
-            message: "Coupon deleted!!"
- *
- *     }
- *
- * * @apiErrorExample Error-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          deleted: false,
-            coupon: 12,
-            message: This coupon don't exist!!
- *
- *     }
- *   @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *     {
-            "error": "You are not authorized to view this content"
-        }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- */
 exports.deleteCoupon = function (req, res) {
     Coupon.destroy({
         where: {
@@ -957,46 +315,6 @@ exports.deleteCoupon = function (req, res) {
         })
 };
 
-/**
- * @api {put} /coupons/importOfflineCoupon Import coupon
- * @apiName ImportCoupon
- * @apiGroup Coupon
- * @apiPermission consumer
- * @apiPermission producer
- * @apiPermission admin
- *
- * @apiParam {String} token token of coupon (required).
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {String} Token token Identifier of the Coupon.
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          validate: true,
- *          token: xdx200QW
- *
- *     }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- *
- * @apiErrorExample Error-Response:
- HTTP/1.1 200 OK
- *     {
- *        validate: false,
- *        token: DX200DT,
- *         error: 'Cannot import coupon'
- *     }
- */
 exports.importOfflineCoupon = function (req, res) {
     const data = req.body;
 
@@ -1044,45 +362,6 @@ exports.importOfflineCoupon = function (req, res) {
         })
 };
 
-/**
- * @api {put} /coupons/redeemCoupon Verifier coupon
- * @apiName VerifierCoupon
- * @apiGroup Coupon
- * @apiPermission verifier
- * @apiPermission admin
- *
- * @apiParam {String} token token of coupon (required).
-
- * @apiHeader {String} Authorization Json Web Token retrieved from login request.
- * @apiHeaderExample {json} Header-Example:
- *     {
- *       "Authorization": "Bearer YW55X25hbWUiOm51bGwsInZhdF9udW1iZXIi"
- *     }
- *
- *
- * @apiSuccess {String} Token token Identifier of the Coupon.
-
-
- * @apiSuccessExample Success-Response:
- *     HTTP/1.1 200 OK
- *     {
- *          validate: true,
- *          token: xdx200QW
- *
- *     }
- *
- * @apiErrorExample Error-Response:
- *     HTTP/1.1 401 Unauthorized
- *          Unauthorized
- *
- * @apiErrorExample Error-Response:
- HTTP/1.1 200 OK
- *     {
- *        validate: false,
- *        token: DX200DT,
- *         error: 'Cannot verifier coupon'
- *     }
- */
 exports.redeemCoupon = function (req, res) {
     const data = req.body;
     const verifier_id = req.user.id;
@@ -1209,6 +488,70 @@ function generateUniqueToken(title, password) { // Generates a 8-char unique tok
     return hash;
 }
 
+function formatNotIn(tokenList) {
+    let result = '(';
+
+    for(let i=0;i<tokenList.length; i++) {
+        result += '"' + tokenList[i] + '"';
+        if(i+1 !== tokenList.length) {
+            result += ',';
+        }
+    }
+
+    return result + ')';
+}
+
+async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded = []) {
+
+    let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
+
+    let isNotExpired;
+    let isPurchasable;
+
+    try {
+        isNotExpired = await isCouponNotExpired(coupon_id);
+        isPurchasable = await isCouponPurchasable(coupon_id, user_id);
+    } catch (err) {
+        console.log('ERROR in COUPON-MANAGER,\nwhen checking if coupon with ID=' + coupon_id + ' is expired/purchasable:');
+        console.log(err);
+        return null;
+    }
+
+    // If the coupon is not expired and is purchasable
+    return new Promise((resolve, reject) => {
+        if (isNotExpired && isPurchasable) {
+
+            console.log(tokenExcluded);
+
+            Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL ' +
+                'AND coupon_id = :coupon_id ' + lastPieceOfQuery + 'LIMIT 1',
+                {replacements: {coupon_id: coupon_id}, type: Sequelize.QueryTypes.SELECT},
+                {model: CouponToken}
+            )
+                .then(coupon => {
+                    if (coupon === null) {
+                        console.log('ERROR in COUPON-MANAGER:');
+                        console.log('USER=' + user_id + ' asked for buying an unknown coupon with ID=' + coupon_id);
+                        reject([HttpStatus.BAD_REQUEST, null]);
+                    }
+
+                    console.log(coupon);
+                    console.log(coupon[0].token);
+
+                    resolve(['UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon[0].token + '"; ', coupon[0].token]);
+                })
+                .catch(err => {
+                    console.log('ERROR in COUPON-MANAGER,\nwhen retrieving a token for the coupon with ID=' + coupon_id + ':');
+                    console.log(err);
+                    reject([HttpStatus.INTERNAL_SERVER_ERROR, null]);
+                })
+        } else {
+            console.log('ERROR in COUPON MANAGER:\nCoupon with ID=' + coupon_id + ' is not purchasable or expired');
+            reject([HttpStatus.BAD_REQUEST, null]);
+        }
+    });
+};
+
 async function isCouponNotExpired(coupon_id) {
     return new Promise((resolve, reject) => {
         Coupon.findOne({
@@ -1239,7 +582,7 @@ async function isCouponPurchasable(coupon_id, user_id) {
         Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, ' +
             'COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS availables, ' +
             'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS buyed ' +
-            'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE id = $2 GROUP BY id',
+            'FROM `coupons` AS `Coupon` JOIN `coupon_tokens` AS `CouponTokens` ON Coupon.id = CouponTokens.coupon_id WHERE id = $2 GROUP BY id',
             {bind: [user_id, coupon_id], type: Sequelize.QueryTypes.SELECT},
             {model: Coupon}
         )
@@ -1303,10 +646,10 @@ async function insertCoupon(coupon, owner) {
     });
 }
 
-async function lockTable(table_name) {
+async function lockTables() {
     return new Promise((resolve, reject) => {
         Sequelize.query(
-            'LOCK TABLE :table_name WRITE', {bind: [table_name]})
+            'LOCK TABLE `coupons` AS `Coupon` WRITE, `coupon_tokens` AS `CouponTokens` WRITE')
             .then(lock => {
                 resolve(true);
             })
