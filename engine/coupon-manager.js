@@ -114,14 +114,19 @@ exports.getProducerCoupons = function (req, res) {
 };
 
 exports.getPurchasedCouponsById = function (req, res) {
-    Coupon.findAll({ // Join con CouponToken
+    Coupon.findAll({
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id, coupon_id: req.params.coupon_id}}],
+        attributes: { include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']] }
     })
-        .then(coupons => {
+        .then(coupons => { 
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }
-            return res.status(HttpStatus.OK).send(coupons);
+
+            return res.status(HttpStatus.OK).send({
+                coupon_id: req.params.coupon_id,
+                bought: coupons[0].dataValues.bought
+            });
         })
         .catch(err => {
             console.log(err);
