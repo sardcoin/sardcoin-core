@@ -167,6 +167,11 @@ exports.buyCoupons = async function (req, res) {
 
     const lock = await lockTables();
 
+    if(req.user.id === 3) {
+        console.log('attendo 3 secondi');
+        await sleep(15000);
+    }
+
     console.log('Stato di lock: ' + lock);
 
     if (!lock) { // TODO unlock tables
@@ -651,6 +656,7 @@ async function lockTables() {
         Sequelize.query(
             'LOCK TABLE `coupons` AS `Coupon` WRITE, `coupon_tokens` AS `CouponTokens` WRITE')
             .then(lock => {
+                console.log(lock);
                 resolve(true);
             })
             .catch(err => {
@@ -672,4 +678,8 @@ async function unlockTables() {
                 resolve(false);
             })
     });
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
 }
