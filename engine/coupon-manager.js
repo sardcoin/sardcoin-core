@@ -113,9 +113,9 @@ exports.getProducerCoupons = function (req, res) {
         })
 };
 
-exports.getPurchasedCoupons = function (req, res) {
+exports.getPurchasedCouponsById = function (req, res) {
     Coupon.findAll({ // Join con CouponToken
-        include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
+        include: [{model: CouponToken, required: true, where: {consumer: req.user.id, coupon_id: req.params.coupon_id}}],
     })
         .then(coupons => {
             if (coupons.length === 0) {
