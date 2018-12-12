@@ -113,12 +113,33 @@ exports.getProducerCoupons = function (req, res) {
         })
 };
 
+exports.getPurchasedCoupons = function (req, res) {
+    Coupon.findAll({
+        include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
+        attributes: { include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']] }
+    })
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Error retrieving purchased coupons'
+            })
+        });
+};
+
 exports.getPurchasedCouponsById = function (req, res) {
     Coupon.findAll({
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id, coupon_id: req.params.coupon_id}}],
         attributes: { include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']] }
     })
-        .then(coupons => { 
+        .then(coupons => {
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }
@@ -172,14 +193,7 @@ exports.buyCoupons = async function (req, res) {
 
     const lock = await lockTables();
 
-    if(req.user.id === 3) {
-        console.log('attendo 3 secondi');
-        await sleep(15000);
-    }
-
-    console.log('Stato di lock: ' + lock);
-
-    if (!lock) { // TODO unlock tables
+    if (!lock) {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while finalizing the purchase'
@@ -591,7 +605,7 @@ async function isCouponPurchasable(coupon_id, user_id) {
 
         Sequelize.query('SELECT id, purchasable, COUNT(*) AS quantity, ' +
             'COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS availables, ' +
-            'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS buyed ' +
+            'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS bought ' +
             'FROM `coupons` AS `Coupon` JOIN `coupon_tokens` AS `CouponTokens` ON Coupon.id = CouponTokens.coupon_id WHERE id = $2 GROUP BY id',
             {bind: [user_id, coupon_id], type: Sequelize.QueryTypes.SELECT},
             {model: Coupon}
@@ -602,7 +616,7 @@ async function isCouponPurchasable(coupon_id, user_id) {
                 // If purchasable is not null, then it checks only for availability, else it checks if you can buy the coupon
                 const result = queryResult.purchasable === null // null == infinite availability
                     ? queryResult.availables > 0
-                    : queryResult.availables > 0 && queryResult.buyed < queryResult.purchasable;
+                    : queryResult.availables > 0 && queryResult.bought < queryResult.purchasable;
                 resolve(result);
             })
             .catch(err => {

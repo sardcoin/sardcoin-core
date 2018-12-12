@@ -35,6 +35,7 @@ module.exports = function (app, passport) {
     /****************** CRUD COUPONS **********************/
     app.post(cmPath + 'create/', expressJoi(Schemas.createCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
     app.get(cmPath + 'getById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
+    app.get(cmPath + 'getPurchasedCoupons', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath + 'getPurchasedCouponsById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.get(cmPath + 'getProducerCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getProducerCoupons);
     app.get(cmPath + 'getAvailableCoupons/', requireAuth, AccessManager.roleAuthorization([consumer, admin, verifier]), CouponManager.getAvailableCoupons);

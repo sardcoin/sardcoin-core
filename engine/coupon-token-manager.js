@@ -1,14 +1,7 @@
 'use strict';
 
-const Coupon = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
-const User = require('../models/index').User;
-const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
-const HttpStatus = require('http-status-codes');
-const fs = require('file-system');
-const path = require('path');
-const crypto = require('crypto');
 
 exports.insertCouponToken = async function (coupon_id, token) {
 
