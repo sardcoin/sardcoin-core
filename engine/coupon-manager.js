@@ -116,7 +116,6 @@ exports.getProducerCoupons = function (req, res) {
 exports.getPurchasedCoupons = function (req, res) {
     Coupon.findAll({
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
-        attributes: { include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']] }
     })
         .then(coupons => {
             if (coupons.length === 0) {
