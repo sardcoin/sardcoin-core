@@ -26,11 +26,11 @@ module.exports = function (app, passport) {
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AccessManager.basicLogin);
     /****************** CRUD USERS ************************/
-    app.post(amPath + 'create/', AccessManager.createUser);        // Create
-    app.get(amPath + 'getFromToken/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getUserFromToken);  // Read by ID
-    app.put(amPath + 'update/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.updateUser);        // Update
+    app.post(amPath   + 'create/', AccessManager.createUser);        // Create
+    app.get(amPath    + 'getFromToken/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getUserFromToken);  // Read by ID
+    app.put(amPath    + 'update/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.updateUser);        // Update
     app.delete(amPath + 'delete/', requireAuth, AccessManager.roleAuthorization([admin]), AccessManager.deleteUser);    // Delete
-    app.get(amPath + 'getProducerFromId/:producer_id', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getProducerFromId);     // Read by ID
+    app.get(amPath    + 'getProducerFromId/:producer_id', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getProducerFromId);     // Read by ID
 
     /****************** CRUD COUPONS **********************/
     app.post(cmPath + 'create/', expressJoi(Schemas.createCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create

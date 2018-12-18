@@ -86,14 +86,15 @@ exports.getProducerFromId = function (req, res, next) {
     Users.findOne({
         where: {
             id: req.params.producer_id,
-        }
+            user_type: 1
+        },
+        attributes: ['username', 'email', 'company_name', 'vat_number', 'first_name', 'last_name', 'address', 'province', 'city', 'zip']
     })
         .then(user => {
             if (user === null) {
                 return res.status(HttpStatus.OK).json({
-                    error: 'No user found with the given id and the given coupon',
+                    error: 'Either the user does not exist or it is not a producer',
                     producer_id: req.params.producer_id,
-                    user_id: req.user.id
                 })
             }
             // console.log('userForimId', user);
