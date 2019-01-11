@@ -5,8 +5,10 @@ const CouponToken = require('../models/index').CouponToken;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
+var request = require('request');
 
 const CouponTokenManager = require('./coupon-token-manager');
+const AccessManager = require('./access-manager');
 
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
@@ -185,6 +187,7 @@ exports.getAvailableCoupons = function (req, res) {
 exports.buyCoupons = async function (req, res) {
 
     const coupon_list = req.body.coupon_list;
+    const payment_id = req.body.payment_id;
     let query = 'START TRANSACTION; ';
     let tokenToExclude = [];
     let buyCouponQuery;
@@ -193,6 +196,7 @@ exports.buyCoupons = async function (req, res) {
     const lock = await lockTables();
 
     if (!lock) {
+        await refundCoupons( coupon_list, payment_id);
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while finalizing the purchase'
@@ -212,6 +216,7 @@ exports.buyCoupons = async function (req, res) {
                     query += buyCouponQuery;
                 } else {
                     await unlockTables();
+                    await refundCoupons( coupon_list, payment_id);
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'An error occurred while finalizing the purchase'
@@ -220,6 +225,7 @@ exports.buyCoupons = async function (req, res) {
             }
         } catch (e) {
             await unlockTables();
+            await refundCoupons( coupon_list, payment_id);
             return res.status(e[0]).send({
                 error: true,
                 message: 'An error occurred while finalizing the purchase'
@@ -233,6 +239,8 @@ exports.buyCoupons = async function (req, res) {
         .then(result => {
             if (result[0] === 0) { // The database has not been updated
                 unlockTables();
+                refundCoupons( coupon_list, payment_id);
+
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'An error occured while finalizing the purchase'
@@ -248,12 +256,17 @@ exports.buyCoupons = async function (req, res) {
         .catch(err => {
             console.log(err);
             unlockTables();
+            refundCoupons( coupon_list, payment_id);
+
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'An error occured while finalizing the purchase'
             });
         });
 };
+
+
+
 
 exports.editCoupon = function (req, res) {
     const data = req.body;
@@ -701,3 +714,105 @@ async function unlockTables() {
 function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
+
+// exports.buyCoupons = async function (req, res) {
+//     const coupon_list = req.body.coupon_list;
+//     const payment_id = req.body.payment_id;
+//     console.log("inBuyCoupons");
+//     refundCoupons( coupon_list, payment_id);
+//
+// };
+
+async function refundCoupons(coupon_list, payment_id) {
+
+    console.log("refundCoupons");
+
+
+
+    for (let i = 0; i<coupon_list.length; i++) {
+        const getProducerId = await getProducerIdfromCouponId(coupon_list[i].id);
+        const producerId = getProducerId.dataValues.owner;
+        var accessToken = null;
+        // funzione per avere l' <access-token>
+        AccessManager.getAccessToken(producerId, async function res(response){
+            accessToken =  response;
+            // funzione per avere il transaction id
+            const transactionId = await  getTransactionId(accessToken, payment_id);
+            console.log('transactiionId', transactionId);
+
+            const headers = {
+
+                         "Accept": "application/json",
+                         "Accept-Language": "en_US",
+                         "content-type": "application/json",
+                         "Authorization": "Bearer "+ accessToken,
+                     }
+
+            const dataString = '{}';
+
+            const options = {
+                url: 'https://api.sandbox.paypal.com/v1/payments/sale/'+ transactionId + '/refund',
+                method: 'POST',
+                headers: headers,
+                body: dataString,
+            }
+
+            request(options, call);
+
+            function  call(error, response, body) {
+
+
+                console.log('body del refund', body);
+
+                if (!error && response.statusCode == 200) {
+                    console.log('refund body', body);
+
+                    }
+                }
+
+        });
+
+    }
+}
+
+
+async function getTransactionId(access_token, payment_id) {
+
+    return new Promise( ((resolve, reject) => {
+    request.get({
+        uri: "https://api.sandbox.paypal.com/v1/payments/payment/" + payment_id,
+        headers: {
+            "Authorization": "Bearer "+ access_token,
+        },
+
+    }, function(error, response, body) {
+        const _body = JSON.parse(body);
+        const transactionId = _body.transactions[0].related_resources[0].sale.id;
+        resolve(transactionId);
+        return transactionId;
+    });
+    }))
+}
+// done preleva id producer tramite l'id del coupon
+async function getProducerIdfromCouponId(coupon_id) {
+
+
+    return new Promise( ((resolve, reject) => {
+
+        Coupon.findOne({
+            attributes: ["owner"],
+            where: {id: coupon_id}
+
+        }).then(owner_id => {
+
+            resolve(owner_id);
+
+        }).catch(err => {
+            console.log(err);
+            reject(err);
+        })
+    }))
+}
+
+
+
