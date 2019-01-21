@@ -7,7 +7,7 @@
 /out-tsc
 # dependencies
 /node_modules
-
+/media/images
 # IDEs and editors
 /.idea
 .project

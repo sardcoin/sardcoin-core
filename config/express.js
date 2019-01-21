@@ -12,7 +12,7 @@ let compressor =     require('compression');
 module.exports = function (app, passport) {
 
     const corsOpt = {
-        origin: ['https://localhost:4200','http://localhost:4200', 'http://localhost:443', 'https://platform.sardcoin.eu'],
+        origin: ['http://192.168.43.104:4200', 'https://localhost:4200','http://localhost:4200', 'http://localhost:443', 'https://platform.sardcoin.eu'],
         credentials: true,
         methods: ['GET', 'PUT', 'POST', 'DELETE', 'OPTIONS'], // to works well with web app, OPTIONS is required
         allowedHeaders: ['Content-Type', 'Authorization'], // allow json and token in the headers,

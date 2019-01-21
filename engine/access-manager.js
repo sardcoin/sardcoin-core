@@ -1,11 +1,12 @@
 'use strict';
 
-const Users = require('../models/index').User;
 const Op    = require('../models/index').Sequelize.Op;
 const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
+const request = require("request");
+const Users = require('../models/index').User;
 
 exports.createUser = function (req, res, next) {
     const user = req.body;
@@ -237,3 +238,104 @@ exports.roleAuthorization = function(roles){
             });
     }
 };
+
+
+// exports.getAccessToken = function (req, res, next) {
+//     Users.findById(req.user.id)
+//         .then(user => {
+//             return res.status(HttpStatus.OK).send(user);
+//         })
+//         .catch(err => {
+//             console.log(err);
+//             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+//                 error: true,
+//                 message: 'Cannot retrieve the personal informations of the user'
+//             });
+//         })
+// };
+
+// funzione per prelevare l'<access-token>
+exports.getAccessToken = async function (producer_id, callback) {
+
+    var accessToken = null;
+
+    const _getClientId = await getClientId(producer_id);
+    const  clientId = _getClientId.dataValues.client_id;
+    const _getPasswordSecret = await getPasswordSecret(producer_id);
+    const  passwordSecret = _getPasswordSecret.dataValues.password_secret;
+
+    console.log('clientId', clientId);
+    console.log('passwordSecret', passwordSecret);
+
+
+
+    var headers = {
+        'Accept': 'application/json',
+        'Accept-Language': 'en_US'
+    };
+
+    var dataString = 'grant_type=client_credentials';
+    var options = {
+        url: 'https://api.sandbox.paypal.com/v1/oauth2/token',
+        method: 'POST',
+        headers: headers,
+        body: dataString,
+        auth: {
+            'user': clientId,
+            'pass': passwordSecret
+        }
+    };
+
+    request(options, call);
+
+   function  call(error, response, body) {
+
+            if (!error && response.statusCode == 200) {
+                if (body != undefined) {
+                    const _body =JSON.parse(body);
+                    accessToken = _body.access_token;
+                    return callback(accessToken);
+
+                }
+            }
+    }
+
+    return this;
+}
+// done, funzione per prelevare id dell'app paypal situata nel db
+async function getClientId(producer_id) {
+
+    return new Promise( ((resolve, reject) => {
+        Users.findOne({
+            attributes: ["client_id"],
+            where: {id: producer_id}
+
+        }).then(client_id => {
+            resolve(client_id);
+        }).catch(err => {
+            console.log(err);
+
+        })
+    }))
+
+
+}
+
+// done funzione per prelevare la secret dell'app paypal situata nel db
+async function getPasswordSecret(producer_id) {
+
+    return new Promise( ((resolve, reject) => {
+        Users.findOne({
+            attributes: ["password_secret"],
+            where: {id: producer_id}
+
+        }).then(password_secret => {
+            resolve(password_secret);
+            return password_secret;
+        }).catch(err => {
+            console.log(err);
+        })
+    }))
+}
+
+
