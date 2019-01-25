@@ -510,19 +510,15 @@ exports.addImage = function (req, res) {
     // return res.send({cacca: 'si'});
 };
 
-function generateUniqueToken(title, password) { // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
+function generateUniqueToken(title, password) {
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
     const total = Math.floor(Math.random() * (max - min)) + min;
 
-    // console.log('total', total);
+    return crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
 
-    let hash = crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
-    // console.log('COUPON HASH: ' + hash);
-
-    return hash;
-}
+} // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
 function formatNotIn(tokenList) {
     let result = '(';
