@@ -402,6 +402,8 @@ exports.redeemCoupon = function (req, res) {
     const data = req.body;
     const verifier_id = req.user.id;
 
+    console.log(data.token);
+
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
         include: [{model: Coupon, required: true}],
@@ -412,7 +414,9 @@ exports.redeemCoupon = function (req, res) {
         }
     })
         .then(result => {
-            if (result === null) {
+            console.log(result);
+
+            if (!result) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     error: true,
                     message: 'Either the coupon is not found, unsold or already redeemed.',
@@ -455,6 +459,7 @@ exports.redeemCoupon = function (req, res) {
                                 })
                             })
                     } else {
+                        console.log("I cant't");
                         return res.status(HttpStatus.BAD_REQUEST).send({
                             error: true,
                             message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
