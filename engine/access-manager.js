@@ -89,7 +89,9 @@ exports.getProducerFromId = function (req, res, next) {
             id: req.params.producer_id,
             user_type: 1
         },
-        attributes: ['username', 'email', 'company_name', 'vat_number', 'first_name', 'last_name', 'address', 'province', 'city', 'zip']
+        attributes: ['username', 'email', 'company_name',
+                    'vat_number', 'first_name', 'last_name', 'address', 'province',
+                    'city', 'zip', 'client_id']
     })
         .then(user => {
             if (user === null) {
