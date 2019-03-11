@@ -341,3 +341,30 @@ async function getPasswordSecret(producer_id) {
 }
 
 
+exports.getBrokers = function (req, res, next) {
+    Users.findAll({
+        where: {
+            user_type: 4
+        },
+        attributes: ['username', 'email', 'company_name',
+            'vat_number', 'first_name', 'last_name', 'address', 'province',
+            'city', 'zip', 'client_id']
+    })
+        .then(broker => {
+            if (broker === null) {
+                return res.status(HttpStatus.OK).json({
+                    error: "Dont't have a Brokers",
+                })
+            }
+            // console.log('userForimId', user);
+            return res.status(HttpStatus.OK).json(broker)
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: err
+            })
+        });
+};
+
+

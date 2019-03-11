@@ -31,6 +31,7 @@ module.exports = function (app, passport) {
     app.put(amPath    + 'update/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.updateUser);        // Update
     app.delete(amPath + 'delete/', requireAuth, AccessManager.roleAuthorization([admin]), AccessManager.deleteUser);    // Delete
     app.get(amPath    + 'getProducerFromId/:producer_id', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getProducerFromId);     // Read by ID
+    app.get(amPath    + 'getBrokers/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getBrokers);  // Read all Broker
 
     /****************** CRUD COUPONS **********************/
     app.post(cmPath + 'create/', expressJoi(Schemas.createCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
