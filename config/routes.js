@@ -5,14 +5,16 @@ const multipartyMiddleware = multiparty();
 const Schemas = require('../schemas/coupons-schema');
 const AccessManager = require('../engine/access-manager');
 const CouponManager = require('../engine/coupon-manager');
+const OrderManager = require('../engine/orders-manager');
 
 
 module.exports = function (app, passport) {
 
     /* PATHs */
-    let indexPath = "/";
-    let amPath = indexPath + 'users/';
-    let cmPath = indexPath + 'coupons/';
+    const indexPath = "/";
+    const amPath    = indexPath + 'users/';
+    const cmPath    = indexPath + 'coupons/';
+    const ordPath   = indexPath + 'orders/';
 
     /* AUTH */
     const requireAuth = passport.authenticate('jwt', {session: false});
@@ -25,6 +27,7 @@ module.exports = function (app, passport) {
 
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AccessManager.basicLogin);
+
     /****************** CRUD USERS ************************/
     app.post(amPath   + 'create/', AccessManager.createUser);        // Create
     app.get(amPath    + 'getFromToken/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getUserFromToken);  // Read by ID
@@ -47,7 +50,8 @@ module.exports = function (app, passport) {
     app.put(cmPath + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.importOfflineCoupon);
     app.put(cmPath + 'redeemCoupon/', requireAuth, AccessManager.roleAuthorization([verifier, producer, admin]), CouponManager.redeemCoupon);
 
-    /****************** CRUD COUPON TOKEN *****************/
+    /****************** CRUD ORDERS *****************/
+    app.get(ordPath + 'getOrdersByConsumer/', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), OrderManager.getOrdersByConsumer);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);

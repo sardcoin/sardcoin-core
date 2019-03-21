@@ -352,12 +352,9 @@ exports.getBrokers = function (req, res, next) {
     })
         .then(broker => {
             if (broker === null) {
-                return res.status(HttpStatus.OK).json({
-                    error: "Dont't have a Brokers",
-                })
+                return res.status(HttpStatus.NO_CONTENT).send({})
             }
-            // console.log('userForimId', user);
-            return res.status(HttpStatus.OK).json(broker)
+            return res.status(HttpStatus.OK).send(broker)
         })
         .catch(err => {
             console.log(err);

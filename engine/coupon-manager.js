@@ -137,8 +137,12 @@ exports.getPurchasedCoupons = function (req, res) {
 
 exports.getPurchasedCouponsById = function (req, res) {
     Coupon.findAll({
-        include: [{model: CouponToken, required: true, where: {consumer: req.user.id, coupon_id: req.params.coupon_id}}],
-        attributes: { include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']] }
+        include: [{
+            model: CouponToken,
+            required: true,
+            where: {consumer: req.user.id, coupon_id: req.params.coupon_id}
+        }],
+        attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']]}
     })
         .then(coupons => {
             if (coupons.length === 0) {
@@ -196,7 +200,7 @@ exports.buyCoupons = async function (req, res) {
     const lock = await lockTables();
 
     if (!lock) {
-        await refundCoupons( coupon_list, payment_id);
+        await refundCoupons(coupon_list, payment_id);
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while finalizing the purchase'
@@ -216,7 +220,7 @@ exports.buyCoupons = async function (req, res) {
                     query += buyCouponQuery;
                 } else {
                     await unlockTables();
-                    await refundCoupons( coupon_list, payment_id);
+                    await refundCoupons(coupon_list, payment_id);
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'An error occurred while finalizing the purchase'
@@ -225,7 +229,7 @@ exports.buyCoupons = async function (req, res) {
             }
         } catch (e) {
             await unlockTables();
-            await refundCoupons( coupon_list, payment_id);
+            await refundCoupons(coupon_list, payment_id);
             return res.status(e[0]).send({
                 error: true,
                 message: 'An error occurred while finalizing the purchase'
@@ -239,7 +243,7 @@ exports.buyCoupons = async function (req, res) {
         .then(result => {
             if (result[0] === 0) { // The database has not been updated
                 unlockTables();
-                refundCoupons( coupon_list, payment_id);
+                refundCoupons(coupon_list, payment_id);
 
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
@@ -256,7 +260,7 @@ exports.buyCoupons = async function (req, res) {
         .catch(err => {
             console.log(err);
             unlockTables();
-            refundCoupons( coupon_list, payment_id);
+            refundCoupons(coupon_list, payment_id);
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
@@ -264,9 +268,6 @@ exports.buyCoupons = async function (req, res) {
             });
         });
 };
-
-
-
 
 exports.editCoupon = function (req, res) {
     const data = req.body;
@@ -528,9 +529,9 @@ function generateUniqueToken(title, password) {
 function formatNotIn(tokenList) {
     let result = '(';
 
-    for(let i=0;i<tokenList.length; i++) {
+    for (let i = 0; i < tokenList.length; i++) {
         result += '"' + tokenList[i] + '"';
-        if(i+1 !== tokenList.length) {
+        if (i + 1 !== tokenList.length) {
             result += ',';
         }
     }
@@ -729,30 +730,29 @@ async function refundCoupons(coupon_list, payment_id) {
     console.log("refundCoupons");
 
 
-
-    for (let i = 0; i<coupon_list.length; i++) {
+    for (let i = 0; i < coupon_list.length; i++) {
         const getProducerId = await getProducerIdfromCouponId(coupon_list[i].id);
         const producerId = getProducerId.dataValues.owner;
         var accessToken = null;
         // funzione per avere l' <access-token>
-        AccessManager.getAccessToken(producerId, async function res(response){
-            accessToken =  response;
+        AccessManager.getAccessToken(producerId, async function res(response) {
+            accessToken = response;
             // funzione per avere il transaction id
-            const transactionId = await  getTransactionId(accessToken, payment_id);
+            const transactionId = await getTransactionId(accessToken, payment_id);
             console.log('transactiionId', transactionId);
 
             const headers = {
 
-                         "Accept": "application/json",
-                         "Accept-Language": "en_US",
-                         "content-type": "application/json",
-                         "Authorization": "Bearer "+ accessToken,
-                     }
+                "Accept": "application/json",
+                "Accept-Language": "en_US",
+                "content-type": "application/json",
+                "Authorization": "Bearer " + accessToken,
+            }
 
             const dataString = '{}';
 
             const options = {
-                url: 'https://api.sandbox.paypal.com/v1/payments/sale/'+ transactionId + '/refund',
+                url: 'https://api.sandbox.paypal.com/v1/payments/sale/' + transactionId + '/refund',
                 method: 'POST',
                 headers: headers,
                 body: dataString,
@@ -760,7 +760,7 @@ async function refundCoupons(coupon_list, payment_id) {
 
             request(options, call);
 
-            function  call(error, response, body) {
+            function call(error, response, body) {
 
 
                 console.log('body del refund', body);
@@ -768,8 +768,8 @@ async function refundCoupons(coupon_list, payment_id) {
                 if (!error && response.statusCode == 200) {
                     console.log('refund body', body);
 
-                    }
                 }
+            }
 
         });
 
@@ -779,26 +779,27 @@ async function refundCoupons(coupon_list, payment_id) {
 
 async function getTransactionId(access_token, payment_id) {
 
-    return new Promise( ((resolve, reject) => {
-    request.get({
-        uri: "https://api.sandbox.paypal.com/v1/payments/payment/" + payment_id,
-        headers: {
-            "Authorization": "Bearer "+ access_token,
-        },
+    return new Promise(((resolve, reject) => {
+        request.get({
+            uri: "https://api.sandbox.paypal.com/v1/payments/payment/" + payment_id,
+            headers: {
+                "Authorization": "Bearer " + access_token,
+            },
 
-    }, function(error, response, body) {
-        const _body = JSON.parse(body);
-        const transactionId = _body.transactions[0].related_resources[0].sale.id;
-        resolve(transactionId);
-        return transactionId;
-    });
+        }, function (error, response, body) {
+            const _body = JSON.parse(body);
+            const transactionId = _body.transactions[0].related_resources[0].sale.id;
+            resolve(transactionId);
+            return transactionId;
+        });
     }))
 }
+
 // done preleva id producer tramite l'id del coupon
 async function getProducerIdfromCouponId(coupon_id) {
 
 
-    return new Promise( ((resolve, reject) => {
+    return new Promise(((resolve, reject) => {
 
         Coupon.findOne({
             attributes: ["owner"],
