@@ -1,6 +1,7 @@
 'use strict';
 
 const Order = require('../models/index').Order;
+const Coupon = require('../models/index').Coupon;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const Op = require('../models/index').Sequelize.Op;
 
@@ -24,8 +25,7 @@ const getOrdersByConsumer = async (req, res) => {
 
 /** The consumer can obtain his detailed order by the id of the order**/
 const getOrderById = async (req, res) => {
-    let aux;
-    let order = {
+    let aux, price, order = {
       id: req.params.order_id,
       consumer: req.user.id,
       OrderCoupon: []
@@ -39,9 +39,12 @@ const getOrderById = async (req, res) => {
 
         if(aux.length > 0) {
             for (const i in aux) {
+                price = (await Coupon.findOne({where: {id: aux[i].dataValues.OrderCoupon.coupon_id}})).dataValues.price;
+
                 order.OrderCoupon.push({
                     coupon_id: aux[i].dataValues.OrderCoupon.coupon_id,
                     quantity: aux[i].dataValues.OrderCoupon.quantity,
+                    price: price
                 })
             }
 
