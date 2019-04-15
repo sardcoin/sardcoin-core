@@ -5,18 +5,19 @@ const CouponToken = require('../models/index').CouponToken;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
-var request = require('request');
 
 const CouponTokenManager = require('./coupon-token-manager');
-const AccessManager = require('./access-manager');
+const OrdersManager = require('./orders-manager');
 
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
 
-exports.createCoupon = async function (req, res) {
-    const data = req.body;
+/** Exported REST functions **/
+
+const createCoupon = async (req, res) => {
+    const  data = req.body;
     let result;
 
     try {
@@ -68,7 +69,7 @@ exports.createCoupon = async function (req, res) {
 
 };
 
-exports.getFromId = function (req, res) {
+const getFromId = (req, res) => {
 
     Coupon.findOne({
         where: {id: req.params.coupon_id}
@@ -92,7 +93,7 @@ exports.getFromId = function (req, res) {
         });
 };
 
-exports.getProducerCoupons = function (req, res) {
+const getProducerCoupons = (req, res) => {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
         'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
@@ -115,7 +116,7 @@ exports.getProducerCoupons = function (req, res) {
         })
 };
 
-exports.getPurchasedCoupons = function (req, res) {
+const getPurchasedCoupons = (req, res) => {
     Coupon.findAll({
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
     })
@@ -135,7 +136,7 @@ exports.getPurchasedCoupons = function (req, res) {
         });
 };
 
-exports.getPurchasedCouponsById = function (req, res) {
+const getPurchasedCouponsById = (req, res) => {
     Coupon.findAll({
         include: [{
             model: CouponToken,
@@ -163,7 +164,7 @@ exports.getPurchasedCouponsById = function (req, res) {
         });
 };
 
-exports.getAvailableCoupons = function (req, res) {
+const getAvailableCoupons = (req, res) => {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
         ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
@@ -188,10 +189,10 @@ exports.getAvailableCoupons = function (req, res) {
 
 };
 
-exports.buyCoupons = async function (req, res) {
+// The application could fail in every point, revert the buy in that case
+const buyCoupons = async (req, res) => {
 
     const coupon_list = req.body.coupon_list;
-    const payment_id = req.body.payment_id;
     let query = 'START TRANSACTION; ';
     let tokenToExclude = [];
     let buyCouponQuery;
@@ -200,7 +201,6 @@ exports.buyCoupons = async function (req, res) {
     const lock = await lockTables();
 
     if (!lock) {
-        await refundCoupons(coupon_list, payment_id);
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while finalizing the purchase'
@@ -220,7 +220,6 @@ exports.buyCoupons = async function (req, res) {
                     query += buyCouponQuery;
                 } else {
                     await unlockTables();
-                    await refundCoupons(coupon_list, payment_id);
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'An error occurred while finalizing the purchase'
@@ -229,7 +228,6 @@ exports.buyCoupons = async function (req, res) {
             }
         } catch (e) {
             await unlockTables();
-            await refundCoupons(coupon_list, payment_id);
             return res.status(e[0]).send({
                 error: true,
                 message: 'An error occurred while finalizing the purchase'
@@ -239,11 +237,13 @@ exports.buyCoupons = async function (req, res) {
 
     query += 'COMMIT';
 
+    console.log('FINAL QUERY');
+    console.log(query);
+
     Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
-        .then(result => {
+        .then(async result => {
             if (result[0] === 0) { // The database has not been updated
-                unlockTables();
-                refundCoupons(coupon_list, payment_id);
+                await unlockTables();
 
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
@@ -251,16 +251,18 @@ exports.buyCoupons = async function (req, res) {
                 });
             }
 
-            unlockTables();
+            // The order goes good
+            await unlockTables();
+            await OrdersManager.createOrderFromCart(req.user.id, coupon_list);
+
             return res.status(HttpStatus.OK).send({
                 success: true,
                 message: 'The purchase has been finalized'
             })
         })
-        .catch(err => {
+        .catch(async err => {
             console.log(err);
-            unlockTables();
-            refundCoupons(coupon_list, payment_id);
+            await unlockTables();
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
@@ -269,7 +271,7 @@ exports.buyCoupons = async function (req, res) {
         });
 };
 
-exports.editCoupon = function (req, res) {
+const editCoupon = (req, res) => {
     const data = req.body;
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
     let visible_from = data.visible_from === null ? null : Number(data.visible_from);
@@ -318,7 +320,7 @@ exports.editCoupon = function (req, res) {
         });
 };
 
-exports.deleteCoupon = function (req, res) {
+const deleteCoupon = (req, res) => {
     Coupon.destroy({
         where: {
             [Op.and]: [
@@ -352,7 +354,7 @@ exports.deleteCoupon = function (req, res) {
         })
 };
 
-exports.importOfflineCoupon = function (req, res) {
+const importOfflineCoupon = (req, res) => {
     const data = req.body;
 
     CouponToken.findOne({
@@ -399,7 +401,7 @@ exports.importOfflineCoupon = function (req, res) {
         })
 };
 
-exports.redeemCoupon = function (req, res) {
+const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
 
@@ -486,7 +488,7 @@ exports.redeemCoupon = function (req, res) {
         })
 };
 
-exports.addImage = function (req, res) {
+const addImage = (req, res) => {
     console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
@@ -516,7 +518,9 @@ exports.addImage = function (req, res) {
     // return res.send({cacca: 'si'});
 };
 
-function generateUniqueToken(title, password) {
+/** Private methods **/
+
+const generateUniqueToken = (title, password) => {
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
@@ -524,9 +528,9 @@ function generateUniqueToken(title, password) {
 
     return crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
 
-} // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
+}; // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
 
-function formatNotIn(tokenList) {
+const formatNotIn = (tokenList) => {
     let result = '(';
 
     for (let i = 0; i < tokenList.length; i++) {
@@ -537,9 +541,9 @@ function formatNotIn(tokenList) {
     }
 
     return result + ')';
-}
+};
 
-async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded = []) {
+const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
 
     let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
 
@@ -590,7 +594,7 @@ async function getBuyCouponQuery(coupon_id, user_id, tokenExcluded = []) {
     });
 };
 
-async function isCouponNotExpired(coupon_id) {
+const isCouponNotExpired = (coupon_id) => {
     return new Promise((resolve, reject) => {
         Coupon.findOne({
             attributes: ['valid_until'],
@@ -610,9 +614,9 @@ async function isCouponNotExpired(coupon_id) {
                 reject(err);
             })
     });
-}
+};
 
-async function isCouponPurchasable(coupon_id, user_id) {
+const isCouponPurchasable = (coupon_id, user_id) => {
     // It returns id, purchasable, quantity, available and buyed
 
     return new Promise((resolve, reject) => {
@@ -638,9 +642,9 @@ async function isCouponPurchasable(coupon_id, user_id) {
                 reject(err); // Error == couponNotPurchasable
             })
     });
-}
+};
 
-async function isVerifierAuthorized(producer_id, verifier_id) {
+const isVerifierAuthorized = (producer_id, verifier_id) => {
     return new Promise((resolve, reject) => {
         Verifier.findOne({
             where: {
@@ -657,9 +661,9 @@ async function isVerifierAuthorized(producer_id, verifier_id) {
                 reject(err);
             })
     });
-}
+};
 
-async function insertCoupon(coupon, owner) {
+const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
         Coupon.create({
             title: coupon.title,
@@ -682,9 +686,9 @@ async function insertCoupon(coupon, owner) {
                 reject(err);
             })
     });
-}
+};
 
-async function lockTables() {
+const lockTables = () => {
     return new Promise((resolve, reject) => {
         Sequelize.query(
             'LOCK TABLE `coupons` AS `Coupon` WRITE, `coupon_tokens` AS `CouponTokens` WRITE')
@@ -697,9 +701,9 @@ async function lockTables() {
                 resolve(false);
             })
     });
-}
+};
 
-async function unlockTables() {
+const unlockTables = () => {
     return new Promise((resolve, reject) => {
         Sequelize.query(
             'UNLOCK TABLES')
@@ -711,110 +715,6 @@ async function unlockTables() {
                 resolve(false);
             })
     });
-}
+};
 
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
-
-// exports.buyCoupons = async function (req, res) {
-//     const coupon_list = req.body.coupon_list;
-//     const payment_id = req.body.payment_id;
-//     console.log("inBuyCoupons");
-//     refundCoupons( coupon_list, payment_id);
-//
-// };
-
-async function refundCoupons(coupon_list, payment_id) {
-
-    console.log("refundCoupons");
-
-
-    for (let i = 0; i < coupon_list.length; i++) {
-        const getProducerId = await getProducerIdfromCouponId(coupon_list[i].id);
-        const producerId = getProducerId.dataValues.owner;
-        var accessToken = null;
-        // funzione per avere l' <access-token>
-        AccessManager.getAccessToken(producerId, async function res(response) {
-            accessToken = response;
-            // funzione per avere il transaction id
-            const transactionId = await getTransactionId(accessToken, payment_id);
-            console.log('transactiionId', transactionId);
-
-            const headers = {
-
-                "Accept": "application/json",
-                "Accept-Language": "en_US",
-                "content-type": "application/json",
-                "Authorization": "Bearer " + accessToken,
-            }
-
-            const dataString = '{}';
-
-            const options = {
-                url: 'https://api.sandbox.paypal.com/v1/payments/sale/' + transactionId + '/refund',
-                method: 'POST',
-                headers: headers,
-                body: dataString,
-            }
-
-            request(options, call);
-
-            function call(error, response, body) {
-
-
-                console.log('body del refund', body);
-
-                if (!error && response.statusCode == 200) {
-                    console.log('refund body', body);
-
-                }
-            }
-
-        });
-
-    }
-}
-
-
-async function getTransactionId(access_token, payment_id) {
-
-    return new Promise(((resolve, reject) => {
-        request.get({
-            uri: "https://api.sandbox.paypal.com/v1/payments/payment/" + payment_id,
-            headers: {
-                "Authorization": "Bearer " + access_token,
-            },
-
-        }, function (error, response, body) {
-            const _body = JSON.parse(body);
-            const transactionId = _body.transactions[0].related_resources[0].sale.id;
-            resolve(transactionId);
-            return transactionId;
-        });
-    }))
-}
-
-// done preleva id producer tramite l'id del coupon
-async function getProducerIdfromCouponId(coupon_id) {
-
-
-    return new Promise(((resolve, reject) => {
-
-        Coupon.findOne({
-            attributes: ["owner"],
-            where: {id: coupon_id}
-
-        }).then(owner_id => {
-
-            resolve(owner_id);
-
-        }).catch(err => {
-            console.log(err);
-            reject(err);
-        })
-    }))
-}
-
-
-
+module.exports = {createCoupon, getFromId, getProducerCoupons, getPurchasedCoupons, getPurchasedCouponsById, getAvailableCoupons, buyCoupons, editCoupon, deleteCoupon, importOfflineCoupon, redeemCoupon, addImage};

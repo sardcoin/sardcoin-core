@@ -303,7 +303,7 @@ exports.getAccessToken = async function (producer_id, callback) {
     }
 
     return this;
-}
+};
 // done, funzione per prelevare id dell'app paypal situata nel db
 async function getClientId(producer_id) {
 
