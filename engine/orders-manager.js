@@ -7,7 +7,7 @@ const Op = require('../models/index').Sequelize.Op;
 
 const HttpStatus = require('http-status-codes');
 
-let paypal = require('paypal-rest-sdk');
+let paypal = require('paypal-nvp-api');
 
 
 /** The consumer can obtain his orders history **/

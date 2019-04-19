@@ -6,6 +6,7 @@ const Schemas = require('../schemas/coupons-schema');
 const AccessManager = require('../engine/access-manager');
 const CouponManager = require('../engine/coupon-manager');
 const OrderManager = require('../engine/orders-manager');
+const PaypalManager = require('../engine/paypal-manager');
 
 
 module.exports = function (app, passport) {
@@ -15,6 +16,7 @@ module.exports = function (app, passport) {
     const amPath    = indexPath + 'users/';
     const cmPath    = indexPath + 'coupons/';
     const ordPath   = indexPath + 'orders/';
+    const payPath   = indexPath + 'paypal/';
 
     /* AUTH */
     const requireAuth = passport.authenticate('jwt', {session: false});
@@ -53,6 +55,11 @@ module.exports = function (app, passport) {
     /****************** CRUD ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), OrderManager.getOrdersByConsumer);
     app.get(ordPath + 'getOrderById/:order_id', requireAuth, AccessManager.roleAuthorization([consumer, admin]), OrderManager.getOrderById);
+
+    /****************** PAYPAL PAYMENTS *****************/
+    app.post(payPath + 'setCheckout', requireAuth, AccessManager.roleAuthorization(all), PaypalManager.setCheckout);
+    app.post(payPath + 'pay', requireAuth, AccessManager.roleAuthorization(all), PaypalManager.pay);
+    app.get(payPath + 'confirm', PaypalManager.confirm);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
