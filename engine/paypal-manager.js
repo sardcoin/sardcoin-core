@@ -16,6 +16,7 @@ const paypalConfig = {
 
 const Paypal = paypalApi(paypalConfig);
 
+/** PUBLIC METHODS **/
 const setCheckout = async (req, res) => {
     const order = req.body;
     let coupon, grouped, query, resultSet, link;
@@ -58,11 +59,9 @@ const setCheckout = async (req, res) => {
         })
     }
 };
-
 const confirm = async (req, res) => {
     res.redirect('http://localhost:4200/#/reserved-area/consumer/checkout?token=' + req.query.token);
 };
-
 const pay = async (req, res) => {
     let resultGet, resultDo;
 
@@ -79,11 +78,7 @@ const pay = async (req, res) => {
     }
 };
 
-
-const getCouponByID = async (coupon_id) => {
-    return await Coupon.findOne({where: {id: coupon_id}});
-};
-
+/** PRIVATE METHODS **/
 const setQuery = async (groupedCoupons) => {
   let m, n = 0;
   let userOwner;
@@ -100,7 +95,7 @@ const setQuery = async (groupedCoupons) => {
       userOwner = await getOwnerById(owner);
 
       amt = 0; // amount of the single producer
-      m=0;
+      m=1;
 
       for(const coupon in groupedCoupons[owner]) {
           query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
@@ -120,12 +115,12 @@ const setQuery = async (groupedCoupons) => {
 
   return query;
 };
-
+const getCouponByID = async (coupon_id) => {
+    return await Coupon.findOne({where: {id: coupon_id}});
+};
 const getOwnerById = async (owner_id) => {
     return await User.findOne({where: {id: owner_id}});
 };
-
-// Unique payment request Id sha256(paypal-email, amt, owner_id)
 const getPaymentRequestId = (userOwner, amt) => {
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
@@ -133,7 +128,6 @@ const getPaymentRequestId = (userOwner, amt) => {
 
     return crypto.createHash('sha256').update(userOwner.email_paypal + amt +  + total.toString()).digest('hex');
 };
-
 const getQueryItem = (query, coupon, n, m) => {
 
     query['L_PAYMENTREQUEST_' + n + '_NAME' + m]         = coupon.title;
@@ -146,4 +140,5 @@ const getQueryItem = (query, coupon, n, m) => {
     return query;
 };
 
+/** EXPORT **/
 module.exports = {setCheckout, confirm, pay};
