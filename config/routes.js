@@ -3,13 +3,13 @@ const multiparty = require('connect-multiparty');
 const multipartyMiddleware = multiparty();
 
 const Schemas = require('../schemas/coupons-schema');
-const AccessManager = require('../engine/access-manager');
+const AcM = require('../engine/access-manager');
 const CouponManager = require('../engine/coupon-manager');
 const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 
 
-module.exports = function (app, passport) {
+module.exports = function (app, passport, config) {
 
     /* PATHs */
     const indexPath = "/";
@@ -19,7 +19,7 @@ module.exports = function (app, passport) {
     const payPath   = indexPath + 'paypal/';
 
     /* AUTH */
-    const requireAuth = passport.authenticate('jwt', {session: false});
+    const reqAuth = passport.authenticate('jwt', {session: false});
     const admin = '0';
     const producer = '1';
     const consumer = '2';
@@ -28,38 +28,38 @@ module.exports = function (app, passport) {
     const all = [admin, producer, consumer, broker, verifier];
 
     /****************** ACCESS MANAGER ********************/
-    app.post('/login', AccessManager.basicLogin);
+    app.post('/login', AcM.basicLogin);
 
     /****************** CRUD USERS ************************/
-    app.post(amPath   + 'create/', AccessManager.createUser);        // Create
-    app.get(amPath    + 'getFromToken/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getUserFromToken);  // Read by ID
-    app.put(amPath    + 'update/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.updateUser);        // Update
-    app.delete(amPath + 'delete/', requireAuth, AccessManager.roleAuthorization([admin]), AccessManager.deleteUser);    // Delete
-    app.get(amPath    + 'getProducerFromId/:producer_id', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getProducerFromId);     // Read by ID
-    app.get(amPath    + 'getBrokers/', requireAuth, AccessManager.roleAuthorization(all), AccessManager.getBrokers);  // Read all Broker
+    app.post(amPath   + 'create/', AcM.createUser);        // Create
+    app.get(amPath    + 'getFromToken/', reqAuth, AcM.roleAuth(all), AcM.getUserFromToken);  // Read by ID
+    app.put(amPath    + 'update/', reqAuth, AcM.roleAuth(all), AcM.updateUser);        // Update
+    app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);    // Delete
+    app.get(amPath    + 'getProducerFromId/:producer_id', reqAuth, AcM.roleAuth(all), AcM.getProducerFromId);     // Read by ID
+    app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);  // Read all Broker
 
     /****************** CRUD COUPONS **********************/
-    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.createCoupon); // Create
-    app.get(cmPath    + 'getById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
-    app.get(cmPath    + 'getPurchasedCoupons', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCoupons);
-    app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', requireAuth, AccessManager.roleAuthorization([consumer, admin]), CouponManager.getPurchasedCouponsById);
-    app.get(cmPath    + 'getProducerCoupons/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.getProducerCoupons);
-    app.get(cmPath    + 'getAvailableCoupons/', requireAuth, AccessManager.roleAuthorization([consumer, admin, verifier]), CouponManager.getAvailableCoupons);
-    app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.editCoupon);
-    app.delete(cmPath + 'deleteCoupon/', requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.deleteCoupon);
-    app.post(cmPath   + 'addImage/', multipartyMiddleware, requireAuth, AccessManager.roleAuthorization([producer, admin]), CouponManager.addImage);
-    app.put(cmPath    + 'buyCoupons/', requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.buyCoupons);
-    app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), requireAuth, AccessManager.roleAuthorization([consumer]), CouponManager.importOfflineCoupon);
-    app.put(cmPath    + 'redeemCoupon/', requireAuth, AccessManager.roleAuthorization([verifier, producer, admin]), CouponManager.redeemCoupon);
+    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon); // Create
+    app.get(cmPath    + 'getById/:coupon_id', reqAuth, AcM.roleAuth([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
+    app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
+    app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
+    app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
+    app.get(cmPath    + 'getAvailableCoupons/', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCoupons);
+    app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.editCoupon);
+    app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.deleteCoupon);
+    app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, admin]), CouponManager.addImage);
+    app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);
+    app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), reqAuth, AcM.roleAuth([consumer]), CouponManager.importOfflineCoupon);
+    app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
 
     /****************** CRUD ORDERS *****************/
-    app.get(ordPath + 'getOrdersByConsumer/', requireAuth, AccessManager.roleAuthorization([consumer, admin]), OrderManager.getOrdersByConsumer);
-    app.get(ordPath + 'getOrderById/:order_id', requireAuth, AccessManager.roleAuthorization([consumer, admin]), OrderManager.getOrderById);
+    app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
+    app.get(ordPath + 'getOrderById/:order_id', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrderById);
 
     /****************** PAYPAL PAYMENTS *****************/
-    app.post(payPath + 'setCheckout', requireAuth, AccessManager.roleAuthorization(all), PaypalManager.setCheckout);
-    app.post(payPath + 'pay', requireAuth, AccessManager.roleAuthorization(all), PaypalManager.pay);
-    app.get(payPath + 'confirm', PaypalManager.confirm);
+    app.post(payPath + 'setCheckout', reqAuth, AcM.roleAuth(all), PaypalManager.setCheckout(config));
+    app.post(payPath + 'pay', reqAuth, AcM.roleAuth(all), PaypalManager.pay(config));
+    app.get(payPath + 'confirm', PaypalManager.confirm(config));
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
