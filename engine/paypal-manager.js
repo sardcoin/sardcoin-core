@@ -7,15 +7,6 @@ const _ = require('lodash');
 const Coupon = require('../models/index').Coupon;
 const User = require('../models/index').User;
 
-// const paypalConfig = {
-//     mode: 'sandbox', // controllo (produzione = live, locale = sandbox)
-//     username: 'sardcoin2018-facilitator_api1.gmail.com',
-//     password: '9NCXEHQCT3K7LGTQ',
-//     signature: 'ARLVDP2L.4MqfOFJIuBr1CdO9YBnArC7h4GygcmzOublpRRncLVxZSuu'
-// };
-
-// const Paypal = paypalApi(paypalConfig);
-
 /** PUBLIC METHODS **/
 const setCheckout = (config) => {
     return async (req, res) => {
@@ -42,14 +33,8 @@ const setCheckout = (config) => {
                 });
             }
 
-            query = await setQuery(grouped);
-
-            // console.log(query);
-
+            query = await setQuery(grouped, config['siteURL']);
             resultSet = await Paypal.request('SetExpressCheckout', query);
-
-            // console.warn(resultSet);
-
             link += 'checkoutnow?token=' + resultSet.TOKEN;
 
             return res.status(HttpStatus.OK).send({link: link});
@@ -62,9 +47,8 @@ const setCheckout = (config) => {
     }
 };
 const confirm = (config) => {
-    return async (req, res) => { // TODO passare config per configurare gli URL, aggiungere al config le URL del sito e del locale
-        console.log(config);
-        res.redirect('http://localhost:4200/#/reserved-area/consumer/checkout?token=' + req.query.token);
+    return async (req, res) => {
+        res.redirect(config['siteURL'] + (config['siteURL'].include('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?token=' + req.query.token);
     };
 };
 const pay = (config) => {
@@ -90,13 +74,13 @@ const pay = (config) => {
 module.exports = {setCheckout, confirm, pay};
 
 /** PRIVATE METHODS **/
-const setQuery = async (groupedCoupons) => { // TODO passare config per configurare gli URL
+const setQuery = async (groupedCoupons, siteURL) => {
     let m, n = 0;
     let userOwner;
     let amt;
     let query = {
-        'RETURNURL': 'http://localhost:8080/paypal/confirm',
-        'CANCELURL': 'http://localhost:4200/#/reserved-area/consumer/checkout?err=true'
+        'RETURNURL': siteURL + ':8080/paypal/confirm',
+        'CANCELURL': siteURL + (siteURL.include('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
     };
 
     /** L_PAYMENTREQUEST_n_NAMEm **/
@@ -109,9 +93,11 @@ const setQuery = async (groupedCoupons) => { // TODO passare config per configur
         m = 1;
 
         for (const coupon in groupedCoupons[owner]) {
-            query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
-            amt += groupedCoupons[owner][coupon].dataValues.quantity * groupedCoupons[owner][coupon].dataValues.price;
-            m++;
+            if(groupedCoupons[owner][coupon].dataValues.price > 0) { // Non sono permessi ITEM con PRICE = 0
+                query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
+                amt += groupedCoupons[owner][coupon].dataValues.quantity * groupedCoupons[owner][coupon].dataValues.price;
+                m++;
+            }
         }
 
         query['PAYMENTREQUEST_' + n + '_PAYMENTACTION'] = 'Sale';
