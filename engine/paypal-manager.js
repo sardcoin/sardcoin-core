@@ -40,6 +40,7 @@ const setCheckout = (config) => {
             return res.status(HttpStatus.OK).send({link: link});
 
         } catch (e) {
+            console.error(e);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 message: 'Error doing something'
             })
@@ -80,7 +81,7 @@ const setQuery = async (groupedCoupons, siteURL) => {
     let amt;
     let query = {
         'RETURNURL': siteURL + ':8080/paypal/confirm',
-        'CANCELURL': siteURL + (siteURL.include('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
+        'CANCELURL': siteURL + (siteURL.includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
     };
 
     /** L_PAYMENTREQUEST_n_NAMEm **/
@@ -89,7 +90,7 @@ const setQuery = async (groupedCoupons, siteURL) => {
     for (const owner in groupedCoupons) {
         userOwner = await getOwnerById(owner);
 
-        amt = 0; // amount of the single producer
+        amt = 0; // Ammontare spettante ad ogni produttore
         m = 1;
 
         for (const coupon in groupedCoupons[owner]) {
@@ -126,7 +127,6 @@ const getPaymentRequestId = (userOwner, amt) => {
     return crypto.createHash('sha256').update(userOwner.email_paypal + amt + +total.toString()).digest('hex');
 };
 const getQueryItem = (query, coupon, n, m) => {
-
     query['L_PAYMENTREQUEST_' + n + '_NAME' + m] = coupon.title;
     query['L_PAYMENTREQUEST_' + n + '_DESC' + m] = coupon.description;
     query['L_PAYMENTREQUEST_' + n + '_AMT' + m] = coupon.price;
