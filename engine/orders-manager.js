@@ -7,9 +7,6 @@ const Op = require('../models/index').Sequelize.Op;
 
 const HttpStatus = require('http-status-codes');
 
-let paypal = require('paypal-nvp-api');
-
-
 /** The consumer can obtain his orders history **/
 const getOrdersByConsumer = async (req, res) => {
     let orders;
@@ -64,7 +61,7 @@ const getOrderById = async (req, res) => {
 };
 
 const createOrderFromCart = async (user_id, coupon_list) => {
-    let newOrder, newOrderCoupon, destroy, order_id;
+    let newOrder, newOrderCoupon, order_id;
 
     try {
         newOrder = await Order.create({consumer: user_id, purchase_time: (new Date()).getTime()});
@@ -88,7 +85,24 @@ const createOrderFromCart = async (user_id, coupon_list) => {
         throw new Error('createOrderFromCart -> Error creating the order');
     }
 
-    return coupon_list;
+    return order_id;
+};
+
+const revertOrder = async (order_id) => {
+  let order, success = true;
+
+  try {
+      order = await Order.findOne({
+          include: [{model: OrderCoupon, required: true}],
+          where: {id: order_id}
+      });
+
+
+  } catch (e) {
+      success = false;
+  }
+
+  return success;
 };
 
 module.exports = {createOrderFromCart, getOrdersByConsumer, getOrderById};

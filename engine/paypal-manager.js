@@ -66,7 +66,10 @@ const pay = (config) => {
                 result: resultDo
             })
         } catch (e) {
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({error: 'Error doing payment'});
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                call: 'pay',
+                message: 'Error doing the payment'
+            });
         }
     }
 };

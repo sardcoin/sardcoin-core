@@ -197,12 +197,14 @@ const buyCoupons = async (req, res) => {
     let tokenToExclude = [];
     let buyCouponQuery;
     let buyQueryResult;
+    let order_id;
 
     const lock = await lockTables();
 
     if (!lock) {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
+            call: 'buyCoupons',
             message: 'An error occurred while finalizing the purchase'
         });
     }
@@ -222,14 +224,17 @@ const buyCoupons = async (req, res) => {
                     await unlockTables();
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
+                        call: 'buyCoupons',
                         message: 'An error occurred while finalizing the purchase'
                     })
                 }
             }
         } catch (e) {
+            console.error(e);
             await unlockTables();
-            return res.status(e[0]).send({
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
+                call: 'buyCoupons',
                 message: 'An error occurred while finalizing the purchase'
             })
         }
@@ -237,8 +242,8 @@ const buyCoupons = async (req, res) => {
 
     query += 'COMMIT';
 
-    console.log('FINAL QUERY');
-    console.log(query);
+    // console.log('FINAL QUERY');
+    // console.log(query);
 
     Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
         .then(async result => {
@@ -247,17 +252,19 @@ const buyCoupons = async (req, res) => {
 
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
+                    call: 'buyCoupons',
                     message: 'An error occured while finalizing the purchase'
                 });
             }
 
-            // The order goes good
+            // The purchase is done
             await unlockTables();
-            await OrdersManager.createOrderFromCart(req.user.id, coupon_list);
+            order_id = await OrdersManager.createOrderFromCart(req.user.id, coupon_list);
 
             return res.status(HttpStatus.OK).send({
                 success: true,
-                message: 'The purchase has been finalized'
+                message: 'The purchase has been finalized',
+                order_id: order_id
             })
         })
         .catch(async err => {
@@ -266,6 +273,7 @@ const buyCoupons = async (req, res) => {
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
+                call: 'buyCoupons',
                 message: 'An error occured while finalizing the purchase'
             });
         });
