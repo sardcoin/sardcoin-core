@@ -4,6 +4,7 @@ const paypalApi = require('paypal-nvp-api');
 const crypto = require('crypto');
 const _ = require('lodash');
 
+const OrderManager = require('../engine/orders-manager');
 const Coupon = require('../models/index').Coupon;
 const User = require('../models/index').User;
 
@@ -49,16 +50,16 @@ const setCheckout = (config) => {
 };
 const confirm = (config) => {
     return async (req, res) => {
-        res.redirect(config['siteURL'] + (config['siteURL'].include('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?token=' + req.query.token);
+        res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?token=' + req.query.token);
     };
 };
 const pay = (config) => {
     return async (req, res) => {
         const Paypal = paypalApi(config['Paypal']);
-        let resultGet, resultDo;
+        let resultGet, resultDo, revert;
 
         try {
-            resultGet = await Paypal.request('GetExpressCheckoutDetails', req.body);
+            resultGet = await Paypal.request('GetExpressCheckoutDetails', req.body.token);
             resultDo = await Paypal.request('DoExpressCheckoutPayment', resultGet);
 
             return res.status(HttpStatus.OK).send({
@@ -66,6 +67,8 @@ const pay = (config) => {
                 result: resultDo
             })
         } catch (e) {
+            revert = await OrderManager.revertOrder(req.body.order_id);
+
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 call: 'pay',
                 message: 'Error doing the payment'

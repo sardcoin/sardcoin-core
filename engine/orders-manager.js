@@ -2,6 +2,7 @@
 
 const Order = require('../models/index').Order;
 const Coupon = require('../models/index').Coupon;
+const CouponToken = require('../models/index').CouponToken;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const Op = require('../models/index').Sequelize.Op;
 
@@ -89,20 +90,67 @@ const createOrderFromCart = async (user_id, coupon_list) => {
 };
 
 const revertOrder = async (order_id) => {
-  let order, success = true;
+    let order, token, up, success = true;
+    let consumer, coupon_id, j;
 
-  try {
-      order = await Order.findOne({
-          include: [{model: OrderCoupon, required: true}],
-          where: {id: order_id}
-      });
+    try {
+        order = await Order.findAll({
+            include: [{model: OrderCoupon, required: true}],
+            where: {id: order_id}
+        });
 
+        console.log(order);
 
-  } catch (e) {
-      success = false;
-  }
+        for (const i in order) {
+            coupon_id = order[i].dataValues.OrderCoupon.dataValues.coupon_id;
+            consumer = order[i].dataValues.consumer;
+            j = 0;
 
-  return success;
+            while(j < order[i].dataValues.OrderCoupon.dataValues.quantity) {
+                token = await CouponToken.findOne({
+                    where: {
+                        coupon_id: coupon_id,
+                        consumer: consumer,
+                        verifier: {[Op.eq]: null}
+                    }
+                });
+
+                if(token) {
+                    up = await CouponToken.update({consumer: null}, {
+                        where: {
+                            coupon_id: coupon_id,
+                            consumer: consumer,
+                            verifier: {[Op.eq]: null},
+                            token: token.dataValues.token
+                        }
+                    });
+                } else {
+                    console.warn('Something is not going good...');
+                    console.warn('Query: SELECT * FROM couponToken WHERE coupon_id = ' + coupon_id + ' AND consumer = ' + consumer + ' AND verifier IS NULL');
+                }
+
+                j++;
+            }
+
+            await OrderCoupon.destroy({where: {
+                    order_id: order_id,
+                    coupon_id: coupon_id,
+                    quantity: order[i].dataValues.OrderCoupon.dataValues.quantity
+                }
+            })
+        }
+
+        await Order.destroy({where: {
+                ID: order[0].dataValues.id,
+            }
+        })
+
+    } catch (e) {
+        console.error(e);
+        success = false;
+    }
+
+    return success;
 };
 
-module.exports = {createOrderFromCart, getOrdersByConsumer, getOrderById};
+module.exports = {createOrderFromCart, getOrdersByConsumer, getOrderById, revertOrder};
