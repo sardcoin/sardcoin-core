@@ -58,8 +58,10 @@ const pay = (config) => {
         const Paypal = paypalApi(config['Paypal']);
         let resultGet, resultDo, revert;
 
+        console.log(req.body);
+
         try {
-            resultGet = await Paypal.request('GetExpressCheckoutDetails', req.body.token);
+            resultGet = await Paypal.request('GetExpressCheckoutDetails', {token: req.body.token});
             resultDo = await Paypal.request('DoExpressCheckoutPayment', resultGet);
 
             return res.status(HttpStatus.OK).send({
@@ -67,6 +69,7 @@ const pay = (config) => {
                 result: resultDo
             })
         } catch (e) {
+            console.error(e);
             revert = await OrderManager.revertOrder(req.body.order_id);
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({

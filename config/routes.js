@@ -7,7 +7,7 @@ const AcM = require('../engine/access-manager');
 const CouponManager = require('../engine/coupon-manager');
 const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
-
+const CategoriesManager = require('../engine/categories-manager');
 
 module.exports = function (app, passport, config) {
 
@@ -17,6 +17,7 @@ module.exports = function (app, passport, config) {
     const cmPath    = indexPath + 'coupons/';
     const ordPath   = indexPath + 'orders/';
     const payPath   = indexPath + 'paypal/';
+    const catPath   = indexPath + 'cat/';
 
     /* AUTH */
     const reqAuth = passport.authenticate('jwt', {session: false});
@@ -30,17 +31,17 @@ module.exports = function (app, passport, config) {
     /****************** ACCESS MANAGER ********************/
     app.post('/login', AcM.basicLogin);
 
-    /****************** CRUD USERS ************************/
-    app.post(amPath   + 'create/', AcM.createUser);        // Create
-    app.get(amPath    + 'getFromToken/', reqAuth, AcM.roleAuth(all), AcM.getUserFromToken);  // Read by ID
-    app.put(amPath    + 'update/', reqAuth, AcM.roleAuth(all), AcM.updateUser);        // Update
-    app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);    // Delete
-    app.get(amPath    + 'getProducerFromId/:producer_id', reqAuth, AcM.roleAuth(all), AcM.getProducerFromId);     // Read by ID
-    app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);  // Read all Broker
+    /****************** USERS ************************/
+    app.post(amPath   + 'create/', AcM.createUser);
+    app.get(amPath    + 'getFromToken/', reqAuth, AcM.roleAuth(all), AcM.getUserFromToken);
+    app.put(amPath    + 'update/', reqAuth, AcM.roleAuth(all), AcM.updateUser);
+    app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);
+    app.get(amPath    + 'getProducerFromId/:producer_id', reqAuth, AcM.roleAuth(all), AcM.getProducerFromId);
+    app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
 
-    /****************** CRUD COUPONS **********************/
-    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon); // Create
-    app.get(cmPath    + 'getById/:coupon_id', reqAuth, AcM.roleAuth([consumer, producer, admin]), CouponManager.getFromId); // Get a coupon by his ID
+    /****************** COUPONS **********************/
+    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon);
+    app.get(cmPath    + 'getById/:coupon_id', reqAuth, AcM.roleAuth([consumer, producer, admin]), CouponManager.getFromId);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
@@ -52,14 +53,20 @@ module.exports = function (app, passport, config) {
     app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), reqAuth, AcM.roleAuth([consumer]), CouponManager.importOfflineCoupon);
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
 
-    /****************** CRUD ORDERS *****************/
+    /****************** ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
     app.get(ordPath + 'getOrderById/:order_id', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrderById);
 
     /****************** PAYPAL PAYMENTS *****************/
     app.post(payPath + 'setCheckout', reqAuth, AcM.roleAuth(all), PaypalManager.setCheckout(config));
-    app.post(payPath + 'pay', reqAuth, AcM.roleAuth(all), PaypalManager.pay(config));
     app.get(payPath + 'confirm', PaypalManager.confirm(config));
+    app.post(payPath + 'pay', reqAuth, AcM.roleAuth(all), PaypalManager.pay(config));
+
+    /****************** CATEGORIES *****************/
+    app.post(catPath + 'insert', reqAuth, AcM.roleAuth([admin]), CategoriesManager.insert);
+    app.get(catPath + 'getAll', reqAuth, AcM.roleAuth([admin]), CategoriesManager.getAll);
+    app.put(catPath + 'update', reqAuth, AcM.roleAuth([admin]), CategoriesManager.update);
+    app.delete(catPath + 'delete', reqAuth, AcM.roleAuth([admin]), CategoriesManager.remove);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);

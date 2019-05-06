@@ -29,6 +29,7 @@ const getOrderById = async (req, res) => {
     let aux, price, order = {
         id: req.params.order_id,
         consumer: req.user.id,
+        purchase_time: '',
         OrderCoupon: []
     };
 
@@ -39,6 +40,7 @@ const getOrderById = async (req, res) => {
         });
 
         if (aux.length > 0) {
+            order.purchase_time = aux[0].dataValues.purchase_time;
             for (const i in aux) {
                 price = (await Coupon.findOne({where: {id: aux[i].dataValues.OrderCoupon.coupon_id}})).dataValues.price;
 
@@ -98,8 +100,6 @@ const revertOrder = async (order_id) => {
             include: [{model: OrderCoupon, required: true}],
             where: {id: order_id}
         });
-
-        console.log(order);
 
         for (const i in order) {
             coupon_id = order[i].dataValues.OrderCoupon.dataValues.coupon_id;
