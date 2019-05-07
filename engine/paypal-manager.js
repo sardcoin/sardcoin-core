@@ -58,8 +58,6 @@ const pay = (config) => {
         const Paypal = paypalApi(config['Paypal']);
         let resultGet, resultDo, revert;
 
-        console.log(req.body);
-
         try {
             resultGet = await Paypal.request('GetExpressCheckoutDetails', {token: req.body.token});
             resultDo = await Paypal.request('DoExpressCheckoutPayment', resultGet);

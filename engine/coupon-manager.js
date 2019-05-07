@@ -2,6 +2,7 @@
 
 const Coupon = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
+const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
@@ -13,11 +14,12 @@ const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
 const crypto = require('crypto');
+const _ = require('lodash');
 
 /** Exported REST functions **/
 
 const createCoupon = async (req, res) => {
-    const  data = req.body;
+    const data = req.body;
     let result;
 
     try {
@@ -68,7 +70,6 @@ const createCoupon = async (req, res) => {
     }
 
 };
-
 const getFromId = (req, res) => {
 
     Coupon.findOne({
@@ -92,7 +93,6 @@ const getFromId = (req, res) => {
             })
         });
 };
-
 const getProducerCoupons = (req, res) => {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -115,7 +115,6 @@ const getProducerCoupons = (req, res) => {
             })
         })
 };
-
 const getPurchasedCoupons = (req, res) => {
     Coupon.findAll({
         include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
@@ -135,7 +134,6 @@ const getPurchasedCoupons = (req, res) => {
             })
         });
 };
-
 const getPurchasedCouponsById = (req, res) => {
     Coupon.findAll({
         include: [{
@@ -163,30 +161,40 @@ const getPurchasedCouponsById = (req, res) => {
             })
         });
 };
+const getAvailableCoupons = async (req, res) => {
+    let coupons;
 
-const getAvailableCoupons = (req, res) => {
-    Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
-        ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
-        'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
-        'AND coupons.visible_from <= CURRENT_TIMESTAMP  AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
-        'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
-        {type: Sequelize.QueryTypes.SELECT},
-        {model: Coupon}
-    )
-        .then(coupons => {
-            if (coupons.length === 0) {
-                return res.status(HttpStatus.NO_CONTENT).send({});
-            }
-            return res.status(HttpStatus.OK).send(coupons)
+    try {
+        coupons = await availableCoupons();
+
+        if (coupons.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+        return res.status(HttpStatus.OK).send(coupons)
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: 'Cannot GET available coupons'
         })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: 'Cannot GET coupons affordable'
-            })
-        });
+    }
+};
+const getAvailableCouponsByCategory = async (req, res) => {
+    let coupons;
 
+    try {
+        coupons = await availableCouponsByCategoryId(req.params.category_id);
+
+        if (coupons.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+
+        return res.status(HttpStatus.OK).send(coupons)
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: 'Cannot GET available coupons by category ID'
+        })
+    }
 };
 
 // The application could fail in every point, revert the buy in that case
@@ -528,6 +536,34 @@ const addImage = (req, res) => {
 
 /** Private methods **/
 
+const availableCoupons = async () => {
+    return await Sequelize.query(
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
+        'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
+        'AND coupons.visible_from <= CURRENT_TIMESTAMP  AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
+        'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
+        {type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon}
+    );
+};
+const availableCouponsByCategoryId = async (category_id) => {
+    let coupons, ids, filtered;
+
+    coupons = await availableCoupons();
+
+    // GET the coupon with category :category_id
+    ids = _.map(coupons, 'id'); // get all the IDs of the available coupons
+    filtered = await CouponsCategories.findAll({where: {category_id: category_id, coupon_id: {[Op.in]: ids}}});
+
+    // GET the full coupon data
+    ids = _.map(filtered, 'coupon_id');
+    filtered = _.filter(coupons, el => ids.includes(el.id)); // filter the coupon from the available iff they belong to the category given
+
+    return filtered;
+
+};
+
 const generateUniqueToken = (title, password) => {
 
     const min = Math.ceil(1);
@@ -725,4 +761,18 @@ const unlockTables = () => {
     });
 };
 
-module.exports = {createCoupon, getFromId, getProducerCoupons, getPurchasedCoupons, getPurchasedCouponsById, getAvailableCoupons, buyCoupons, editCoupon, deleteCoupon, importOfflineCoupon, redeemCoupon, addImage};
+module.exports = {
+    createCoupon,
+    getFromId,
+    getProducerCoupons,
+    getPurchasedCoupons,
+    getPurchasedCouponsById,
+    getAvailableCoupons,
+    getAvailableCouponsByCategory,
+    buyCoupons,
+    editCoupon,
+    deleteCoupon,
+    importOfflineCoupon,
+    redeemCoupon,
+    addImage
+};

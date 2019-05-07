@@ -170,10 +170,10 @@ exports.deleteUser = function (req, res, next) {
             ]}})
         .then((user) => {
             if(user == 0){
-            return res.status(HttpStatus.OK).json({
+            return res.status(HttpStatus.BAD_REQUEST).json({
                 deleted: false,
                 username: req.body.username,
-                message: "user don't exist!!"
+                message: "The request user does not exist."
             })}
             else {
                 return res.status(HttpStatus.OK).json({
@@ -348,7 +348,7 @@ exports.getBrokers = function (req, res, next) {
         },
         attributes: ['username', 'email', 'company_name',
             'vat_number', 'first_name', 'last_name', 'address', 'province',
-            'city', 'zip', 'client_id']
+            'city', 'zip']
     })
         .then(broker => {
             if (broker === null) {
