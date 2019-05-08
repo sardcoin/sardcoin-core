@@ -346,7 +346,7 @@ exports.getBrokers = function (req, res, next) {
         where: {
             user_type: 4
         },
-        attributes: ['username', 'email', 'company_name',
+        attributes: ['id','username', 'email', 'company_name',
             'vat_number', 'first_name', 'last_name', 'address', 'province',
             'city', 'zip']
     })

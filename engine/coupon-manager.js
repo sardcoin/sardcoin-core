@@ -6,6 +6,7 @@ const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
+const CouponBrokerManager = require('./coupon-broker-manager');
 
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
@@ -21,7 +22,7 @@ const _ = require('lodash');
 const createCoupon = async (req, res) => {
     const data = req.body;
     let result;
-
+    // console.log('createCoupon')
     try {
         result = await insertCoupon(data, req.user.id);
     } catch (e) {
@@ -33,6 +34,25 @@ const createCoupon = async (req, res) => {
     }
 
     if (result) { // If the coupon has been created
+        // console.log('data.broker_id',data.brokers)
+        // console.log('result',result)
+
+        if(data.brokers) {
+            for (let i = 0; i < data.brokers.length; i++) {
+                try {
+                    const newBroker = await CouponBrokerManager
+                        .insertCouponBroker(result.get('id'), data.brokers[i].id);
+                } catch (e) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the broker.',
+                        brokens_created: (i + 1)
+                    });
+                }
+
+
+            }
+        }
         for (let i = 0; i < data.quantity; i++) {
             const token = generateUniqueToken(data.title, req.user.password);
             let newToken;
@@ -46,6 +66,7 @@ const createCoupon = async (req, res) => {
                     tokens_created: (i + 1)
                 });
             }
+
 
             if (!newToken) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -708,6 +729,8 @@ const isVerifierAuthorized = (producer_id, verifier_id) => {
 };
 
 const insertCoupon = (coupon, owner) => {
+    console.log('insertCoupon')
+
     return new Promise((resolve, reject) => {
         Coupon.create({
             title: coupon.title,
