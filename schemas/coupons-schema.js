@@ -13,6 +13,7 @@ const createCouponSchema = {
         purchasable:    Joi.number().allow(null).error(new Error("Purchasable must be a number or null")),
         constraints:    Joi.string().allow(null).error(new Error("Constraints must be a string or null")),
         quantity:       Joi.number().integer().required().error(new Error("The quantity is required")),
+        brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
     },
     params: {},
 };
