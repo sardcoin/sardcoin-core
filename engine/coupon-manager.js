@@ -196,6 +196,27 @@ const getAvailableCouponsByCategory = async (req, res) => {
         })
     }
 };
+const getAvailableByTextAndCatId = async (req, res) => {
+    let coupons;
+    let text = req.params.text;
+
+    try {
+        // The text received is separated by dash
+        text = text.split('-').toString().replace(new RegExp(',', 'g'), ' ');
+        coupons = filterCouponsByText((await availableCouponsByCategoryId(req.params.category_id)), text);
+
+        if (coupons.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+
+        return res.status(HttpStatus.OK).send(coupons)
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: 'Cannot GET available coupons by category ID'
+        })
+    }
+};
 
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
@@ -536,6 +557,9 @@ const addImage = (req, res) => {
 
 /** Private methods **/
 
+const filterCouponsByText = (coupons, text) => {
+    return coupons.filter(coupon => coupon.title.toLowerCase().includes(text) || coupon.description.toLowerCase().includes(text));
+};
 const availableCoupons = async () => {
     return await Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -552,18 +576,21 @@ const availableCouponsByCategoryId = async (category_id) => {
 
     coupons = await availableCoupons();
 
-    // GET the coupon with category :category_id
-    ids = _.map(coupons, 'id'); // get all the IDs of the available coupons
-    filtered = await CouponsCategories.findAll({where: {category_id: category_id, coupon_id: {[Op.in]: ids}}});
+    if(category_id > 0) {
+        // GET the coupon with category :category_id
+        ids = _.map(coupons, 'id'); // get all the IDs of the available coupons
+        filtered = await CouponsCategories.findAll({where: {category_id: category_id, coupon_id: {[Op.in]: ids}}});
 
-    // GET the full coupon data
-    ids = _.map(filtered, 'coupon_id');
-    filtered = _.filter(coupons, el => ids.includes(el.id)); // filter the coupon from the available iff they belong to the category given
+        // GET the full coupon data
+        ids = _.map(filtered, 'coupon_id');
+        filtered = _.filter(coupons, el => ids.includes(el.id)); // filter the coupon from the available iff they belong to the category given
+    } else {
+        filtered = coupons;
+    }
 
     return filtered;
 
-};
-
+}; // If category_id = 0, all coupons are returned
 const generateUniqueToken = (title, password) => {
 
     const min = Math.ceil(1);
@@ -573,7 +600,6 @@ const generateUniqueToken = (title, password) => {
     return crypto.createHash('sha256').update(title + password + total.toString()).digest('hex').substr(0, 8).toUpperCase();
 
 }; // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
-
 const formatNotIn = (tokenList) => {
     let result = '(';
 
@@ -586,7 +612,6 @@ const formatNotIn = (tokenList) => {
 
     return result + ')';
 };
-
 const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
 
     let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
@@ -637,7 +662,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
         }
     });
 };
-
 const isCouponNotExpired = (coupon_id) => {
     return new Promise((resolve, reject) => {
         Coupon.findOne({
@@ -659,7 +683,6 @@ const isCouponNotExpired = (coupon_id) => {
             })
     });
 };
-
 const isCouponPurchasable = (coupon_id, user_id) => {
     // It returns id, purchasable, quantity, available and buyed
 
@@ -687,7 +710,6 @@ const isCouponPurchasable = (coupon_id, user_id) => {
             })
     });
 };
-
 const isVerifierAuthorized = (producer_id, verifier_id) => {
     return new Promise((resolve, reject) => {
         Verifier.findOne({
@@ -706,7 +728,6 @@ const isVerifierAuthorized = (producer_id, verifier_id) => {
             })
     });
 };
-
 const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
         Coupon.create({
@@ -731,7 +752,6 @@ const insertCoupon = (coupon, owner) => {
             })
     });
 };
-
 const lockTables = () => {
     return new Promise((resolve, reject) => {
         Sequelize.query(
@@ -746,7 +766,6 @@ const lockTables = () => {
             })
     });
 };
-
 const unlockTables = () => {
     return new Promise((resolve, reject) => {
         Sequelize.query(
@@ -769,6 +788,7 @@ module.exports = {
     getPurchasedCouponsById,
     getAvailableCoupons,
     getAvailableCouponsByCategory,
+    getAvailableByTextAndCatId,
     buyCoupons,
     editCoupon,
     deleteCoupon,
