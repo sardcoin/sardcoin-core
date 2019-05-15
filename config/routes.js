@@ -48,6 +48,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'getAvailableCoupons/', CouponManager.getAvailableCoupons); // auth sopra commentata
     app.get(cmPath    + 'getAvailableByCatId/:category_id', CouponManager.getAvailableCouponsByCategory); //  auth sopra
     app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId); // auth sopra
+    app.get(cmPath    + 'getBrokerCoupons/', reqAuth, AcM.roleAuth([broker, admin]), CouponManager.getBrokerCoupons);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.deleteCoupon);
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, admin]), CouponManager.addImage);

@@ -803,10 +803,37 @@ const unlockTables = () => {
     });
 };
 
+
+const getBrokerCoupons = (req, res) => {
+    Sequelize.query(
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, \n' +
+        '    COUNT(CASE WHEN consumer IS null AND verifier IS null AND package IS null  THEN 1 END) AS quantity\n' +
+        '    FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  JOIN coupon_broker ON\n' +
+        '        coupon_broker.coupon_id = coupons.id WHERE coupon_broker.broker_id = $1 AND ' +
+        '(coupon_tokens.consumer IS null AND coupon_tokens.verifier IS null AND coupon_tokens.package IS null)' +
+        '    GROUP BY id',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the broker coupons '
+            })
+        })
+};
+
 module.exports = {
     createCoupon,
     getFromId,
     getProducerCoupons,
+    getBrokerCoupons,
     getPurchasedCoupons,
     getPurchasedCouponsById,
     getAvailableCoupons,
