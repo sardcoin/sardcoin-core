@@ -41,13 +41,13 @@ module.exports = function (app, passport, config) {
 
     /****************** COUPONS **********************/
     app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon);
-    app.get(cmPath    + 'getById/:coupon_id', reqAuth, AcM.roleAuth([consumer, producer, admin]), CouponManager.getFromId);
+    app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId); //  reqAuth, AcM.roleAuth([consumer, admin, verifier]),
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
-    app.get(cmPath    + 'getAvailableCoupons/', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCoupons);
-    app.get(cmPath    + 'getAvailableByCatId/:category_id', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCouponsByCategory);
-    app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableByTextAndCatId);
+    app.get(cmPath    + 'getAvailableCoupons/', CouponManager.getAvailableCoupons); // auth sopra commentata
+    app.get(cmPath    + 'getAvailableByCatId/:category_id', CouponManager.getAvailableCouponsByCategory); //  auth sopra
+    app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId); // auth sopra
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.deleteCoupon);
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, admin]), CouponManager.addImage);
@@ -68,7 +68,7 @@ module.exports = function (app, passport, config) {
     app.put(catPath + 'update', reqAuth, AcM.roleAuth([admin]), CatManager.update);
     app.post(catPath + 'insert', reqAuth, AcM.roleAuth([admin]), CatManager.insert);
     app.delete(catPath + 'delete', reqAuth, AcM.roleAuth([admin]), CatManager.remove);
-    app.get(catPath + 'getAll', reqAuth, AcM.roleAuth([admin, consumer]), CatManager.getAll);
+    app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),
     app.post(catPath + 'assignCategoryToCoupon', reqAuth, AcM.roleAuth([admin, producer]), CatManager.assignCategory);
     app.delete(catPath + 'removeCouponCategory', reqAuth, AcM.roleAuth([admin, producer]), CatManager.removeCategory);
 

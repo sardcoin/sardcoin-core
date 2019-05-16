@@ -19,7 +19,7 @@ const getOrdersByConsumer = async (req, res) => {
     } catch (e) {
         console.error(e);
         return res.send(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            message: 'Error on querying the orders made by the user'
+            message: 'Error on querying the orders made by the user.'
         });
     }
 };
