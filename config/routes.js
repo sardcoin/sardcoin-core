@@ -36,7 +36,7 @@ module.exports = function (app, passport, config) {
     app.get(amPath    + 'getFromToken/', reqAuth, AcM.roleAuth(all), AcM.getUserFromToken);
     app.put(amPath    + 'update/', reqAuth, AcM.roleAuth(all), AcM.updateUser);
     app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);
-    app.get(amPath    + 'getProducerFromId/:producer_id', reqAuth, AcM.roleAuth(all), AcM.getProducerFromId);
+    app.get(amPath    + 'getProducerFromId/:producer_id', AcM.getProducerFromId);
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
 
     /****************** COUPONS **********************/
