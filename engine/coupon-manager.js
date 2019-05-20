@@ -202,7 +202,7 @@ const getAvailableByTextAndCatId = async (req, res) => {
 
     try {
         // The text received is separated by dash
-        text = text.split('-').toString().replace(new RegExp(',', 'g'), ' ');
+        text = text.split('-').toString().replace(new RegExp(',', 'g'), ' ').toLowerCase();
         coupons = filterCouponsByText((await availableCouponsByCategoryId(req.params.category_id)), text);
 
         if (coupons.length === 0) {
