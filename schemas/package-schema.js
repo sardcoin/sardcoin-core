@@ -1,6 +1,6 @@
 const Joi = require('joi');
-
-const createCouponSchema = {
+console.log('schema')
+const createPackageSchema = {
     query: {},
     body: {
         title:          Joi.string().allow('').min(5).max(50).required().error(new Error("The title must be between 5 and 40 characters long, is required ")),
@@ -13,12 +13,14 @@ const createCouponSchema = {
         purchasable:    Joi.number().allow(null).error(new Error("Purchasable must be a number or null")),
         constraints:    Joi.string().allow(null).error(new Error("Constraints must be a string or null")),
         quantity:       Joi.number().integer().required().error(new Error("The quantity is required")),
-        brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
+        coupons:        Joi.array().allow(null).error(new Error("coupon must be a array or null")),
+        categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
+
     },
     params: {},
 };
 
-const updateCouponSchema = {
+const updatePackageSchema = {
     query: {},
     body: {
         id:             Joi.number().required().label("Id is required"),
@@ -32,23 +34,15 @@ const updateCouponSchema = {
         constraints:    Joi.string().allow(null),
         quantity:       Joi.number().integer(),
         purchasable:    Joi.number().allow(null),
-        brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
+        coupons:        Joi.array().allow(null).error(new Error("coupon must be a array or null")),
 
     },
     params: {}
 };
 
-
-const validateCouponSchema = {
-    query: {},
-    body: {
-        token:    Joi.string().required().label("Token is required"),
-    },
-    params: {}
-};
 
 module.exports = {
-    createCouponSchema,
-    updateCouponSchema,
-    validateCouponSchema
+    createPackageSchema,
+    updatePackageSchema,
+
 };
