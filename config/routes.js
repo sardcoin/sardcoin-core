@@ -90,11 +90,7 @@ module.exports = function (app, passport, config) {
     app.put(catPath + 'update', reqAuth, AcM.roleAuth([admin]), CatManager.update);
     app.post(catPath + 'insert', reqAuth, AcM.roleAuth([admin]), CatManager.insert);
     app.delete(catPath + 'delete', reqAuth, AcM.roleAuth([admin]), CatManager.remove);
-<<<<<<< HEAD
     app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),
-=======
-    app.get(catPath + 'getAll', reqAuth, AcM.roleAuth([admin,producer,broker, consumer]), CatManager.getAll);
->>>>>>> [fix] save previus change db
     app.post(catPath + 'assignCategoryToCoupon', reqAuth, AcM.roleAuth([admin, producer]), CatManager.assignCategory);
     app.delete(catPath + 'removeCouponCategory', reqAuth, AcM.roleAuth([admin, producer]), CatManager.removeCategory);
 
