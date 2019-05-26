@@ -10,6 +10,7 @@ exports.insertCouponToken = async function (coupon_id, token) {
             token: token,
             coupon_id: coupon_id,
             consumer: null,
+            package:null,
             verifier: null
         })
             .then(newCoupon => {
@@ -24,11 +25,12 @@ exports.insertCouponToken = async function (coupon_id, token) {
     });
 };
 
-exports.updateCouponToken = async function(token, coupon_id, consumer=null, verifier=null){
+exports.updateCouponToken = async function(token, coupon_id, consumer=null,pack=null, verifier=null){
     return new Promise((resolve, reject) => {
         CouponToken.update({
             consumer: consumer,
-            verifier: verifier
+            verifier: verifier,
+            package:pack
         }, {
             where: {
                 [Op.and]: [
@@ -37,6 +39,7 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null, veri
             }
         })
             .then(couponTokenUpdated => {
+                console.log('couponTokenUpdated',couponTokenUpdated)
                 const result = !(couponTokenUpdated[0] === 0); // If the update is fine, it returns true
                 resolve(result);
             })
@@ -48,3 +51,51 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null, veri
             })
     });
 };
+
+
+
+
+exports.getTokenByIdCoupon = (coupon_id)=> {
+
+    console.log('get tokens, coupon_id', coupon_id)
+
+    return new Promise((resolve, reject) => {
+        CouponToken.findOne({
+
+                where: {consumer: null, coupon_id: coupon_id, package: null, verifier:null}
+
+        })
+            .then(newCouponToken => {
+                resolve(newCouponToken);
+            })
+            .catch(err => {
+                console.log("This coupon token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
+ exports.getCouponsByIdPackage = async( package_id)=> {
+
+    console.log('get tokens, coupon_id', package_id)
+
+    return new Promise( (resolve, reject) => {
+        CouponToken.findAll({
+
+            where: { package: package_id, verifier:null}
+
+        })
+            .then(couponsIntoPackage => {
+                resolve(couponsIntoPackage);
+            })
+            .catch(err => {
+                console.log("This coupon token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
