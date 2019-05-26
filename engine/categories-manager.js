@@ -103,30 +103,18 @@ const remove = async (req, res) => {
 const assignCategory = async (req, res) => {
     let creation;
 
+    // console.log('req', req)
     try {
         creation = await CouponsCategories.create({
-            coupon_id: req.body.coupon_id,
-            category_id: req.body.category_id
+            coupon_id: req.coupon_id,
+            category_id: req.category_id
         });
 
-        return res.status(HttpStatus.OK).send({
-            created: true,
-            coupon_id: parseInt(creation.get('coupon_id')),
-            category_id: parseInt(creation.get('category_id'))
-        });
+
     } catch (e) {
         console.error(e);
-        if (e.message.includes('foreign key constraint fails')) {
-            return res.status(HttpStatus.BAD_REQUEST).send({
-                error: true,
-                message: 'A foreign key constraint fails. Either the coupon_id or the category_id references to an unknown child.'
-            })
+
         }
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            message: 'An error occurred while creating a new category'
-        })
-    }
 };
 const removeCategory = async (req, res) => {
     let couponCatRemoved;

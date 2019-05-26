@@ -7,6 +7,7 @@ const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
 const CouponBrokerManager = require('./coupon-broker-manager');
+const CategoriesManager = require('./categories-manager');
 
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
@@ -22,7 +23,7 @@ const _ = require('lodash');
 const createCoupon = async (req, res) => {
     const data = req.body;
     let result;
-    // console.log('createCoupon')
+    console.log('createCoupon')
     try {
         result = await insertCoupon(data, req.user.id);
     } catch (e) {
@@ -36,7 +37,25 @@ const createCoupon = async (req, res) => {
     if (result) { // If the coupon has been created
         // console.log('data.broker_id',data.brokers)
         // console.log('result',result)
+        if (data.categories.length > 0) {
+            // console.log('data.categoriesss',data.categories)
 
+            for (let i = 0; i < data.categories.length; i++) {
+                try {
+                    await CategoriesManager.assignCategory({
+                        coupon_id: result.id,
+                        category_id: data.categories[i].id
+                    })
+                } catch (e) {
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error assign categories.'
+                    });
+                }
+
+            }
+        }
         if(data.brokers) {
             for (let i = 0; i < data.brokers.length; i++) {
                 try {
