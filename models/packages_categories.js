@@ -17,7 +17,7 @@ module.exports = (sequelize, DataType) => {
     });
 
     PackagesCategories.associate = function (models) {
-        PackagesCategories.hasMany(models.Package,   {foreignKey: 'id', sourceKey: 'packeage_id'});
+        PackagesCategories.hasMany(models.Coupon,   {foreignKey: 'id', sourceKey: 'packeage_id'});
         PackagesCategories.hasMany(models.Category, {foreignKey: 'id', sourceKey: 'category_id'});
     };
 

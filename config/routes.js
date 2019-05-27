@@ -45,7 +45,7 @@ module.exports = function (app, passport, config) {
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
 
     /****************** COUPONS **********************/
-    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon);
+    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon);
     app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId); //  reqAuth, AcM.roleAuth([consumer, admin, verifier]),
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
@@ -63,7 +63,7 @@ module.exports = function (app, passport, config) {
 
 
     /****************** PACKAGE **********************/
-    app.post(pkPath   + 'create/', expressJoi(SchemasPackage.createPackageSchema), reqAuth, AcM.roleAuth([broker, admin]), PackageManager.createPackage);
+    // app.post(pkPath   + 'create/', expressJoi(SchemasPackage.createPackageSchema), reqAuth, AcM.roleAuth([broker, admin]), PackageManager.createPackage);
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
     // app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     // app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);

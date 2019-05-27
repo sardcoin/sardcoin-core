@@ -20,7 +20,7 @@ module.exports = (sequelize, DataType) => {
         CouponToken.hasMany(models.User, {foreignKey: 'id', sourceKey: 'consumer'});
         CouponToken.hasMany(models.User, {foreignKey: 'id', sourceKey: 'verifier'});
         CouponToken.hasMany(models.Coupon, {foreignKey: 'id', sourceKey: 'coupon_id'});
-        CouponToken.hasMany(models.Package, {foreignKey: 'id', sourceKey: 'package'});
+        CouponToken.hasMany(models.Package_tokens, {foreignKey: 'token', sourceKey: 'package'});
 
     };
 

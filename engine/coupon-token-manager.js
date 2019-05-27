@@ -25,6 +25,28 @@ exports.insertCouponToken = async function (coupon_id, token) {
     });
 };
 
+exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
+
+    return new Promise((resolve, reject) => {
+        CouponToken.update({
+            token: token,
+            coupon_id: coupon_id,
+            consumer: null,
+            package:tokenPackage,
+            verifier: null
+        })
+            .then(newCoupon => {
+                resolve(newCoupon !== null);
+            })
+            .catch(err => {
+                console.log("The coupon token cannot be created.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
 exports.updateCouponToken = async function(token, coupon_id, consumer=null,pack=null, verifier=null){
     return new Promise((resolve, reject) => {
         CouponToken.update({
@@ -92,6 +114,29 @@ exports.getTokenByIdCoupon = (coupon_id)=> {
             })
             .catch(err => {
                 console.log("This coupon token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
+
+exports.insertPackageToken = async function (coupon_id, token, idPackage) {
+
+    return new Promise((resolve, reject) => {
+        CouponToken.create({
+            token: token,
+            coupon_id: coupon_id,
+            consumer: null,
+            package:idPackage,
+            verifier: null
+        })
+            .then(newCoupon => {
+                resolve(newCoupon !== null);
+            })
+            .catch(err => {
+                console.log("The coupon token cannot be created.");
                 console.log(err);
 
                 reject(err);

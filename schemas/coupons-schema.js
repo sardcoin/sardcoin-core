@@ -14,8 +14,9 @@ const createCouponSchema = {
         constraints:    Joi.string().allow(null).error(new Error("Constraints must be a string or null")),
         quantity:       Joi.number().integer().required().error(new Error("The quantity is required")),
         brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
+        coupons:        Joi.array().allow(null).error(new Error("couponns must be a array or null")),
         categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
-        type:           Joi.number().allow(null).error(new Error("Type must be a number or null")),
+        type:           Joi.number().integer().allow(null).error(new Error("Type must be a number or null")),
     },
     params: {},
 };
@@ -36,7 +37,8 @@ const updateCouponSchema = {
         purchasable:    Joi.number().allow(null),
         brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
         categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
-        type:           Joi.number().allow(null).error(new Error("Type must be a number or null")),
+        coupons:        Joi.array().allow(null).error(new Error("couponns must be a array or null")),
+        type:           Joi.number().integer().allow(null).error(new Error("Type must be a number or null")),
 
     },
     params: {}
