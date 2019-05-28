@@ -1,7 +1,6 @@
 'use strict';
 
-const Category = require('../models/index').Category;
-const CouponsCategories = require('../models/index').CouponsCategories;
+const PackagesCategories = require('../models/index').PackagesCategories;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
 
@@ -12,7 +11,7 @@ const insert = async (req, res) => {
     let creation;
 
     try {
-        creation = await Category.create({
+        creation = await PackagesCategories.create({
             name: req.body.name
         });
 
@@ -32,7 +31,7 @@ const getAll = async (req, res) => {
     let categories;
 
     try {
-        categories = await Category.findAll();
+        categories = await PackagesCategories.findAll();
 
         if (categories.length === 0) {
             return res.status(HttpStatus.NO_CONTENT).send({});
@@ -51,7 +50,7 @@ const update = async (req, res) => {
     let categoryUpdated;
 
     try {
-        categoryUpdated = await Category.update({name: req.body.name}, {where: {id: req.body.id}});
+        categoryUpdated = await PackagesCategories.update({name: req.body.name}, {where: {id: req.body.id}});
 
         if (categoryUpdated[0] === 0) {
             return res.status(HttpStatus.BAD_REQUEST).send({
@@ -76,7 +75,7 @@ const remove = async (req, res) => {
     let categoryRemoved;
 
     try {
-        categoryRemoved = await Category.destroy({where: {id: req.body.id}});
+        categoryRemoved = await PackagesCategories.destroy({where: {id: req.body.id}});
 
         if (categoryRemoved === 0) {
             return res.status(HttpStatus.BAD_REQUEST).send({
@@ -100,27 +99,36 @@ const remove = async (req, res) => {
 };
 
 /** CouponCategories Creation and deletion**/
-const assignCategory = async (req, res) => {
+const assignCategory = async (req) => {
+    console.log('req', req)
     let creation;
 
-    // console.log('req', req)
     try {
-        creation = await CouponsCategories.create({
-            coupon_id: req.coupon_id,
+        creation = await PackagesCategories.create({
+            package_id: req.package_id,
             category_id: req.category_id
         });
 
-
+        return creation
     } catch (e) {
         console.error(e);
-
+        if (e.message.includes('foreign key constraint fails')) {
+            return {
+                error: true,
+                message: 'A foreign key constraint fails. Either the package_id or the category_id references to an unknown child.'
+            }
         }
+        return {
+            error: true,
+            message: 'An error occurred while associate a  category'
+        }
+    }
 };
 const removeCategory = async (req, res) => {
     let couponCatRemoved;
 
     try {
-        couponCatRemoved = await CouponsCategories.destroy({where: {coupon_id: req.body.coupon_id, category_id: req.body.category_id}});
+        couponCatRemoved = await PackagesCategories.destroy({where: {package_id: req.body.package_id, category_id: req.body.category_id}});
 
         if (couponCatRemoved === 0) {
             return res.status(HttpStatus.BAD_REQUEST).send({
@@ -131,7 +139,7 @@ const removeCategory = async (req, res) => {
 
         return res.status(HttpStatus.OK).send({
             deleted: true,
-            coupon_id: req.body.coupon_id,
+            package_id: req.body.package_id,
             category_id: req.body.category_id
         });
     } catch (e) {
@@ -139,6 +147,27 @@ const removeCategory = async (req, res) => {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'An error occurred while deleting the category associated to the coupon'
+        })
+    }
+};
+
+
+const getAllCategory_idFromPackage_id = async (id) => {
+    let category_ids;
+
+    try {
+        category_ids = await PackagesCategories.findAll();
+
+        if (category_ids.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+
+        return res.status(HttpStatus.OK).send(categories);
+    } catch (e) {
+        console.error(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'An error occurred while retrieving the categories'
         })
     }
 };

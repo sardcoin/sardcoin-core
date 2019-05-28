@@ -6,9 +6,12 @@ const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
-
+const CouponBrokerManager = require('./coupon-broker-manager');
+const CategoriesManager = require('./categories-manager');
+const Package_id = require('../models/index').Package_id;
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
+const PackageManager = require('./package-manager');
 
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
@@ -21,9 +24,11 @@ const _ = require('lodash');
 const createCoupon = async (req, res) => {
     const data = req.body;
     let result;
-
+    console.log('data', data)
     try {
-        result = await insertCoupon(data, req.user.id);
+
+            result = await insertCoupon(data, req.user.id);
+
     } catch (e) {
         console.log(e);
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -33,12 +38,67 @@ const createCoupon = async (req, res) => {
     }
 
     if (result) { // If the coupon has been created
+        // console.log('data.broker_id',data.brokers)
+        // console.log('result',result)
+        if (data.categories.length > 0) {
+            // console.log('data.categoriesss',data.categories)
+
+            for (let i = 0; i < data.categories.length; i++) {
+                try {
+                    await CategoriesManager.assignCategory({
+                        coupon_id: result.id,
+                        category_id: data.categories[i].id
+                    })
+                } catch (e) {
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error assign categories.'
+                    });
+                }
+
+            }
+        }
+        if(data.brokers) {
+            for (let i = 0; i < data.brokers.length; i++) {
+                try {
+                    const newBroker = await CouponBrokerManager
+                        .insertCouponBroker(result.get('id'), data.brokers[i].id);
+                } catch (e) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the broker.',
+                        brokens_created: (i + 1)
+                    });
+                }
+
+
+            }
+        }
         for (let i = 0; i < data.quantity; i++) {
-            const token = generateUniqueToken(data.title, req.user.password);
+
             let newToken;
 
+            console.log('result' , result)
             try {
-                newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
+                if(result.type == 0) {
+                    const token = generateUniqueToken(data.title, req.user.password);
+                    newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
+                } else {
+
+                        try {
+                            for(let j =0; j < data.coupons.length; j++) {
+                                const tokenPackage = await PackageManager.generateUniqueToken(data.title, req.user.password)
+                                await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
+                                const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
+                                console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
+                                newToken = await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, tokenPackage, null)
+                            }
+                            } catch (e) {
+                            console.log('error insert package into coupons_token', e)
+                        }
+
+                }
             } catch (e) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
@@ -46,6 +106,7 @@ const createCoupon = async (req, res) => {
                     tokens_created: (i + 1)
                 });
             }
+
 
             if (!newToken) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -728,6 +789,8 @@ const isVerifierAuthorized = (producer_id, verifier_id) => {
     });
 };
 const insertCoupon = (coupon, owner) => {
+    console.log('insertCoupon')
+
     return new Promise((resolve, reject) => {
         Coupon.create({
             title: coupon.title,
@@ -740,6 +803,7 @@ const insertCoupon = (coupon, owner) => {
             valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until),
             purchasable: coupon.purchasable,
             constraints: coupon.constraints,
+            type: coupon.type,
             owner: owner,
         })
             .then(newCoupon => {
@@ -779,10 +843,37 @@ const unlockTables = () => {
     });
 };
 
+
+const getBrokerCoupons = (req, res) => {
+    Sequelize.query(
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, \n' +
+        '    COUNT(CASE WHEN consumer IS null AND verifier IS null AND package IS null  THEN 1 END) AS quantity\n' +
+        '    FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  JOIN coupon_broker ON\n' +
+        '        coupon_broker.coupon_id = coupons.id WHERE coupon_broker.broker_id = $1 AND ' +
+        '(coupon_tokens.consumer IS null AND coupon_tokens.verifier IS null AND coupon_tokens.package IS null)' +
+        '    GROUP BY id',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the broker coupons '
+            })
+        })
+};
+
 module.exports = {
     createCoupon,
     getFromId,
     getProducerCoupons,
+    getBrokerCoupons,
     getPurchasedCoupons,
     getPurchasedCouponsById,
     getAvailableCoupons,

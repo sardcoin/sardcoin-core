@@ -17,6 +17,7 @@ module.exports = (sequelize, DataType) => {
         valid_until:  DataType.DATE,
         purchasable:  DataType.INTEGER(11),
         constraints:  DataType.STRING(255),
+        type:         DataType.INTEGER(1),
         owner:        DataType.INTEGER(11),
     }, {
         freezeTableName: true,
