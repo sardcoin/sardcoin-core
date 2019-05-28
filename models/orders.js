@@ -3,7 +3,7 @@
 module.exports = (sequelize, DataType) => {
     let Order = sequelize.define('Order', {
         id: {
-            type: DataType.INTEGER(5),
+            type: DataType.INTEGER(11),
             autoIncrement: true,
             primaryKey: true
         },

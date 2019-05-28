@@ -41,13 +41,13 @@ module.exports = function (app, passport, config) {
 
     /****************** COUPONS **********************/
     app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.createCoupon);
-    app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId); //  reqAuth, AcM.roleAuth([consumer, admin, verifier]),
+    app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
-    app.get(cmPath    + 'getAvailableCoupons/', CouponManager.getAvailableCoupons); // auth sopra commentata
-    app.get(cmPath    + 'getAvailableByCatId/:category_id', CouponManager.getAvailableCouponsByCategory); //  auth sopra
-    app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId); // auth sopra
+    app.get(cmPath    + 'getAvailableCoupons/', CouponManager.getAvailableCoupons);
+    app.get(cmPath    + 'getAvailableByCatId/:category_id', CouponManager.getAvailableCouponsByCategory);
+    app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.deleteCoupon);
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, admin]), CouponManager.addImage);

@@ -228,6 +228,8 @@ const buyCoupons = async (req, res) => {
     let buyQueryResult;
     let order_id;
 
+    console.log(coupon_list);
+
     const lock = await lockTables();
 
     if (!lock) {
@@ -237,6 +239,8 @@ const buyCoupons = async (req, res) => {
             message: 'An error occurred while finalizing the purchase'
         });
     }
+
+    console.log(coupon_list.length);
 
     for (let i = 0; i < coupon_list.length; i++) {
         try {
@@ -271,8 +275,8 @@ const buyCoupons = async (req, res) => {
 
     query += 'COMMIT';
 
-    // console.log('FINAL QUERY');
-    // console.log(query);
+    console.log('FINAL QUERY');
+    console.log(query);
 
     Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
         .then(async result => {
@@ -632,8 +636,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
     return new Promise((resolve, reject) => {
         if (isNotExpired && isPurchasable) {
 
-            console.log(tokenExcluded);
-
             Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL ' +
                 'AND coupon_id = :coupon_id ' + lastPieceOfQuery + 'LIMIT 1',
                 {replacements: {coupon_id: coupon_id}, type: Sequelize.QueryTypes.SELECT},
@@ -645,9 +647,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
                         console.log('USER=' + user_id + ' asked for buying an unknown coupon with ID=' + coupon_id);
                         reject([HttpStatus.BAD_REQUEST, null]);
                     }
-
-                    console.log(coupon);
-                    console.log(coupon[0].token);
 
                     resolve(['UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon[0].token + '"; ', coupon[0].token]);
                 })

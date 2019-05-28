@@ -13,7 +13,7 @@ const getOrdersByConsumer = async (req, res) => {
     let orders;
 
     try {
-        orders = await Order.findAll({where: {consumer: req.user.id}});
+        orders = await Order.findAll({where: {consumer: req.user.id}, order: [['purchase_time', 'DESC']]});
 
         return res.status(HttpStatus.OK).send(orders);
     } catch (e) {
