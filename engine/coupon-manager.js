@@ -27,7 +27,7 @@ const createCoupon = async (req, res) => {
     console.log('data', data)
     try {
 
-            result = await insertCoupon(data, req.user.id);
+        result = await insertCoupon(data, req.user.id);
 
     } catch (e) {
         console.log(e);
@@ -59,7 +59,7 @@ const createCoupon = async (req, res) => {
 
             }
         }
-        if(data.brokers) {
+        if (data.brokers) {
             for (let i = 0; i < data.brokers.length; i++) {
                 try {
                     const newBroker = await CouponBrokerManager
@@ -79,24 +79,24 @@ const createCoupon = async (req, res) => {
 
             let newToken;
 
-            console.log('result' , result)
+            console.log('result', result)
             try {
-                if(result.type == 0) {
+                if (result.type == 0) {
                     const token = generateUniqueToken(data.title, req.user.password);
                     newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
                 } else {
 
-                        try {
-                            for(let j =0; j < data.coupons.length; j++) {
-                                const tokenPackage = await PackageManager.generateUniqueToken(data.title, req.user.password)
-                                await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
-                                const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
-                                console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
-                                newToken = await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, tokenPackage, null)
-                            }
-                            } catch (e) {
-                            console.log('error insert package into coupons_token', e)
+                    try {
+                        for (let j = 0; j < data.coupons.length; j++) {
+                            const tokenPackage = await PackageManager.generateUniqueToken(data.title, req.user.password)
+                            await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
+                            const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
+                            console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
+                            newToken = await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id, null, tokenPackage, null)
                         }
+                    } catch (e) {
+                        console.log('error insert package into coupons_token', e)
+                    }
 
                 }
             } catch (e) {
@@ -641,7 +641,7 @@ const availableCouponsByCategoryId = async (category_id) => {
 
     coupons = await availableCoupons();
 
-    if(category_id > 0) {
+    if (category_id > 0) {
         // GET the coupon with category :category_id
         ids = _.map(coupons, 'id'); // get all the IDs of the available coupons
         filtered = await CouponsCategories.findAll({where: {category_id: category_id, coupon_id: {[Op.in]: ids}}});
@@ -870,30 +870,30 @@ const getBrokerCoupons = (req, res) => {
 };
 
 
-const getFromIdIntern = async function ( id) {
+const getFromIdIntern = async function (id) {
 
-   return new Promise (resolve => {
-       Coupon.findOne({
-           where: {id: id}
-       })
-           .then(coupon => {
-               if (coupon === null) {
-                   return {
-                       error: 'No coupon found with the given id.',
-                       coupon_id: parseInt(id),
-                   }
-               }
+    return new Promise(resolve => {
+        Coupon.findOne({
+            where: {id: id}
+        })
+            .then(coupon => {
+                if (coupon === null) {
+                    return {
+                        error: 'No coupon found with the given id.',
+                        coupon_id: parseInt(id),
+                    }
+                }
 
-               resolve(coupon)
-           })
-           .catch(err => {
-               console.log(err);
-               return {
-                   error: 'No coupon found with the given id.',
-                   coupon_id: parseInt(id),
-               }
-           });
-   })
+                resolve(coupon)
+            })
+            .catch(err => {
+                console.log(err);
+                return {
+                    error: 'No coupon found with the given id.',
+                    coupon_id: parseInt(id),
+                }
+            });
+    })
 };
 
 module.exports = {
