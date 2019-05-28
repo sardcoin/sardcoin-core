@@ -146,30 +146,32 @@ const insertTokenPackage = (package_id, token) => {
 
 const  getAllData = async function ( packages) {
     let result = []
+    console.log('packagespackagespackagespackagespackagespackages',packages)
 
     for await (let pack of packages) {
         let coupons = []
-        let coupon = {coupon: null, token: null}
         const categories = await getCategories(pack)
         console.log('categories getAllData',categories)
-        const tokens =  await CouponTokenManager.getTokenByIdPackage(pack.id)
-        console.log('tokenstokenstokens',tokens)
+        const token =  await CouponTokenManager.getTokenByIdPackage(pack.id)
+        console.log('tokenstokenstokens',token)
 
-        for (const token of tokens){
-           const cpToken = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-            console.log('ccpToken',cpToken)
 
-            for (const tk of cpToken) {
-                const id = tk.dataValues.coupon_id
+           const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+            console.log('ccpToken',cpTokens)
+
+            for (const cpToken of cpTokens) {
+                let p = {coupon: null, token: null}
+
+                const id = cpToken.dataValues.coupon_id
 
                 const cp = await CouponMenager.getFromIdIntern(id)
-                coupon.coupon = cp.dataValues
-                console.log('cpcpcpcpcpcpcp',cp)
+                p.coupon = cp.dataValues
+                console.log('cpcpcpcpcpcpcp', cp)
 
-                coupon.token = cpToken
-                coupons.push(coupon)
+                p.token = cpToken.dataValues
+                coupons.push(p)
             }
-        }
+
         console.log('coupons getAllData',coupons)
         result.push({package: pack, categories: categories, coupons: coupons})
     }

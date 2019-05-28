@@ -147,7 +147,7 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {
-        Package_tokens.findAll({
+        Package_tokens.findOne({
 
             where: { package_id: token_id}
 
