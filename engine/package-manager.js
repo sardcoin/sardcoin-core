@@ -8,10 +8,8 @@ const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
 const CategoriesPackageManager = require('./categories-packages-manager');
-const PackagesCategories = require('../models/index').PackagesCategories;
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
-
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -83,38 +81,35 @@ const formatNotIn = (tokenList) => {
 
     return result + ')';
 };
-
+// return all package with categories and coupons associate
 const getBrokerPackages = async(req, res) => {
     let result = []
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
-        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null AND package.id=coupon_tokens.package THEN 1 END) ' +
-        'AS buyed, COUNT(CASE WHEN verifier IS null AND package.id=coupon_tokens.package THEN 1 END) AS quantity ' +
-        'FROM package JOIN coupon_tokens ON package.id = coupon_tokens.package WHERE owner = $1 ' +
+        '(COUNT(CASE WHEN verifier IS null  THEN 1 END) - COUNT(CASE WHEN consumer IS  null AND verifier IS null  THEN 1 END))/\n' +
+        '        (COUNT(CASE WHEN verifier IS null  THEN 1 END)/COUNT(DISTINCT package_tokens.token))' +
+        'AS buyed, COUNT(DISTINCT package_tokens.token) AS quantity ' +
+        'FROM coupons JOIN package_tokens ON coupons.id = package_tokens.package_id JOIN coupon_tokens ON package_tokens.token = coupon_tokens.package' +
+        ' WHERE owner = $1 ' +
         'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
-        {model: Package})
-        .then(packages => {
+        {model: Coupon})
+        .then( async packages => {
             console.log('packages', packages)
 
             if (packages.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             } else {
-                for (let pack of packages) {
-                    PackagesCategories.findAll({
-                        attributes: ['category_id'],
-                        where: {
-                            package_id: pack.id
-                        }
-                    }).then(async categories =>{
-                        console.log('categories',await categories)
-
-                        const coupons = await CouponTokenManager.getCouponsByIdPackage(pack.id)
-                        result.push({package: pack, categories: categories, coupons: coupons})
-                        return res.status(HttpStatus.OK).send(result);
-                    })
+                try {
+                    result = await getAllData(packages)
+                    return res.status(HttpStatus.OK).send(result);
+                } catch (e) {
+                   console.log(e)
                 }
-                console.log('result', result)
+
+
+                console.log('result finale', result)
+                return res.status(HttpStatus.OK).send(result);
             }
 
         })
@@ -149,13 +144,52 @@ const insertTokenPackage = (package_id, token) => {
     });
 };
 
+const  getAllData = async function ( packages) {
+    let result = []
+
+    for await (let pack of packages) {
+        let coupons = []
+        const categories = await getCategories(pack)
+        console.log('categories getAllData',categories)
+        const tokens =  await CouponTokenManager.getTokenByIdPackage(pack.id)
+        console.log('tokenstokenstokens',tokens)
+
+        for (const token of tokens){
+           const cp = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+           coupons.push(cp)
+        }
+        console.log('coupons getAllData',coupons)
+        result.push({package: pack, categories: categories, coupons: coupons})
+    }
+    console.log('getAllData', result)
+    return result;
 
 
+
+};
+
+const  getCategories = async function ( pack) {
+
+    return new Promise((resolve, reject) => {
+        CouponsCategories.findAll({
+            attributes: ['category_id'],
+            where: {
+                coupon_id: pack.id
+            }
+        }).then(categories => {
+            resolve(categories)
+
+            })
+        })
+
+};
 
 
 module.exports = {
     generateUniqueToken,
     getBrokerPackages,
     addImage,
-    insertTokenPackage
+    insertTokenPackage,
+    getAllData,
+    getCategories
 };

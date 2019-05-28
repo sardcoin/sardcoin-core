@@ -2,6 +2,7 @@
 
 const CouponToken = require('../models/index').CouponToken;
 const Op = require('../models/index').Sequelize.Op;
+const Package_tokens = require('../models/index').Package_tokens;
 
 exports.insertCouponToken = async function (coupon_id, token) {
 
@@ -99,21 +100,20 @@ exports.getTokenByIdCoupon = (coupon_id)=> {
     });
 };
 
- exports.getCouponsByIdPackage = async( package_id)=> {
+ exports.getCouponsByTokenPackage = async( token)=> {
 
-    console.log('get tokens, coupon_id', package_id)
 
     return new Promise( (resolve, reject) => {
         CouponToken.findAll({
 
-            where: { package: package_id, verifier:null}
+            where: { package: token, verifier:null}
 
         })
             .then(couponsIntoPackage => {
                 resolve(couponsIntoPackage);
             })
             .catch(err => {
-                console.log("This coupon token don't available.");
+                console.log("The coupons don't available.");
                 console.log(err);
 
                 reject(err);
@@ -122,14 +122,14 @@ exports.getTokenByIdCoupon = (coupon_id)=> {
 };
 
 
-exports.insertPackageToken = async function (coupon_id, token, idPackage) {
+exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
 
     return new Promise((resolve, reject) => {
         CouponToken.create({
             token: token,
             coupon_id: coupon_id,
             consumer: null,
-            package:idPackage,
+            package:tokenPackage,
             verifier: null
         })
             .then(newCoupon => {
@@ -144,3 +144,22 @@ exports.insertPackageToken = async function (coupon_id, token, idPackage) {
     });
 };
 
+exports.getTokenByIdPackage = async function (token_id) {
+
+    return new Promise((resolve, reject) => {
+        Package_tokens.findAll({
+
+            where: { package_id: token_id}
+
+        })
+            .then(tokenPackage => {
+                resolve(tokenPackage);
+            })
+            .catch(err => {
+                console.log("This package token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
