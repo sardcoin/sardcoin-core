@@ -1,6 +1,6 @@
 'use strict';
 
-const Package_tokens = require('../models/index').Package_tokens;
+const PackageTokens = require('../models/index').PackageTokens;
 const CouponToken = require('../models/index').CouponToken;
 const Coupon = require('../models/index').Coupon;
 const CouponsCategories = require('../models/index').CouponsCategories;
@@ -130,7 +130,7 @@ const insertTokenPackage = (package_id, token) => {
     console.log('insertPackage')
 
     return new Promise((resolve, reject) => {
-        Package_tokens.create({
+        PackageTokens.create({
             token: token,
             package_id: package_id
         })
@@ -147,7 +147,7 @@ const insertTokenPackage = (package_id, token) => {
 const  getAllData = async function ( packages) {
     let result = []
 
-    for await (let pack of packages) {
+    for (let pack of packages) {
         let coupons = []
         const categories = await getCategories(pack)
         console.log('categories getAllData',categories)

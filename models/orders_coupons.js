@@ -17,8 +17,8 @@ module.exports = (sequelize, DataType) => {
 
     OrderCoupon.associate = function (models) {
         OrderCoupon.hasMany(models.Order,  {foreignKey: 'id', sourceKey: 'order_id'});
-        // OrderCoupon.hasMany(models.CouponToken, {foreignKey: 'token', sourceKey: 'coupon_token'});
-        // OrderCoupon.hasMany(models.PackageTokens, {foreignKey: 'token', sourceKey: 'package_token'});
+        OrderCoupon.hasMany(models.CouponToken, {foreignKey: 'token', sourceKey: 'coupon_token'});
+        OrderCoupon.hasMany(models.PackageTokens, {foreignKey: 'token', sourceKey: 'package_token'});
     };
 
     return OrderCoupon;

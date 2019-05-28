@@ -1,5 +1,4 @@
 const Joi = require('joi');
-console.log('schema')
 const createPackageSchema = {
     query: {},
     body: {

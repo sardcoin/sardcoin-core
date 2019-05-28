@@ -2,7 +2,7 @@
 
 const CouponToken = require('../models/index').CouponToken;
 const Op = require('../models/index').Sequelize.Op;
-const Package_tokens = require('../models/index').Package_tokens;
+const PackageTokens = require('../models/index').PackageTokens;
 
 exports.insertCouponToken = async function (coupon_id, token) {
 
@@ -147,7 +147,7 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {
-        Package_tokens.findAll({
+        PackageTokens.findAll({
 
             where: { package_id: token_id}
 

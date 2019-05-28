@@ -10,8 +10,6 @@ module.exports = (sequelize, DataType) => {
             type: DataType.INTEGER(5),
             primaryKey: true
         },
-
-
         quantita:     DataType.INTEGER(2),
 
     }, {
