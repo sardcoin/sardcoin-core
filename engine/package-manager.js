@@ -7,7 +7,7 @@ const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
-const CategoriesPackageManager = require('./categories-packages-manager');
+const CouponMenager = require('./coupon-manager');
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const HttpStatus = require('http-status-codes');
@@ -149,14 +149,26 @@ const  getAllData = async function ( packages) {
 
     for (let pack of packages) {
         let coupons = []
+        let coupon = {coupon: null, token: null}
         const categories = await getCategories(pack)
         console.log('categories getAllData',categories)
         const tokens =  await CouponTokenManager.getTokenByIdPackage(pack.id)
         console.log('tokenstokenstokens',tokens)
 
         for (const token of tokens){
-           const cp = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-           coupons.push(cp)
+           const cpToken = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+            console.log('ccpToken',cpToken)
+
+            for (const tk of cpToken) {
+                const id = tk.dataValues.coupon_id
+
+                const cp = await CouponMenager.getFromIdIntern(id)
+                coupon.coupon = cp.dataValues
+                console.log('cpcpcpcpcpcpcp',cp)
+
+                coupon.token = cpToken
+                coupons.push(coupon)
+            }
         }
         console.log('coupons getAllData',coupons)
         result.push({package: pack, categories: categories, coupons: coupons})

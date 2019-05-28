@@ -869,6 +869,33 @@ const getBrokerCoupons = (req, res) => {
         })
 };
 
+
+const getFromIdIntern = async function ( id) {
+
+   return new Promise (resolve => {
+       Coupon.findOne({
+           where: {id: id}
+       })
+           .then(coupon => {
+               if (coupon === null) {
+                   return {
+                       error: 'No coupon found with the given id.',
+                       coupon_id: parseInt(id),
+                   }
+               }
+
+               resolve(coupon)
+           })
+           .catch(err => {
+               console.log(err);
+               return {
+                   error: 'No coupon found with the given id.',
+                   coupon_id: parseInt(id),
+               }
+           });
+   })
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -884,5 +911,6 @@ module.exports = {
     deleteCoupon,
     importOfflineCoupon,
     redeemCoupon,
-    addImage
+    addImage,
+    getFromIdIntern
 };
