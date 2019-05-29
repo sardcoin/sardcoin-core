@@ -11,7 +11,7 @@ const CategoriesManager = require('./categories-manager');
 const Package_id = require('../models/index').Package_id;
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
-const PackageManager = require('./package-manager');
+const PackageManager = require('../engine/package-manager');
 
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
@@ -81,14 +81,14 @@ const createCoupon = async (req, res) => {
 
             console.log('result' , result)
             try {
-                if(result.type == 0) {
+                if(result.type == 0 || result.type == undefined) {
                     const token = generateUniqueToken(data.title, req.user.password);
                     newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
-                } else {
+                } else if (result.type == 1) {
 
                         try {
                             for(let j =0; j < data.coupons.length; j++) {
-                                const tokenPackage = await PackageManager.generateUniqueToken(data.title, req.user.password)
+                                const tokenPackage = generateUniqueToken(data.title, req.user.password)
                                 await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
                                 const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
                                 console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
@@ -391,7 +391,7 @@ const editCoupon = (req, res) => {
             ]
         }
     })
-        .then(couponUpdated => {
+        .then(async couponUpdated => {
             // console.log('couponUpdated', couponUpdated);
             if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
@@ -401,6 +401,39 @@ const editCoupon = (req, res) => {
                 })
             }
             else {
+
+                        // console.log('data.categoriesss',data.categories)
+
+                try {
+                    await CategoriesManager.removeAllCategory({
+                        coupon_id: data.id,
+                    })
+                } catch (e) {
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error deleted categories.'
+                    });
+                }
+                if (data.categories.length > 0) {
+                        for (let i = 0; i < data.categories.length; i++) {
+                            try {
+                                await CategoriesManager.assignCategory({
+                                    coupon_id: data.id,
+                                    category_id: data.categories[i].id
+                                })
+                            } catch (e) {
+
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Error assign categories.'
+                                });
+                            }
+
+                        }
+                    }
+
+
                 return res.status(HttpStatus.OK).json({
                     updated: true,
                     coupon_id: data.id

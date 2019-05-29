@@ -59,7 +59,7 @@ const addImage = (req, res) => {
 
 
 
-const generateUniqueToken = (title, token) => {
+const generateUniqueToken =  (title, token) => {
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
@@ -126,8 +126,7 @@ const getBrokerPackages = async(req, res) => {
 
 
 
-const insertTokenPackage = (package_id, token) => {
-    console.log('insertPackage')
+module.exports.insertTokenPackage = (package_id, token)=> {
 
     return new Promise((resolve, reject) => {
         Package_tokens.create({
@@ -203,7 +202,6 @@ module.exports = {
     generateUniqueToken,
     getBrokerPackages,
     addImage,
-    insertTokenPackage,
     getAllData,
     getCategories
 };
