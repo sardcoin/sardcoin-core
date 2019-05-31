@@ -52,7 +52,6 @@ const addImage = (req, res) => {
         });
     });
 
-    // return res.send({cacca: 'si'});
 };
 
 /** Private methods **/

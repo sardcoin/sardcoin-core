@@ -6,6 +6,11 @@ const CouponToken = require('../models/index').CouponToken;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const Op = require('../models/index').Sequelize.Op;
 
+const ITEM_TYPE = {
+    COUPON: 0,
+    PACKAGE: 1
+};
+
 const HttpStatus = require('http-status-codes');
 
 /** The consumer can obtain his orders history **/
@@ -63,25 +68,36 @@ const getOrderById = async (req, res) => {
     }
 };
 
+/**
+ * coupon_list is defined as follow:
+ * token: token of the coupon/package
+ * type: it can be 0 (coupon) or 1 (package)
+**/
 const createOrderFromCart = async (user_id, coupon_list) => {
-    let newOrder, newOrderCoupon, order_id;
+    let newOrder, newOrderCoupon, order_id, coupon_token, package_token;
 
     try {
         newOrder = await Order.create({consumer: user_id, purchase_time: (new Date()).getTime()});
         order_id = newOrder.dataValues.id;
 
-        for (const i in coupon_list) {
+        console.log(coupon_list);
+
+        for (const coupon of coupon_list) {
+            console.log(coupon);
+            package_token = coupon.type === ITEM_TYPE.PACKAGE ? coupon.token : null;
+            coupon_token  = coupon.type === ITEM_TYPE.COUPON ? coupon.token : null;
+
             newOrderCoupon = await OrderCoupon.create({
                 order_id: order_id,
-                coupon_id: coupon_list[i].id,
-                quantity: coupon_list[i].quantity
+                coupon_token: coupon_token,
+                package_token: package_token
             });
         }
     } catch (e) {
         // The method creashed somewhere inserting entries on the database. For this reason, I delete every entry has been inserted
         if (order_id) {
             await OrderCoupon.destroy({where: {order_id: order_id}});
-            await Order.destroy({where: {order_id: order_id}});
+            await Order.destroy({where: {id: order_id}});
         }
 
         console.error(e);
