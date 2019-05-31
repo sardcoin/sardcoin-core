@@ -16,7 +16,7 @@ module.exports = (sequelize, DataType) => {
     });
 
     Order.associate = function (models) {
-        Order.belongsTo(models.OrderCoupon, {foreignKey: 'id', sourceKey: 'source_id'});
+        Order.hasMany(models.OrderCoupon, {foreignKey: 'order_id', sourceKey: 'id'});
     };
 
     return Order;
