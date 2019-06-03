@@ -59,7 +59,8 @@ const getOrderById = async (req, res) => {
                     id: coupon.dataValues.id,
                     coupon_token: coupon.dataValues.coupon_token || null,
                     package_token: coupon.dataValues.package_token || null,
-                    price: price.dataValues.price
+                    price: price.dataValues.price,
+                    coupon_id: coupon_id
                 })
             }
 
@@ -87,7 +88,7 @@ const createOrderFromCart = async (user_id, coupon_list) => {
         newOrder = await Order.create({consumer: user_id, purchase_time: (new Date()).getTime()});
         order_id = newOrder.dataValues.id;
 
-        console.log(coupon_list);
+        // console.log(coupon_list);
 
         for (const coupon of coupon_list) {
             console.log(coupon);

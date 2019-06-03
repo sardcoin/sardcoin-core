@@ -159,6 +159,39 @@ const getFromId = (req, res) => {
             })
         });
 };
+const getByToken = async (req, res) => {
+    let coupon_token, coupon_id, coupon;
+    let token = req.params.token;
+    let type = parseInt(req.params.type);
+
+    try {
+        coupon_token = type === ITEM_TYPE.COUPON
+            ? await CouponToken.findOne({where: {token: token}})
+            : await PackageTokens.findOne({where: {token: token}});
+
+        if(coupon_token) {
+            coupon_id = type === ITEM_TYPE.COUPON ? coupon_token.dataValues.coupon_id : coupon_token.dataValues.package_id;
+            coupon = await Coupon.findOne({where: {id: coupon_id}});
+
+            if(coupon) {
+                return res.status(HttpStatus.OK).send(coupon);
+            } else {
+               return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+        } else {
+            return res.status(HttpStatus.BAD_REQUEST).send({
+                error: true,
+                message: 'Cannot retrieve the coupon: either the token or the type are not correct.'
+            })
+        }
+    } catch (e) {
+        console.error(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'An error occurred while retrieving the coupon'
+        })
+    }
+};
 const getProducerCoupons = (req, res) => {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -281,6 +314,17 @@ const getAvailableByTextAndCatId = async (req, res) => {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: 'Cannot GET available coupons by category ID'
         })
+    }
+};
+const isCouponRedeemed = async (req, res) => { // TODO
+    const token = req.params.token, type = req.params.type;
+    let response;
+
+    try {
+
+
+    } catch (e) {
+
     }
 };
 
@@ -713,7 +757,11 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
             if (coupon === null) {
                 console.error('ERROR in COUPON-MANAGER:');
                 console.error('USER=' + user_id + ' asked for buying either an unknown coupon or an out of stock coupon with ID=' + coupon_id);
-                result = { error: true, code: HttpStatus.BAD_REQUEST, message: 'Either the coupon is unknown or it is out of stock' };
+                result = {
+                    error: true,
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Either the coupon is unknown or it is out of stock'
+                };
             } else {
                 result = {
                     error: false,
@@ -751,7 +799,7 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
         isNotExpired = await isCouponNotExpired(package_id);
         isPurchasable = await isItemPurchasable(package_id, user_id, ITEM_TYPE.PACKAGE);
 
-        if(isNotExpired && isPurchasable) {
+        if (isNotExpired && isPurchasable) {
             // Select a package with ID package_id iff there is one pack available
             pack = await Sequelize.query(
                 'SELECT PackageTokens.token, CouponTokens.coupon_id, CouponTokens.consumer ' +
@@ -763,7 +811,7 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
             );
 
             // If there is a pack available, it checks the ability to be purchased for each coupon in the package
-            if(pack) {
+            if (pack) {
                 for (let coupon of pack) {
                     isNotExpired = isNotExpired && await isCouponNotExpired(coupon.coupon_id);
                     isPurchasable = isPurchasable && await isItemPurchasable(coupon.coupon_id, user_id, ITEM_TYPE.COUPON);
@@ -783,14 +831,22 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                 // return error no pack found
                 console.error('ERROR in COUPON-MANAGER:');
                 console.error('USER=' + user_id + ' asked for buying either an unknown package or an out of stock package with ID=' + package_id);
-                result = { error: true, code: HttpStatus.BAD_REQUEST, message: 'Either the package is unknown or it is out of stock' };
+                result = {
+                    error: true,
+                    code: HttpStatus.BAD_REQUEST,
+                    message: 'Either the package is unknown or it is out of stock'
+                };
             }
         }
 
     } catch (e) {
         console.warn('ERROR in COUPON-MANAGER somewhere when checking if package with ID=' + package_id + ' is expired/purchasable:');
         console.error(e);
-        result = {error: true, code: HttpStatus.INTERNAL_SERVER_ERROR, message: 'Error somewhere when creating the query update for the coupon with id ' + package_id};
+        result = {
+            error: true,
+            code: HttpStatus.INTERNAL_SERVER_ERROR,
+            message: 'Error somewhere when creating the query update for the coupon with id ' + package_id
+        };
     }
 
     return result;
@@ -834,7 +890,10 @@ const isItemPurchasable = async (coupon_id, user_id, type = ITEM_TYPE.COUPON) =>
         'JOIN coupon_tokens AS CouponTokens ON CouponTokens.package = PackageTokens.token ' +
         'WHERE PackageTokens.package_id = $2';
 
-    queryResult = (await Sequelize.query(query, {bind: [user_id, coupon_id], type: Sequelize.QueryTypes.SELECT}, {model: Coupon}))[0];
+    queryResult = (await Sequelize.query(query, {
+        bind: [user_id, coupon_id],
+        type: Sequelize.QueryTypes.SELECT
+    }, {model: Coupon}))[0];
 
     return queryResult.purchasable === null // null == infinite availability
         ? queryResult.available > 0
@@ -962,6 +1021,7 @@ const getFromIdIntern = async function (id) {
 module.exports = {
     createCoupon,
     getFromId,
+    getByToken,
     getProducerCoupons,
     getBrokerCoupons,
     getPurchasedCoupons,
@@ -969,6 +1029,7 @@ module.exports = {
     getAvailableCoupons,
     getAvailableCouponsByCategory,
     getAvailableByTextAndCatId,
+    isCouponRedeemed,
     buyCoupons,
     editCoupon,
     deleteCoupon,

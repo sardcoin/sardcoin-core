@@ -54,6 +54,7 @@ module.exports = function (app, passport, config) {
 
     // Private methods for user type
     app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon);
+    app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getByToken);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
@@ -63,6 +64,7 @@ module.exports = function (app, passport, config) {
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
     app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);
     app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), reqAuth, AcM.roleAuth([consumer]), CouponManager.importOfflineCoupon);
+    app.get(cmPath    + 'isCouponRedeemed/', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.redeemCoupon);
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
 
 
