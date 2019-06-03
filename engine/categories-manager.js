@@ -145,7 +145,7 @@ const removeCategory = async (req, res) => {
 
 const removeAllCategory = async (req, res) => {
     let couponCatRemoved;
-    console.log('req removeAllCategory', req)
+    //console.log('req removeAllCategory', req)
     try {
         couponCatRemoved = await CouponsCategories.destroy({where: {coupon_id: req.coupon_id}});
 

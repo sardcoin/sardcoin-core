@@ -24,7 +24,7 @@ const _ = require('lodash');
 const createCoupon = async (req, res) => {
     const data = req.body;
     let result;
-    console.log('data', data)
+    //console.log('data', data)
     try {
 
             result = await insertCoupon(data, req.user.id);
@@ -79,7 +79,7 @@ const createCoupon = async (req, res) => {
 
             let newToken;
 
-            console.log('result' , result)
+            //console.log('result' , result)
             try {
                 if(result.type == 0 || result.type == undefined) {
                     const token = generateUniqueToken(data.title, req.user.password);
@@ -91,7 +91,7 @@ const createCoupon = async (req, res) => {
                                 const tokenPackage = generateUniqueToken(data.title, req.user.password)
                                 await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
                                 const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
-                                console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
+                                //console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
                                 newToken = await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, tokenPackage, null)
                             }
                             } catch (e) {
@@ -740,8 +740,8 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
                         reject([HttpStatus.BAD_REQUEST, null]);
                     }
 
-                    console.log(coupon);
-                    console.log(coupon[0].token);
+                    //console.log(coupon);
+                    //console.log(coupon[0].token);
 
                     resolve(['UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `coupon_id`=' + coupon_id + ' AND `token`="' + coupon[0].token + '"; ', coupon[0].token]);
                 })

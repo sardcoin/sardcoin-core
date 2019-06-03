@@ -116,7 +116,7 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    console.log(user);
+   // console.log(user);
 
     Users.update({
         company_name: user.company_name,
@@ -138,7 +138,7 @@ exports.updateUser = function (req, res, next) {
         }
     })
         .then(newUser => {
-            console.log(newUser);
+            //console.log(newUser);
             if (newUser[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,

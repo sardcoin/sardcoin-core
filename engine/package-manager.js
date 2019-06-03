@@ -95,7 +95,7 @@ const getBrokerPackages = async(req, res) => {
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then( async packages => {
-            console.log('packages', packages)
+            //console.log('packages', packages)
 
             if (packages.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
@@ -108,7 +108,7 @@ const getBrokerPackages = async(req, res) => {
                 }
 
 
-                console.log('result finale', result)
+                //console.log('result finale', result)
                 return res.status(HttpStatus.OK).send(result);
             }
 
@@ -122,7 +122,33 @@ const getBrokerPackages = async(req, res) => {
         })
 };
 
+const getAssignCouponsById = (req, res) => {
+    Coupon.findAll({
+        include: [{
+            model: CouponToken,
+            required: true,
+            where: {package: { $not: null}, coupon_id: req.params.coupon_id}
+        }],
+        attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'assign']]}
+    })
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
 
+            return res.status(HttpStatus.OK).send({
+                coupon_id: req.params.coupon_id,
+                assign: coupons[0].dataValues.assign
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Error retrieving assign coupons'
+            })
+        });
+};
 
 
 
@@ -145,14 +171,14 @@ module.exports.insertTokenPackage = (package_id, token)=> {
 
 const  getAllData = async function ( packages) {
     let result = []
-    console.log('packagespackagespackagespackagespackagespackages',packages)
+    //console.log('packagespackagespackagespackagespackagespackages',packages)
 
     for await (let pack of packages) {
         let coupons = []
         const categories = await getCategories(pack)
-        console.log('categories getAllData',categories)
+        //console.log('categories getAllData',categories)
         const token =  await CouponTokenManager.getTokenByIdPackage(pack.id)
-        console.log('tokenstokenstokens',token)
+        //console.log('tokenstokenstokens',token)
 
 
            const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
@@ -203,5 +229,6 @@ module.exports = {
     getBrokerPackages,
     addImage,
     getAllData,
+    getAssignCouponsById,
     getCategories
 };
