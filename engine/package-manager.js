@@ -58,7 +58,7 @@ const addImage = (req, res) => {
 
 
 
-const generateUniqueToken = (title, token) => {
+const generateUniqueToken =  (title, token) => {
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
@@ -94,7 +94,7 @@ const getBrokerPackages = async(req, res) => {
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then( async packages => {
-            console.log('packages', packages)
+            //console.log('packages', packages)
 
             if (packages.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
@@ -107,7 +107,7 @@ const getBrokerPackages = async(req, res) => {
                 }
 
 
-                console.log('result finale', result)
+                //console.log('result finale', result)
                 return res.status(HttpStatus.OK).send(result);
             }
 
@@ -121,12 +121,37 @@ const getBrokerPackages = async(req, res) => {
         })
 };
 
+const getAssignCouponsById = (req, res) => {
+    Coupon.findAll({
+        include: [{
+            model: CouponToken,
+            required: true,
+            where: {package: { $not: null}, coupon_id: req.params.coupon_id}
+        }],
+        attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'assign']]}
+    })
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+
+            return res.status(HttpStatus.OK).send({
+                coupon_id: req.params.coupon_id,
+                assign: coupons[0].dataValues.assign
+            });
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Error retrieving assign coupons'
+            })
+        });
+};
 
 
 
-
-const insertTokenPackage = (package_id, token) => {
-    console.log('insertPackage')
+module.exports.insertTokenPackage = (package_id, token)=> {
 
     return new Promise((resolve, reject) => {
         PackageTokens.create({
@@ -145,30 +170,32 @@ const insertTokenPackage = (package_id, token) => {
 
 const  getAllData = async function ( packages) {
     let result = []
+    //console.log('packagespackagespackagespackagespackagespackages',packages)
 
     for (let pack of packages) {
         let coupons = []
-        let coupon = {coupon: null, token: null}
         const categories = await getCategories(pack)
-        console.log('categories getAllData',categories)
-        const tokens =  await CouponTokenManager.getTokenByIdPackage(pack.id)
-        console.log('tokenstokenstokens',tokens)
+        //console.log('categories getAllData',categories)
+        const token =  await CouponTokenManager.getTokenByIdPackage(pack.id)
+        //console.log('tokenstokenstokens',token)
 
-        for (const token of tokens){
-           const cpToken = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-            console.log('ccpToken',cpToken)
 
-            for (const tk of cpToken) {
-                const id = tk.dataValues.coupon_id
+           const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+            console.log('ccpToken',cpTokens)
+
+            for (const cpToken of cpTokens) {
+                let p = {coupon: null, token: null}
+
+                const id = cpToken.dataValues.coupon_id
 
                 const cp = await CouponMenager.getFromIdIntern(id)
-                coupon.coupon = cp.dataValues
-                console.log('cpcpcpcpcpcpcp',cp)
+                p.coupon = cp.dataValues
+                console.log('cpcpcpcpcpcpcp', cp)
 
-                coupon.token = cpToken
-                coupons.push(coupon)
+                p.token = cpToken.dataValues
+                coupons.push(p)
             }
-        }
+
         console.log('coupons getAllData',coupons)
         result.push({package: pack, categories: categories, coupons: coupons})
     }
@@ -200,7 +227,7 @@ module.exports = {
     generateUniqueToken,
     getBrokerPackages,
     addImage,
-    insertTokenPackage,
     getAllData,
+    getAssignCouponsById,
     getCategories
 };

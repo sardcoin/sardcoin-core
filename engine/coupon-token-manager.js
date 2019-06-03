@@ -62,7 +62,7 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null,pack=
             }
         })
             .then(couponTokenUpdated => {
-                console.log('couponTokenUpdated',couponTokenUpdated)
+                //console.log('couponTokenUpdated',couponTokenUpdated)
                 const result = !(couponTokenUpdated[0] === 0); // If the update is fine, it returns true
                 resolve(result);
             })
@@ -80,7 +80,7 @@ exports.updateCouponToken = async function(token, coupon_id, consumer=null,pack=
 
 exports.getTokenByIdCoupon = (coupon_id)=> {
 
-    console.log('get tokens, coupon_id', coupon_id)
+    //console.log('get tokens, coupon_id', coupon_id)
 
     return new Promise((resolve, reject) => {
         CouponToken.findOne({
@@ -147,7 +147,7 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {
-        PackageTokens.findAll({
+        PackageTokens.findOne({
 
             where: { package_id: token_id}
 

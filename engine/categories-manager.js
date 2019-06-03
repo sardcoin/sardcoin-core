@@ -143,4 +143,31 @@ const removeCategory = async (req, res) => {
     }
 };
 
-module.exports = {insert, getAll, update, remove, assignCategory, removeCategory};
+const removeAllCategory = async (req, res) => {
+    let couponCatRemoved;
+    //console.log('req removeAllCategory', req)
+    try {
+        couponCatRemoved = await CouponsCategories.destroy({where: {coupon_id: req.coupon_id}});
+
+        if (couponCatRemoved === 0) {
+            return {
+                error: true,
+                message: 'The tuple category-coupon to delete does not exist.'
+            }
+        }
+
+        return {
+            deleted: true,
+            coupon_id: req.coupon_id,
+        };
+    } catch (e) {
+        console.error(e);
+        return {
+            error: true,
+            message: 'An error occurred while deleting the category associated to the coupon'
+        }
+    }
+};
+
+
+module.exports = {removeAllCategory, insert, getAll, update, remove, assignCategory, removeCategory};
