@@ -100,15 +100,15 @@ const getBrokerPackages = async(req, res) => {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             } else {
                 try {
-                    result = await getAllData(packages)
-                    return res.status(HttpStatus.OK).send(result);
+                    //result = await getAllData(packages)
+                    return res.status(HttpStatus.OK).send(packages);
                 } catch (e) {
                    console.log(e)
                 }
 
 
                 //console.log('result finale', result)
-                return res.status(HttpStatus.OK).send(result);
+                return res.status(HttpStatus.OK).send(packages);
             }
 
         })
@@ -116,10 +116,31 @@ const getBrokerPackages = async(req, res) => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
-                message: 'Cannot get the distinct coupons created'
+                message: 'Cannot get the distinct packages created'
             })
         })
 };
+
+
+const getCouponsPackage = async (req, res) => {
+    let coupons = []
+    const id = req.params.package_id;
+    const token =  await CouponTokenManager.getTokenByIdPackage(id)
+    const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+    for (const cpToken of cpTokens) {
+        const id = cpToken.dataValues.coupon_id
+
+        const cp = await CouponMenager.getFromIdIntern(id)
+        coupons.push(cp.dataValues)
+    }
+    return res.status(HttpStatus.OK).send({
+        coupons_count: coupons.length,
+        coupons_array: coupons
+    })
+};
+
+
+
 
 const getAssignCouponsById = (req, res) => {
     Coupon.findAll({
@@ -168,6 +189,8 @@ module.exports.insertTokenPackage = (package_id, token)=> {
     });
 };
 
+
+// unused get complete informations from package
 const  getAllData = async function ( packages) {
     let result = []
     //console.log('packagespackagespackagespackagespackagespackages',packages)
@@ -206,6 +229,8 @@ const  getAllData = async function ( packages) {
 
 };
 
+
+
 const  getCategories = async function ( pack) {
 
     return new Promise((resolve, reject) => {
@@ -229,5 +254,6 @@ module.exports = {
     addImage,
     getAllData,
     getAssignCouponsById,
-    getCategories
+    getCategories,
+    getCouponsPackage
 };
