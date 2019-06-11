@@ -5,6 +5,7 @@ const Coupon = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const Op = require('../models/index').Sequelize.Op;
+const Sequelize = require('../models/index').sequelize;
 
 const HttpStatus = require('http-status-codes');
 
@@ -24,6 +25,32 @@ const getOrdersByConsumer = async (req, res) => {
     }
 };
 
+
+const getLastOrder = async (req, res) => {
+
+    Sequelize.query(
+        'SELECT MAX(id) as lastId from orders',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: OrderCoupon}
+        ).then((maxId) =>{
+
+
+            console.log('max id', maxId)
+            if (!maxId) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            } else {
+                return res.status(HttpStatus.OK).send(JSON.parse(JSON.stringify(maxId))[0]);
+
+            }
+    }).catch( err =>{
+        console.log('error get last id',err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Cannot get last id order'
+        })
+    })
+
+};
 /** The consumer can obtain his detailed order by the id of the order**/
 const getOrderById = async (req, res) => {
     let aux, price, order = {
@@ -153,4 +180,4 @@ const revertOrder = async (order_id) => {
     return success;
 };
 
-module.exports = {createOrderFromCart, getOrdersByConsumer, getOrderById, revertOrder};
+module.exports = {createOrderFromCart, getOrdersByConsumer, getOrderById, revertOrder, getLastOrder};
