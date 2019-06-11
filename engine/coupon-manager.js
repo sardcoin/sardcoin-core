@@ -1,6 +1,7 @@
 'use strict';
 
 const Coupon = require('../models/index').Coupon;
+const CouponBroker = require('../models/index').CouponBroker;
 const CouponToken = require('../models/index').CouponToken;
 const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
@@ -39,7 +40,7 @@ const createCoupon = async (req, res) => {
 
     if (result) { // If the coupon has been created
         // console.log('data.broker_id',data.brokers)
-        // console.log('result',result)
+        console.log('result',result)
         if (data.categories.length > 0) {
             // console.log('data.categoriesss',data.categories)
 
@@ -50,7 +51,7 @@ const createCoupon = async (req, res) => {
                         category_id: data.categories[i].id
                     })
                 } catch (e) {
-
+                    await deleteCoupon(result)
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'Error assign categories.'
@@ -65,6 +66,7 @@ const createCoupon = async (req, res) => {
                     const newBroker = await CouponBrokerManager
                         .insertCouponBroker(result.get('id'), data.brokers[i].id);
                 } catch (e) {
+                    await deleteCoupon(result)
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'Error creating the broker.',
@@ -78,9 +80,10 @@ const createCoupon = async (req, res) => {
         for (let i = 0; i < data.quantity; i++) {
 
             let newToken;
-
+            let couponToken = null
             //console.log('result' , result)
             try {
+
                 if(result.type == 0 || result.type == undefined) {
                     const token = generateUniqueToken(data.title, req.user.password);
                     newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
@@ -90,16 +93,20 @@ const createCoupon = async (req, res) => {
                             for(let j =0; j < data.coupons.length; j++) {
                                 const tokenPackage = generateUniqueToken(data.title, req.user.password)
                                 await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
-                                const couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
+                                couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
                                 //console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
                                 newToken = await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, tokenPackage, null)
                             }
                             } catch (e) {
+                            await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
+                            await deleteCoupon(result)
                             console.log('error insert package into coupons_token', e)
                         }
 
                 }
             } catch (e) {
+                await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
+                await deleteCoupon(result)
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'Error creating the tokens.',
@@ -109,6 +116,8 @@ const createCoupon = async (req, res) => {
 
 
             if (!newToken) {
+                await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
+                await deleteCoupon(result)
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'Error creating the tokens.',
@@ -452,11 +461,21 @@ const editCoupon = (req, res) => {
 };
 
 const deleteCoupon = (req, res) => {
+    let id = 0
+    let owner = 0
+    if (req.body){
+        id = req.body.id
+        owner = req.user.id
+    } else {
+        id = req.dataValues.id
+        owner = req.dataValues.owner
+    }
+    console.log('reqqqqqqq delete coupon',req)
     Coupon.destroy({
         where: {
             [Op.and]: [
-                {id: req.body.id},
-                {owner: req.user.id}
+                {id: id},
+                {owner: owner}
             ]
         }
     })
@@ -464,13 +483,14 @@ const deleteCoupon = (req, res) => {
             if (coupon === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     deleted: false,
-                    coupon: parseInt(req.body.id),
+                    coupon: parseInt(id),
                     message: "This coupon doesn't exist or you doesn't own the coupon!"
                 });
             } else {
+
                 return res.status(HttpStatus.OK).json({
                     deleted: true,
-                    coupon: parseInt(req.body.id),
+                    coupon: parseInt(id),
                 });
             }
         })
@@ -479,7 +499,7 @@ const deleteCoupon = (req, res) => {
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
-                coupon: parseInt(req.body.id),
+                coupon: parseInt(id),
                 error: 'Cannot deleteCoupon the coupon'
             })
         })
