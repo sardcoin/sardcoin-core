@@ -194,7 +194,7 @@ const getByToken = async (req, res) => {
 };
 const getProducerCoupons = (req, res) => {
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
         'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
         'GROUP BY id',
@@ -701,7 +701,7 @@ const filterCouponsByText = (coupons, text) => {
 };
 const availableCoupons = async () => {
     return await Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
         ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
         'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
         'AND coupons.visible_from <= CURRENT_TIMESTAMP  AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
@@ -771,7 +771,6 @@ const getBuyQuery = async (coupon_id, user_id, type = 0, tokenExcluded = []) => 
         ? await getBuyCouponQuery(coupon_id, user_id, tokenExcluded)
         : await getBuyPackageQuery(coupon_id, user_id, tokenExcluded);
 };
-
 const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
     let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
     let isNotExpired, isPurchasable, coupon, result;
@@ -820,8 +819,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
 
     return result;
 };
-
-
 const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
     let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
     let isNotExpired = true, isPurchasable = true;
@@ -884,8 +881,6 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
 
     return result;
 };
-
-
 const isCouponNotExpired = (coupon_id) => {
     return new Promise((resolve, reject) => {
         Coupon.findOne({
@@ -1004,7 +999,7 @@ const unlockTables = () => {
 };
 const getBrokerCoupons = (req, res) => {
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, \n' +
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, \n' +
         '    COUNT(CASE WHEN consumer IS null AND verifier IS null AND package IS null  THEN 1 END) AS quantity\n' +
         '    FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  JOIN coupon_broker ON\n' +
         '        coupon_broker.coupon_id = coupons.id WHERE coupon_broker.broker_id = $1 AND ' +
@@ -1013,6 +1008,8 @@ const getBrokerCoupons = (req, res) => {
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
+            coupons = coupons.filter(coupon => coupon.quantity != 0);
+
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }

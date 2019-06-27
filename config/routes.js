@@ -70,7 +70,6 @@ module.exports = function (app, passport, config) {
     /****************** PACKAGE **********************/
     // app.post(pkPath   + 'create/', expressJoi(SchemasPackage.createPackageSchema), reqAuth, AcM.roleAuth([broker, admin]), PackageManager.createPackage);
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
-    app.get(pkPath    + 'getAssignCouponsById/:coupon_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getAssignCouponsById);
     app.get(pkPath    + 'getCouponsPackage/:package_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getCouponsPackage);
     // app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
     // app.get(cmPath    + 'getAvailableCoupons/', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCoupons);

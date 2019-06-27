@@ -48,7 +48,10 @@ const getOrderById = async (req, res) => {
         if (aux.length > 0) {
             order.purchase_time = aux[0].dataValues.purchase_time;
 
+            console.log(aux[0].dataValues.OrderCoupons);
+
             for (const coupon of aux[0].dataValues.OrderCoupons) {
+                console.warn(coupon.dataValues);
                 coupon_id = coupon.dataValues.coupon_token
                     ? (await CouponToken.findOne({where: {token: coupon.dataValues.coupon_token}})).dataValues.coupon_id
                     : (await PackageTokens.findOne({where: {token: coupon.dataValues.package_token}})).dataValues.package_id;
@@ -91,7 +94,7 @@ const createOrderFromCart = async (user_id, coupon_list) => {
         // console.log(coupon_list);
 
         for (const coupon of coupon_list) {
-            console.log(coupon);
+            console.log('createOrderFromCart', coupon);
             package_token = coupon.type === ITEM_TYPE.PACKAGE ? coupon.token : null;
             coupon_token = coupon.type === ITEM_TYPE.COUPON ? coupon.token : null;
 

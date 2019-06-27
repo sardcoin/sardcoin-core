@@ -7,7 +7,7 @@ const CouponsCategories = require('../models/index').CouponsCategories;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
 const Op = require('../models/index').Sequelize.Op;
-const CouponMenager = require('./coupon-manager');
+const CouponManager = require('./coupon-manager');
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const HttpStatus = require('http-status-codes');
@@ -17,13 +17,6 @@ const crypto = require('crypto');
 const _ = require('lodash');
 
 /** Exported REST functions **/
-
-
-
-
-
-
-
 
 const addImage = (req, res) => {
     console.log(req);
@@ -56,9 +49,7 @@ const addImage = (req, res) => {
 
 /** Private methods **/
 
-
-
-const generateUniqueToken =  (title, token) => {
+const generateUniqueToken = (title, token) => {
 
     const min = Math.ceil(1);
     const max = Math.floor(1000000);
@@ -81,7 +72,7 @@ const formatNotIn = (tokenList) => {
     return result + ')';
 };
 // return all package with categories and coupons associate
-const getBrokerPackages = async(req, res) => {
+const getBrokerPackages = async (req, res) => {
     let result = []
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
@@ -93,23 +84,12 @@ const getBrokerPackages = async(req, res) => {
         'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
-        .then( async packages => {
-            //console.log('packages', packages)
-
+        .then(packages => {
             if (packages.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
-            } else {
-                try {
-                    //result = await getAllData(packages)
-                    return res.status(HttpStatus.OK).send(packages);
-                } catch (e) {
-                   console.log(e)
-                }
-
-
-                //console.log('result finale', result)
-                return res.status(HttpStatus.OK).send(packages);
             }
+
+            return res.status(HttpStatus.OK).send(packages);
 
         })
         .catch(err => {
@@ -121,16 +101,15 @@ const getBrokerPackages = async(req, res) => {
         })
 };
 
-
 const getCouponsPackage = async (req, res) => {
     let coupons = []
     const id = req.params.package_id;
-    const token =  await CouponTokenManager.getTokenByIdPackage(id)
+    const token = await CouponTokenManager.getTokenByIdPackage(id)
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
     for (const cpToken of cpTokens) {
         const id = cpToken.dataValues.coupon_id
 
-        const cp = await CouponMenager.getFromIdIntern(id)
+        const cp = await CouponManager.getFromIdIntern(id)
         coupons.push(cp.dataValues)
     }
     return res.status(HttpStatus.OK).send({
@@ -139,40 +118,7 @@ const getCouponsPackage = async (req, res) => {
     })
 };
 
-
-
-
-const getAssignCouponsById = (req, res) => {
-    Coupon.findAll({
-        include: [{
-            model: CouponToken,
-            required: true,
-            where: {package: { $not: null}, coupon_id: req.params.coupon_id}
-        }],
-        attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'assign']]}
-    })
-        .then(coupons => {
-            if (coupons.length === 0) {
-                return res.status(HttpStatus.NO_CONTENT).send({});
-            }
-
-            return res.status(HttpStatus.OK).send({
-                coupon_id: req.params.coupon_id,
-                assign: coupons[0].dataValues.assign
-            });
-        })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Error retrieving assign coupons'
-            })
-        });
-};
-
-
-
-module.exports.insertTokenPackage = (package_id, token)=> {
+module.exports.insertTokenPackage = (package_id, token) => {
 
     return new Promise((resolve, reject) => {
         PackageTokens.create({
@@ -183,15 +129,14 @@ module.exports.insertTokenPackage = (package_id, token)=> {
                 resolve(newPackage);
             })
             .catch(err => {
-                console.log('error insert',err);
+                console.log('error insert', err);
                 reject(err);
             })
     });
 };
 
-
 // unused get complete informations from package
-const  getAllData = async function ( packages) {
+const getAllData = async function (packages) {
     let result = []
     //console.log('packagespackagespackagespackagespackagespackages',packages)
 
@@ -199,39 +144,36 @@ const  getAllData = async function ( packages) {
         let coupons = []
         const categories = await getCategories(pack)
         //console.log('categories getAllData',categories)
-        const token =  await CouponTokenManager.getTokenByIdPackage(pack.id)
+        const token = await CouponTokenManager.getTokenByIdPackage(pack.id)
         //console.log('tokenstokenstokens',token)
 
 
-           const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-            console.log('ccpToken',cpTokens)
+        const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+        console.log('ccpToken', cpTokens)
 
-            for (const cpToken of cpTokens) {
-                let p = {coupon: null, token: null}
+        for (const cpToken of cpTokens) {
+            let p = {coupon: null, token: null}
 
-                const id = cpToken.dataValues.coupon_id
+            const id = cpToken.dataValues.coupon_id
 
-                const cp = await CouponMenager.getFromIdIntern(id)
-                p.coupon = cp.dataValues
-                console.log('cpcpcpcpcpcpcp', cp)
+            const cp = await CouponManager.getFromIdIntern(id)
+            p.coupon = cp.dataValues
+            console.log('cpcpcpcpcpcpcp', cp)
 
-                p.token = cpToken.dataValues
-                coupons.push(p)
-            }
+            p.token = cpToken.dataValues
+            coupons.push(p)
+        }
 
-        console.log('coupons getAllData',coupons)
+        console.log('coupons getAllData', coupons)
         result.push({package: pack, categories: categories, coupons: coupons})
     }
     console.log('getAllData', result)
     return result;
 
 
-
 };
 
-
-
-const  getCategories = async function ( pack) {
+const getCategories = async function (pack) {
 
     return new Promise((resolve, reject) => {
         CouponsCategories.findAll({
@@ -242,18 +184,16 @@ const  getCategories = async function ( pack) {
         }).then(categories => {
             resolve(categories)
 
-            })
         })
+    })
 
 };
-
 
 module.exports = {
     generateUniqueToken,
     getBrokerPackages,
     addImage,
     getAllData,
-    getAssignCouponsById,
     getCategories,
     getCouponsPackage
 };
