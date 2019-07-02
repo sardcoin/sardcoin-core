@@ -84,6 +84,7 @@ module.exports = function (app, passport, config) {
     /****************** ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
     app.get(ordPath + 'getOrderById/:order_id', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrderById);
+    app.get(ordPath + 'getLastOrder/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getLastOrder);
 
     /****************** PAYPAL PAYMENTS *****************/
     app.post(payPath + 'setCheckout', reqAuth, AcM.roleAuth(all), PaypalManager.setCheckout(config));
