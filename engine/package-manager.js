@@ -73,15 +73,13 @@ const formatNotIn = (tokenList) => {
 };
 // return all package with categories and coupons associate
 const getBrokerPackages = async (req, res) => {
-    let result = []
+    let result = [];
+
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, ' +
-        '(COUNT(CASE WHEN verifier IS null  THEN 1 END) - COUNT(CASE WHEN consumer IS  null AND verifier IS null  THEN 1 END))/\n' +
-        '        (COUNT(CASE WHEN verifier IS null  THEN 1 END)/COUNT(DISTINCT package_tokens.token))' +
-        'AS buyed, COUNT(DISTINCT package_tokens.token) AS quantity ' +
-        'FROM coupons JOIN package_tokens ON coupons.id = package_tokens.package_id JOIN coupon_tokens ON package_tokens.token = coupon_tokens.package' +
-        ' WHERE owner = $1 ' +
-        'GROUP BY id',
+        'SELECT coupons.*, COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NOT NULL THEN 1 END) AS bought\n ' +
+        'FROM `package_tokens` JOIN coupons ON package_tokens.package_id = coupons.id\n ' +
+        'WHERE owner = $1 ' +
+        'GROUP BY package_tokens.package_id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(packages => {

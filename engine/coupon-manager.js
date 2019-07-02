@@ -851,7 +851,7 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                     result = {
                         error: false,
                         token: pack[0].token,
-                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; '
+                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=\' + user_id + \' WHERE `package`=\\\'\' + pack[0].token + \'\\\';'
                     };
                 } else {
                     console.log('ERROR in COUPON MANAGER:\nPackage with ID=' + package_id + ' is not purchasable or expired');

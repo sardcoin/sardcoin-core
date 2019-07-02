@@ -7,7 +7,7 @@ module.exports = (sequelize, DataType) => {
             primaryKey: true
         },
         package_id:   DataType.INTEGER(10),
-
+        consumer: DataType.INTEGER(11)
     }, {
         freezeTableName: true,
         timestamps: false,
@@ -16,6 +16,7 @@ module.exports = (sequelize, DataType) => {
 
     PackageTokens.associate = function (models) {
         PackageTokens.hasMany(models.Coupon, {foreignKey: 'id', sourceKey: 'package_id'});
+        PackageTokens.hasMany(models.User, {foreignKey: 'id', sourceKey: 'consumer'});
     };
 
     return PackageTokens;
