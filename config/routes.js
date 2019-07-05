@@ -52,7 +52,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId);
 
     // Private methods for user type
-    app.post(cmPath   + 'create/', expressJoi(Schemas.createCouponSchema), reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon);
+    app.post(cmPath   + 'create/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon); // TODO add again expressJoi(Schemas.createCouponSchema)
     app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getByToken);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);

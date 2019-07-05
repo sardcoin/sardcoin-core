@@ -3,7 +3,7 @@ const Joi = require('joi');
 const createCouponSchema = {
     query: {},
     body: {
-        title:          Joi.string().allow('').min(5).max(50).required().error(new Error("The title must be between 5 and 40 characters long, is required ")),
+        title:          Joi.string().allow('').min(5).max(70).required().error(new Error("The title must be between 5 and 70 characters long, is required ")),
         description:    Joi.string().min(5).max(255).allow(null).error(new Error("The description must be between 5 and 255 characters long ")),
         image:          Joi.string().required().error(new Error("Image is required")),
         price:          Joi.number().required().error(new Error("Price is required")),
@@ -15,7 +15,7 @@ const createCouponSchema = {
         quantity:       Joi.number().integer().required().error(new Error("The quantity is required")),
         brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
         coupons:        Joi.array().allow(null).error(new Error("couponns must be a array or null")),
-        categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
+        categories:     Joi.array().required().error(new Error("categories must be an array and it is required")),
         type:           Joi.number().integer().allow(null).error(new Error("Type must be a number or null")),
     },
     params: {},

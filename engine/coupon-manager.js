@@ -29,12 +29,12 @@ const ITEM_TYPE = {
 
 const createCoupon = async (req, res) => {
     const data = req.body;
-    let result;
-    //console.log('data', data)
+    let insertResult, newToken, couponToken;
+
+    console.log(req.body);
+
     try {
-
-        result = await insertCoupon(data, req.user.id);
-
+        insertResult = await insertCoupon(data, req.user.id);
     } catch (e) {
         console.log(e);
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -43,86 +43,88 @@ const createCoupon = async (req, res) => {
         });
     }
 
-    if (result) { // If the coupon has been created
-        // console.log('data.broker_id',data.brokers)
-        console.log('result',result)
-        if (data.categories.length > 0) {
-            // console.log('data.categoriesss',data.categories)
-
-            for (let i = 0; i < data.categories.length; i++) {
-                try {
-                    await CategoriesManager.assignCategory({
-                        coupon_id: result.id,
-                        category_id: data.categories[i].id
-                    })
-                } catch (e) {
-                    await deleteCoupon(result)
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Error assign categories.'
-                    });
-                }
-
-            }
-        }
-        if (data.brokers) {
-            for (let i = 0; i < data.brokers.length; i++) {
-                try {
-                    const newBroker = await CouponBrokerManager
-                        .insertCouponBroker(result.get('id'), data.brokers[i].id);
-                } catch (e) {
-                    await deleteCoupon(result)
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Error creating the broker.',
-                        brokens_created: (i + 1)
-                    });
-                }
-
-
-            }
-        }
-        for (let i = 0; i < data.quantity; i++) {
-
-            let newToken;
-            let couponToken = null
-            //console.log('result' , result)
+    if (insertResult) { // If the coupon has been created
+        for (let category of data.categories) {
             try {
-
-                if(result.type == 0 || result.type == undefined) {
-                    const token = generateUniqueToken(data.title, req.user.password);
-                    newToken = await CouponTokenManager.insertCouponToken(result.get('id'), token);
-                } else if (result.type == 1) {
-
-                        try {
-                            for(let j =0; j < data.coupons.length; j++) {
-                                const tokenPackage = generateUniqueToken(data.title, req.user.password)
-                                await PackageManager.insertTokenPackage(result.get('id'), tokenPackage)
-                                couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id)
-                                //console.log('tokennnnnnn', couponToken, 'tokenPackageeeeeee', tokenPackage)
-                                newToken = await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, tokenPackage, null)
-                            }
-                            } catch (e) {
-                            await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
-                            await deleteCoupon(result)
-                            console.log('error insert package into coupons_token', e)
-                        }
-
-                }
+                await CategoriesManager.assignCategory({
+                    coupon_id: insertResult.id,
+                    category_id: category.id
+                })
             } catch (e) {
-                await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
-                await deleteCoupon(result)
+                await deleteCoupon(insertResult);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
-                    message: 'Error creating the tokens.',
-                    tokens_created: (i + 1)
+                    message: 'Error assign categories.'
                 });
+            }
+        } // Category association
+
+        if (data.brokers) {
+            if (req.body.type === ITEM_TYPE.PACKAGE) { // The package cannot be transferred to another broker
+                await deleteCoupon(insertResult);
+                return res.status(HttpStatus.BAD_REQUEST).send({
+                    error: true,
+                    message: 'It is not possible to add a broker authorized to use a package.'
+                });
+            }
+
+            for (let broker of data.brokers.length) {
+                try {
+                    const newBroker = await CouponBrokerManager.insertCouponBroker(insertResult.get('id'), broker.id);
+                } catch (e) {
+                    await deleteCoupon(insertResult);
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error associating the coupon to the chosen brokers.',
+                    });
+                }
+            }
+        } // Broker association
+
+        for (let i = 0; i < data.quantity; i++) { // TODO sostituire coupons con package e ciclare bene su quelli
+            console.warn('i', i, 'insertResult');
+            try {
+                if (req.body.type === ITEM_TYPE.COUPON) {
+                    const token = generateUniqueToken(data.title, req.user.password);
+                    newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
+                } else {
+                    try {
+                        for (let j = 0; j < data.coupons.length; j++) {
+                            const tokenPackage = generateUniqueToken(data.title, req.user.password);
+                            await PackageManager.insertTokenPackage(insertResult.get('id'), tokenPackage);
+                            couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id);
+                            newToken = await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id, null, tokenPackage, null)
+                        }
+                    } catch (e) {
+                        console.error('error insert package into coupons_token', e);
+                        await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
+                        await deleteCoupon(insertResult)
+                    }
+                }
+            } catch (e) {
+                console.error(e);
+                try {
+                    await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
+                    await deleteCoupon(insertResult);
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the tokens.',
+                        tokens_created: (i + 1)
+                    });
+                } catch (e) {
+                    console.error(e);
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error creating the tokens.',
+                        tokens_created: (i + 1)
+                    });
+                }
             }
 
 
             if (!newToken) {
-                await CouponTokenManager.updateCouponToken( couponToken.dataValues.token, data.coupons[j].id,null, null, null)
-                await deleteCoupon(result)
+                await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
+                await deleteCoupon(insertResult);
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'Error creating the tokens.',
@@ -178,14 +180,14 @@ const getByToken = async (req, res) => {
             ? await CouponToken.findOne({where: {token: token}})
             : await PackageTokens.findOne({where: {token: token}});
 
-        if(coupon_token) {
+        if (coupon_token) {
             coupon_id = type === ITEM_TYPE.COUPON ? coupon_token.dataValues.coupon_id : coupon_token.dataValues.package_id;
             coupon = await Coupon.findOne({where: {id: coupon_id}});
 
-            if(coupon) {
+            if (coupon) {
                 return res.status(HttpStatus.OK).send(coupon);
             } else {
-               return res.status(HttpStatus.NO_CONTENT).send({});
+                return res.status(HttpStatus.NO_CONTENT).send({});
             }
         } else {
             return res.status(HttpStatus.BAD_REQUEST).send({
@@ -460,7 +462,7 @@ const editCoupon = (req, res) => {
             }
             else {
 
-                        // console.log('data.categoriesss',data.categories)
+                // console.log('data.categoriesss',data.categories)
 
                 try {
                     await CategoriesManager.removeAllCategory({
@@ -474,22 +476,22 @@ const editCoupon = (req, res) => {
                     });
                 }
                 if (data.categories.length > 0) {
-                        for (let i = 0; i < data.categories.length; i++) {
-                            try {
-                                await CategoriesManager.assignCategory({
-                                    coupon_id: data.id,
-                                    category_id: data.categories[i].id
-                                })
-                            } catch (e) {
+                    for (let i = 0; i < data.categories.length; i++) {
+                        try {
+                            await CategoriesManager.assignCategory({
+                                coupon_id: data.id,
+                                category_id: data.categories[i].id
+                            })
+                        } catch (e) {
 
-                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                    error: true,
-                                    message: 'Error assign categories.'
-                                });
-                            }
-
+                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                error: true,
+                                message: 'Error assign categories.'
+                            });
                         }
+
                     }
+                }
 
 
                 return res.status(HttpStatus.OK).json({
@@ -511,14 +513,14 @@ const editCoupon = (req, res) => {
 const deleteCoupon = (req, res) => {
     let id = 0
     let owner = 0
-    if (req.body){
+    if (req.body) {
         id = req.body.id
         owner = req.user.id
     } else {
         id = req.dataValues.id
         owner = req.dataValues.owner
     }
-    console.log('reqqqqqqq delete coupon',req)
+    console.log('reqqqqqqq delete coupon', req)
     Coupon.destroy({
         where: {
             [Op.and]: [
@@ -685,8 +687,6 @@ const redeemCoupon = (req, res) => {
         })
 };
 const addImage = (req, res) => {
-    console.log(req);
-
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
         const file = req.files.file;
@@ -710,8 +710,6 @@ const addImage = (req, res) => {
             });
         });
     });
-
-    // return res.send({cacca: 'si'});
 };
 
 /** Private methods **/

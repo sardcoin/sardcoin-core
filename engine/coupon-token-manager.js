@@ -48,7 +48,7 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
     });
 };
 
-exports.updateCouponToken = async function(token, coupon_id, consumer=null,pack=null, verifier=null){
+exports.updateCouponToken = function(token, coupon_id, consumer=null,pack=null, verifier=null){
     return new Promise((resolve, reject) => {
         CouponToken.update({
             consumer: consumer,
