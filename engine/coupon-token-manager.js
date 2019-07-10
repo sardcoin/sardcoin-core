@@ -11,7 +11,7 @@ exports.insertCouponToken = async function (coupon_id, token) {
             token: token,
             coupon_id: coupon_id,
             consumer: null,
-            package:null,
+            package: null,
             verifier: null
         })
             .then(newCoupon => {
@@ -33,7 +33,7 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
             token: token,
             coupon_id: coupon_id,
             consumer: null,
-            package:tokenPackage,
+            package: tokenPackage,
             verifier: null
         })
             .then(newCoupon => {
@@ -48,22 +48,17 @@ exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
     });
 };
 
-exports.updateCouponToken = function(token, coupon_id, consumer=null,pack=null, verifier=null){
+exports.updateCouponToken = function (token, coupon_id, consumer = null, pack = null, verifier = null) {
     return new Promise((resolve, reject) => {
         CouponToken.update({
             consumer: consumer,
             verifier: verifier,
-            package:pack
+            package: pack
         }, {
-            where: {
-                [Op.and]: [
-                    {token: token}, {coupon_id: coupon_id}
-                ]
-            }
+            where: {token: token, coupon_id: coupon_id}
         })
             .then(couponTokenUpdated => {
-                //console.log('couponTokenUpdated',couponTokenUpdated)
-                const result = !(couponTokenUpdated[0] === 0); // If the update is fine, it returns true
+                const result = couponTokenUpdated[0] !== 0; // If the update is fine, it returns true
                 resolve(result);
             })
             .catch(err => {
@@ -76,37 +71,29 @@ exports.updateCouponToken = function(token, coupon_id, consumer=null,pack=null, 
 };
 
 
-
-
-exports.getTokenByIdCoupon = (coupon_id)=> {
-
-    //console.log('get tokens, coupon_id', coupon_id)
-
+exports.getTokenByIdCoupon = (coupon_id) => {
     return new Promise((resolve, reject) => {
         CouponToken.findOne({
-
-                where: {consumer: null, coupon_id: coupon_id, package: null, verifier:null}
-
+            where: {consumer: null, coupon_id: coupon_id, package: null, verifier: null}
         })
             .then(newCouponToken => {
                 resolve(newCouponToken);
             })
             .catch(err => {
-                console.log("This coupon token don't available.");
-                console.log(err);
-
+                console.log("A coupon token is not available.");
+                console.error(err);
                 reject(err);
             })
     });
 };
 
- exports.getCouponsByTokenPackage = async( token)=> {
+exports.getCouponsByTokenPackage = async (token) => {
 
 
-    return new Promise( (resolve, reject) => {
+    return new Promise((resolve, reject) => {
         CouponToken.findAll({
 
-            where: { package: token, verifier:null}
+            where: {package: token, verifier: null}
 
         })
             .then(couponsIntoPackage => {
@@ -121,35 +108,12 @@ exports.getTokenByIdCoupon = (coupon_id)=> {
     });
 };
 
-
-exports.insertPackageToken = async function (coupon_id, token, tokenPackage) {
-
-    return new Promise((resolve, reject) => {
-        CouponToken.create({
-            token: token,
-            coupon_id: coupon_id,
-            consumer: null,
-            package:tokenPackage,
-            verifier: null
-        })
-            .then(newCoupon => {
-                resolve(newCoupon !== null);
-            })
-            .catch(err => {
-                console.log("The coupon token cannot be created.");
-                console.log(err);
-
-                reject(err);
-            })
-    });
-};
-
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {
         PackageTokens.findOne({
 
-            where: { package_id: token_id}
+            where: {package_id: token_id}
 
         })
             .then(tokenPackage => {

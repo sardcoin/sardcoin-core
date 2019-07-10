@@ -116,34 +116,31 @@ const getCouponsPackage = async (req, res) => {
     })
 };
 
-module.exports.insertTokenPackage = (package_id, token) => {
-
+exports.insertTokenPackage = async (package_id, token) => {
     return new Promise((resolve, reject) => {
         PackageTokens.create({
             token: token,
             package_id: package_id
         })
             .then(newPackage => {
+                console.log('\nNEW PACKAGE: ', newPackage.dataValues);
                 resolve(newPackage);
             })
             .catch(err => {
-                console.log('error insert', err);
+                console.log('error inserting the new token package', err);
                 reject(err);
             })
     });
 };
 
 // unused get complete informations from package
-const getAllData = async function (packages) {
+/*const getAllData = async function (packages) {
     let result = []
-    //console.log('packagespackagespackagespackagespackagespackages',packages)
 
     for (let pack of packages) {
         let coupons = []
         const categories = await getCategories(pack)
-        //console.log('categories getAllData',categories)
         const token = await CouponTokenManager.getTokenByIdPackage(pack.id)
-        //console.log('tokenstokenstokens',token)
 
 
         const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
@@ -169,7 +166,7 @@ const getAllData = async function (packages) {
     return result;
 
 
-};
+};*/
 
 const getCategories = async function (pack) {
 
@@ -191,7 +188,6 @@ module.exports = {
     generateUniqueToken,
     getBrokerPackages,
     addImage,
-    getAllData,
     getCategories,
     getCouponsPackage
 };

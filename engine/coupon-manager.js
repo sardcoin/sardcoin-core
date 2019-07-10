@@ -29,123 +29,92 @@ const ITEM_TYPE = {
 
 const createCoupon = async (req, res) => {
     const data = req.body;
-    let insertResult, newToken, couponToken;
-
-    console.log(req.body);
+    let insertResult, newToken, couponToken, token, pack_coupon_id;
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-    } catch (e) {
-        console.log(e);
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            message: 'Error inserting the new coupon.',
-        });
-    }
 
-    if (insertResult) { // If the coupon has been created
-        for (let category of data.categories) {
-            try {
-                await CategoriesManager.assignCategory({
-                    coupon_id: insertResult.id,
-                    category_id: category.id
-                })
-            } catch (e) {
-                await deleteCoupon(insertResult);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    error: true,
-                    message: 'Error assign categories.'
-                });
-            }
-        } // Category association
+        if (insertResult) { // If the coupon has been created
+            for (let category of data.categories) {
+                await CategoriesManager.assignCategory({coupon_id: insertResult.id, category_id: category.id})
+            } // Category association
 
-        if (data.brokers) {
-            if (req.body.type === ITEM_TYPE.PACKAGE) { // The package cannot be transferred to another broker
-                await deleteCoupon(insertResult);
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    error: true,
-                    message: 'It is not possible to add a broker authorized to use a package.'
-                });
-            }
-
-            for (let broker of data.brokers.length) {
-                try {
-                    const newBroker = await CouponBrokerManager.insertCouponBroker(insertResult.get('id'), broker.id);
-                } catch (e) {
-                    await deleteCoupon(insertResult);
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            if (data.brokers) {
+                if (data.type === ITEM_TYPE.PACKAGE) {
+                    await internal_deleteCoupon(insertResult);
+                    return res.status(HttpStatus.BAD_REQUEST).send({
                         error: true,
-                        message: 'Error associating the coupon to the chosen brokers.',
+                        message: 'It is not possible to add a broker authorized to use a package.'
                     });
-                }
-            }
-        } // Broker association
+                } // The package cannot be transferred to another broker
+                for (let broker of data.brokers.length) {
+                    const newBroker = await CouponBrokerManager.insertCouponBroker(insertResult.get('id'), broker.id);
+                } // for each broker it associates the coupon created to him
+            } // Broker association
 
-        for (let i = 0; i < data.quantity; i++) { // TODO sostituire coupons con package e ciclare bene su quelli
-            console.warn('i', i, 'insertResult');
-            try {
-                if (req.body.type === ITEM_TYPE.COUPON) {
-                    const token = generateUniqueToken(data.title, req.user.password);
+            // It creates 'quantity' tokens for the coupon inserted
+            for (let i = 0; i < data.quantity; i++) {
+                token = generateUniqueToken(data.title, req.user.password);
+
+                if (data.type === ITEM_TYPE.COUPON) {
                     newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
                 } else {
-                    try {
-                        for (let j = 0; j < data.coupons.length; j++) {
-                            const tokenPackage = generateUniqueToken(data.title, req.user.password);
-                            await PackageManager.insertTokenPackage(insertResult.get('id'), tokenPackage);
-                            couponToken = await CouponTokenManager.getTokenByIdCoupon(data.coupons[j].id);
-                            newToken = await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id, null, tokenPackage, null)
+                    await PackageManager.insertTokenPackage(insertResult.get('id'), token);
+
+                    for (const pack of data.package) {
+                        pack_coupon_id = pack.coupon.id;
+
+                        for (let j = 0; j < pack.quantity; j++) {
+                            couponToken = await CouponTokenManager.getTokenByIdCoupon(pack_coupon_id);
+                            newToken = await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, pack_coupon_id, null, token, null);
                         }
-                    } catch (e) {
-                        console.error('error insert package into coupons_token', e);
-                        await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
-                        await deleteCoupon(insertResult)
                     }
                 }
-            } catch (e) {
-                console.error(e);
-                try {
-                    await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
-                    await deleteCoupon(insertResult);
+
+                if (!newToken) {
+                    console.error('Error either inserting or updating the CouponToken associated to the coupon');
+                    await internal_deleteCoupon(insertResult.dataValues.id);
+
+                    if(couponToken) {
+                        await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, pack_coupon_id);
+                    }
+
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         message: 'Error creating the tokens.',
-                        tokens_created: (i + 1)
-                    });
-                } catch (e) {
-                    console.error(e);
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Error creating the tokens.',
-                        tokens_created: (i + 1)
                     });
                 }
             }
 
+            return res.status(HttpStatus.CREATED).send({
+                created: true,
+                title: data.title,
+                quantity: data.quantity
+            });
 
-            if (!newToken) {
-                await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, data.coupons[j].id);
-                await deleteCoupon(insertResult);
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    error: true,
-                    message: 'Error creating the tokens.',
-                    tokens_created: (i + 1)
-                });
-            }
+        } else {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Error inserting the new coupon.',
+            });
         }
 
-        return res.status(HttpStatus.CREATED).send({
-            created: true,
-            title: data.title,
-            quantity: data.quantity
-        });
+    } catch (e) {
+        console.error(e);
 
-    } else {
+        if (insertResult) { // TODO probably to catch
+            await internal_deleteCoupon(insertResult.dataValues.id);
+        }
+
+        if (couponToken) {
+            await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, pack_coupon_id);
+        }
+
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'Error inserting the new coupon.',
         });
     }
-
 };
 const getFromId = (req, res) => {
 
@@ -511,21 +480,11 @@ const editCoupon = (req, res) => {
         });
 };
 const deleteCoupon = (req, res) => {
-    let id = 0
-    let owner = 0
-    if (req.body) {
-        id = req.body.id
-        owner = req.user.id
-    } else {
-        id = req.dataValues.id
-        owner = req.dataValues.owner
-    }
-    console.log('reqqqqqqq delete coupon', req)
     Coupon.destroy({
         where: {
             [Op.and]: [
-                {id: id},
-                {owner: owner}
+                {id: req.body.id},
+                {owner: req.user.id}
             ]
         }
     })
@@ -533,14 +492,13 @@ const deleteCoupon = (req, res) => {
             if (coupon === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     deleted: false,
-                    coupon: parseInt(id),
+                    coupon: parseInt(req.body.id),
                     message: "This coupon doesn't exist or you doesn't own the coupon!"
                 });
             } else {
-
                 return res.status(HttpStatus.OK).json({
                     deleted: true,
-                    coupon: parseInt(id),
+                    coupon: parseInt(req.body.id),
                 });
             }
         })
@@ -549,7 +507,7 @@ const deleteCoupon = (req, res) => {
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
-                coupon: parseInt(id),
+                coupon: parseInt(req.body.id),
                 error: 'Cannot deleteCoupon the coupon'
             })
         })
@@ -719,11 +677,25 @@ const filterCouponsByText = (coupons, text) => {
 };
 const availableCoupons = async () => {
     return await Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
-        ' COUNT(*) AS quantity FROM coupon_tokens JOIN coupons ' +
-        'ON coupons.id = coupon_tokens.coupon_id WHERE consumer IS null AND coupons.visible_from IS NOT null ' +
-        'AND coupons.visible_from <= CURRENT_TIMESTAMP  AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
-        'AND (coupons.valid_until >= CURRENT_TIMESTAMP  OR coupons.valid_until IS null) GROUP BY coupons.id',
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        'FROM coupons ' +
+        'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  ' +
+        'WHERE coupon_tokens.consumer IS NULL ' +
+        'AND coupon_tokens.package IS NULL ' +
+        'AND coupons.visible_from IS NOT NULL ' +
+        'AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP  ' +
+        'AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
+        'GROUP BY coupons.id ' +
+        'UNION ( ' +
+        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        '  FROM coupons ' +
+        '  JOIN package_tokens ON coupons.id = package_tokens.package_id' +
+        '  WHERE package_tokens.consumer IS NULL ' +
+        '  AND coupons.visible_from IS NOT NULL ' +
+        '  AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
+        '  AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
+        '  GROUP BY coupons.id  ' +
+        ')',
         {type: Sequelize.QueryTypes.SELECT},
         {model: Coupon}
     );
@@ -768,6 +740,16 @@ const formatNotIn = (tokenList) => {
     }
 
     return result + ')';
+};
+const internal_deleteCoupon = async (coupon_id) => {
+    let deletion;
+
+    try {
+        deletion = await Coupon.destroy({where: {id: coupon_id}});
+    } catch (e) {
+        console.warn('There was an error during the deletion of the coupon with id ' + coupon_id);
+        console.error(e);
+    }
 };
 
 /** This methods create the update query in the purchasing process **/
