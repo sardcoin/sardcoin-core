@@ -10,6 +10,7 @@ const CouponManager = require('../engine/coupon-manager');
 const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
+const ReportManager = require('../engine/report-manager');
 
 module.exports = function (app, passport, config) {
 
@@ -21,7 +22,7 @@ module.exports = function (app, passport, config) {
     const payPath   = indexPath + 'paypal/';
     const catPath   = indexPath + 'categories/';
     const pkPath    = indexPath + 'packages/';
-
+    const rpPath    = indexPath + 'reports/';
 
     /* AUTH */
     const reqAuth = passport.authenticate('jwt', {session: false});
@@ -62,19 +63,9 @@ module.exports = function (app, passport, config) {
 
 
     /****************** PACKAGE **********************/
-    // app.post(pkPath   + 'create/', expressJoi(SchemasPackage.createPackageSchema), reqAuth, AcM.roleAuth([broker, admin]), PackageManager.createPackage);
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
     app.get(pkPath    + 'getAssignCouponsById/:coupon_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getAssignCouponsById);
     app.get(pkPath    + 'getCouponsPackage/:package_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getCouponsPackage);
-    // app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
-    // app.get(cmPath    + 'getAvailableCoupons/', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCoupons);
-    // app.get(cmPath    + 'getAvailableCouponsByCategoryId/:category_id', reqAuth, AcM.roleAuth([consumer, admin, verifier]), CouponManager.getAvailableCouponsByCategory);
-    // app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer, admin]), CouponManager.editCoupon);
-    // app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.deleteCoupon);
-    // app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, admin]), CouponManager.addImage);
-    // app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);
-    // app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), reqAuth, AcM.roleAuth([consumer]), CouponManager.importOfflineCoupon);
-    // app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
 
     /****************** ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
@@ -93,6 +84,12 @@ module.exports = function (app, passport, config) {
     app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),
     app.post(catPath + 'assignCategoryToCoupon', reqAuth, AcM.roleAuth([admin, producer]), CatManager.assignCategory);
     app.delete(catPath + 'removeCouponCategory', reqAuth, AcM.roleAuth([admin, producer]), CatManager.removeCategory);
+
+    /****************** REPORTS *****************/
+    app.get(rpPath + 'getReportProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCoupons);
+    app.get(rpPath + 'getReportProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCouponFromId);
+    app.get(rpPath + 'getReportBrokerProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCoupons);
+    app.get(rpPath + 'getReportBrokerProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCouponFromId);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
