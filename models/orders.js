@@ -3,7 +3,7 @@
 module.exports = (sequelize, DataType) => {
     let Order = sequelize.define('Order', {
         id: {
-            type: DataType.INTEGER(5),
+            type: DataType.INTEGER(11),
             autoIncrement: true,
             primaryKey: true
         },
@@ -16,7 +16,7 @@ module.exports = (sequelize, DataType) => {
     });
 
     Order.associate = function (models) {
-        Order.belongsTo(models.OrderCoupon, {foreignKey: 'id', sourceKey: 'source_id'});
+        Order.hasMany(models.OrderCoupon, {foreignKey: 'order_id', sourceKey: 'id'});
     };
 
     return Order;

@@ -35,7 +35,9 @@ const setCheckout = (config) => {
             }
 
             query = await setQuery(grouped, config['siteURL']);
+            console.warn(query);
             resultSet = await Paypal.request('SetExpressCheckout', query);
+            console.log(resultSet);
             link += 'checkoutnow?token=' + resultSet.TOKEN;
 
             return res.status(HttpStatus.OK).send({link: link});
@@ -50,7 +52,7 @@ const setCheckout = (config) => {
 };
 const confirm = (config) => {
     return async (req, res) => {
-        res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?token=' + req.query.token);
+        res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/checkout?token=' + req.query.token);
     };
 };
 const pay = (config) => {
