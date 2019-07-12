@@ -677,9 +677,9 @@ const filterCouponsByText = (coupons, text) => {
 };
 const availableCoupons = async () => {
     return await Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, 0 AS quantity_pack ' +
         'FROM coupons ' +
-        'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  ' +
+        'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
         'WHERE coupon_tokens.consumer IS NULL ' +
         'AND coupon_tokens.package IS NULL ' +
         'AND coupons.visible_from IS NOT NULL ' +
@@ -687,9 +687,10 @@ const availableCoupons = async () => {
         'AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
         'GROUP BY coupons.id ' +
         'UNION ( ' +
-        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, COUNT(coupon_tokens.package) AS quantity_pack  ' +
         '  FROM coupons ' +
         '  JOIN package_tokens ON coupons.id = package_tokens.package_id' +
+        '  JOIN coupon_tokens ON package_tokens.token = coupon_tokens.package ' +
         '  WHERE package_tokens.consumer IS NULL ' +
         '  AND coupons.visible_from IS NOT NULL ' +
         '  AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
