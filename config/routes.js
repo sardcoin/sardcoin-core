@@ -72,7 +72,7 @@ module.exports = function (app, passport, config) {
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
-    app.get(pkPath    + 'getCouponsPackage/:package_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getCouponsPackage);
+    app.get(pkPath    + 'getCouponsPackage/:package_id', PackageManager.getCouponsPackage);
 
     /****************** ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
