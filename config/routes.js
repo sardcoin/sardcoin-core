@@ -10,6 +10,7 @@ const CouponManager = require('../engine/coupon-manager');
 const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
+const ReportManager = require('../engine/report-manager');
 
 module.exports = function (app, passport, config) {
 
@@ -21,7 +22,7 @@ module.exports = function (app, passport, config) {
     const payPath   = indexPath + 'paypal/';
     const catPath   = indexPath + 'categories/';
     const pkPath    = indexPath + 'packages/';
-
+    const rpPath    = indexPath + 'reports/';
 
     /* AUTH */
     const reqAuth = passport.authenticate('jwt', {session: false});
@@ -71,7 +72,7 @@ module.exports = function (app, passport, config) {
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
-    app.get(pkPath    + 'getCouponsPackage/:package_id', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getCouponsPackage);
+    app.get(pkPath    + 'getCouponsPackage/:package_id', PackageManager.getCouponsPackage);
 
     /****************** ORDERS *****************/
     app.get(ordPath + 'getOrdersByConsumer/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getOrdersByConsumer);
@@ -91,6 +92,12 @@ module.exports = function (app, passport, config) {
     app.delete(catPath + 'delete', reqAuth, AcM.roleAuth([admin]), CatManager.remove);
     app.post(catPath + 'assignCategoryToCoupon', reqAuth, AcM.roleAuth([admin, producer, broker]), CatManager.assignCategory);
     app.delete(catPath + 'removeCouponCategory', reqAuth, AcM.roleAuth([admin, producer, broker]), CatManager.removeCategory);
+
+    /****************** REPORTS *****************/
+    app.get(rpPath + 'getReportProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCoupons);
+    app.get(rpPath + 'getReportProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCouponFromId);
+    app.get(rpPath + 'getReportBrokerProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCoupons);
+    app.get(rpPath + 'getReportBrokerProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCouponFromId);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
