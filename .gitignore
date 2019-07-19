@@ -44,3 +44,4 @@ Thumbs.db
 
 # config files
 /config/config.json
+/config/*

@@ -8,7 +8,8 @@ module.exports = (sequelize, DataType) => {
         },
         coupon_id: DataType.INTEGER(11),
         consumer:  DataType.INTEGER(11),
-        verifier:  DataType.INTEGER(11)
+        verifier:  DataType.INTEGER(11),
+        package:   DataType.INTEGER(11),
     }, {
         freezeTableName: true,
         timestamps: false,
@@ -19,6 +20,7 @@ module.exports = (sequelize, DataType) => {
         CouponToken.hasMany(models.User, {foreignKey: 'id', sourceKey: 'consumer'});
         CouponToken.hasMany(models.User, {foreignKey: 'id', sourceKey: 'verifier'});
         CouponToken.hasMany(models.Coupon, {foreignKey: 'id', sourceKey: 'coupon_id'});
+        CouponToken.hasMany(models.PackageTokens, {foreignKey: 'token', sourceKey: 'package'});
     };
 
     return CouponToken;

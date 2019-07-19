@@ -89,7 +89,9 @@ exports.getProducerFromId = function (req, res, next) {
             id: req.params.producer_id,
             user_type: 1
         },
-        attributes: ['username', 'email', 'company_name', 'vat_number', 'first_name', 'last_name', 'address', 'province', 'city', 'zip']
+        attributes: ['username', 'email', 'company_name',
+                    'vat_number', 'first_name', 'last_name', 'address', 'province',
+                    'city', 'zip']
     })
         .then(user => {
             if (user === null) {
@@ -114,7 +116,7 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    console.log(user);
+   // console.log(user);
 
     Users.update({
         company_name: user.company_name,
@@ -136,7 +138,7 @@ exports.updateUser = function (req, res, next) {
         }
     })
         .then(newUser => {
-            console.log(newUser);
+            //console.log(newUser);
             if (newUser[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
@@ -168,10 +170,10 @@ exports.deleteUser = function (req, res, next) {
             ]}})
         .then((user) => {
             if(user == 0){
-            return res.status(HttpStatus.OK).json({
+            return res.status(HttpStatus.BAD_REQUEST).json({
                 deleted: false,
                 username: req.body.username,
-                message: "user don't exist!!"
+                message: "The request user does not exist."
             })}
             else {
                 return res.status(HttpStatus.OK).json({
@@ -215,7 +217,7 @@ exports.basicLogin = function (req, res, next) {
     })(req, res, next);
 };
 
-exports.roleAuthorization = function(roles){
+exports.roleAuth = function(roles){
 
     return function(req, res, next){
 
@@ -240,6 +242,7 @@ exports.roleAuthorization = function(roles){
 };
 
 
+// TODO rimuovere, dovrebbe essere inutile con nuovo paypal
 // exports.getAccessToken = function (req, res, next) {
 //     Users.findById(req.user.id)
 //         .then(user => {
@@ -253,89 +256,112 @@ exports.roleAuthorization = function(roles){
 //             });
 //         })
 // };
-
 // funzione per prelevare l'<access-token>
-exports.getAccessToken = async function (producer_id, callback) {
-
-    var accessToken = null;
-
-    const _getClientId = await getClientId(producer_id);
-    const  clientId = _getClientId.dataValues.client_id;
-    const _getPasswordSecret = await getPasswordSecret(producer_id);
-    const  passwordSecret = _getPasswordSecret.dataValues.password_secret;
-
-    console.log('clientId', clientId);
-    console.log('passwordSecret', passwordSecret);
-
-
-
-    var headers = {
-        'Accept': 'application/json',
-        'Accept-Language': 'en_US'
-    };
-
-    var dataString = 'grant_type=client_credentials';
-    var options = {
-        url: 'https://api.sandbox.paypal.com/v1/oauth2/token',
-        method: 'POST',
-        headers: headers,
-        body: dataString,
-        auth: {
-            'user': clientId,
-            'pass': passwordSecret
-        }
-    };
-
-    request(options, call);
-
-   function  call(error, response, body) {
-
-            if (!error && response.statusCode == 200) {
-                if (body != undefined) {
-                    const _body =JSON.parse(body);
-                    accessToken = _body.access_token;
-                    return callback(accessToken);
-
-                }
-            }
-    }
-
-    return this;
-}
+// exports.getAccessToken = async function (producer_id, callback) {
+//
+//     var accessToken = null;
+//
+//     const _getClientId = await getClientId(producer_id);
+//     const  clientId = _getClientId.dataValues.client_id;
+//     const _getPasswordSecret = await getPasswordSecret(producer_id);
+//     const  passwordSecret = _getPasswordSecret.dataValues.password_secret;
+//
+//     console.log('clientId', clientId);
+//     console.log('passwordSecret', passwordSecret);
+//
+//
+//
+//     var headers = {
+//         'Accept': 'application/json',
+//         'Accept-Language': 'en_US'
+//     };
+//
+//     var dataString = 'grant_type=client_credentials';
+//     var options = {
+//         url: 'https://api.sandbox.paypal.com/v1/oauth2/token',
+//         method: 'POST',
+//         headers: headers,
+//         body: dataString,
+//         auth: {
+//             'user': clientId,
+//             'pass': passwordSecret
+//         }
+//     };
+//
+//     request(options, call);
+//
+//    function  call(error, response, body) {
+//
+//             if (!error && response.statusCode == 200) {
+//                 if (body != undefined) {
+//                     const _body =JSON.parse(body);
+//                     accessToken = _body.access_token;
+//                     return callback(accessToken);
+//
+//                 }
+//             }
+//     }
+//
+//     return this;
+// };
 // done, funzione per prelevare id dell'app paypal situata nel db
-async function getClientId(producer_id) {
+// async function getClientId(producer_id) {
+//
+//     return new Promise( ((resolve, reject) => {
+//         Users.findOne({
+//             attributes: ["client_id"],
+//             where: {id: producer_id}
+//
+//         }).then(client_id => {
+//             resolve(client_id);
+//         }).catch(err => {
+//             console.log(err);
+//
+//         })
+//     }))
+//
+//
+// }
+//
+// // done funzione per prelevare la secret dell'app paypal situata nel db
+// async function getPasswordSecret(producer_id) {
+//
+//     return new Promise( ((resolve, reject) => {
+//         Users.findOne({
+//             attributes: ["password_secret"],
+//             where: {id: producer_id}
+//
+//         }).then(password_secret => {
+//             resolve(password_secret);
+//             return password_secret;
+//         }).catch(err => {
+//             console.log(err);
+//         })
+//     }))
+// }
 
-    return new Promise( ((resolve, reject) => {
-        Users.findOne({
-            attributes: ["client_id"],
-            where: {id: producer_id}
 
-        }).then(client_id => {
-            resolve(client_id);
-        }).catch(err => {
-            console.log(err);
-
+exports.getBrokers = function (req, res, next) {
+    Users.findAll({
+        where: {
+            user_type: 4
+        },
+        attributes: ['id','username', 'email', 'company_name',
+            'vat_number', 'first_name', 'last_name', 'address', 'province',
+            'city', 'zip']
+    })
+        .then(broker => {
+            if (broker === null) {
+                return res.status(HttpStatus.NO_CONTENT).send({})
+            }
+            return res.status(HttpStatus.OK).send(broker)
         })
-    }))
-
-
-}
-
-// done funzione per prelevare la secret dell'app paypal situata nel db
-async function getPasswordSecret(producer_id) {
-
-    return new Promise( ((resolve, reject) => {
-        Users.findOne({
-            attributes: ["password_secret"],
-            where: {id: producer_id}
-
-        }).then(password_secret => {
-            resolve(password_secret);
-            return password_secret;
-        }).catch(err => {
+        .catch(err => {
             console.log(err);
-        })
-    }))
-}
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: err
+            })
+        });
+};
 
 
