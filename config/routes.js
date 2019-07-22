@@ -11,6 +11,7 @@ const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
 const ReportManager = require('../engine/report-manager');
+const CouponBrokerManager = require('../engine/coupon-broker-manager');
 
 module.exports = function (app, passport, config) {
 
@@ -65,6 +66,7 @@ module.exports = function (app, passport, config) {
     app.post(cmPath   + 'create/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon); // TODO add again expressJoi(Schemas.createCouponSchema)
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
     app.get(cmPath    + 'getBrokerCoupons/', reqAuth, AcM.roleAuth([broker, admin]), CouponManager.getBrokerCoupons);
+    // app.get(cmPath    + 'getBrokersFromId/:coupon_id', CouponBrokerManager.getBrokersFromId);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer,broker, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.deleteCoupon);
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
