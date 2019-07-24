@@ -29,14 +29,16 @@ const ITEM_TYPE = {
 
 const createCoupon = async (req, res) => {
     const data = req.body;
+    console.log('data', data)
     let insertResult, newToken, couponToken, token, pack_coupon_id;
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
+        console.log('insertResult', insertResult)
 
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
-                await CategoriesManager.assignCategory({coupon_id: insertResult.id, category_id: category.id})
+                await CategoriesManager.assignCategory({coupon_id: insertResult.dataValues.id, category_id: category.id})
             } // Category association
 
             if (data.brokers) {
@@ -47,7 +49,7 @@ const createCoupon = async (req, res) => {
                         message: 'It is not possible to add a broker authorized to use a package.'
                     });
                 } // The package cannot be transferred to another broker
-                for (let broker of data.brokers.length) {
+                for (let broker of data.brokers) {
                     const newBroker = await CouponBrokerManager.insertCouponBroker(insertResult.get('id'), broker.id);
                 } // for each broker it associates the coupon created to him
             } // Broker association
@@ -412,6 +414,7 @@ const editCoupon = (req, res) => {
         valid_until: valid_until,
         constraints: data.constraints,
         purchasable: data.purchasable,
+        brokers: data.brokers
     }, {
         where: {
             [Op.and]: [
@@ -421,7 +424,7 @@ const editCoupon = (req, res) => {
         }
     })
         .then(async couponUpdated => {
-            // console.log('couponUpdated', couponUpdated);
+            console.log('couponUpdated', couponUpdated);
             if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
@@ -435,6 +438,9 @@ const editCoupon = (req, res) => {
 
                 try {
                     await CategoriesManager.removeAllCategory({
+                        coupon_id: data.id,
+                    });
+                    await CouponBrokerManager.removeAllCouponsBroker({
                         coupon_id: data.id,
                     })
                 } catch (e) {
@@ -461,7 +467,10 @@ const editCoupon = (req, res) => {
 
                     }
                 }
-
+                    for (let broker of data.brokers) {
+                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                    } // for each broker it associates the coupon created to him
+                // Broker association
 
                 return res.status(HttpStatus.OK).json({
                     updated: true,

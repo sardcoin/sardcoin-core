@@ -103,7 +103,7 @@ const remove = async (req, res) => {
 const assignCategory = async (req, res) => {
     let creation;
 
-    // console.log('req', req)
+    console.log('req assignCategory', req)
     try {
         creation = await CouponsCategories.create({
             coupon_id: req.coupon_id,
