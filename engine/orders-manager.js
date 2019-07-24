@@ -59,7 +59,7 @@ const getLastOrder = async (req, res) => {
 };
 /** The consumer can obtain his detailed order by the id of the order**/
 const getOrderById = async (req, res) => {
-    let aux, price, coupon_id, order = {
+    let aux, price, coupon_id, couponToken, verifier = null, order = {
         id: req.params.order_id,
         consumer: req.user.id,
         purchase_time: '',
@@ -75,13 +75,15 @@ const getOrderById = async (req, res) => {
         if (aux.length > 0) {
             order.purchase_time = aux[0].dataValues.purchase_time;
 
-            console.log(aux[0].dataValues.OrderCoupons);
-
             for (const coupon of aux[0].dataValues.OrderCoupons) {
-                console.warn(coupon.dataValues);
-                coupon_id = coupon.dataValues.coupon_token
-                    ? (await CouponToken.findOne({where: {token: coupon.dataValues.coupon_token}})).dataValues.coupon_id
-                    : (await PackageTokens.findOne({where: {token: coupon.dataValues.package_token}})).dataValues.package_id;
+
+                if(coupon.dataValues.coupon_token) {
+                    couponToken = await CouponToken.findOne({where: {token: coupon.dataValues.coupon_token}});
+                    verifier = couponToken.verifier;
+                    coupon_id = couponToken.dataValues.coupon_id;
+                } else {
+                    coupon_id = (await PackageTokens.findOne({where: {token: coupon.dataValues.package_token}})).dataValues.package_id;
+                }
 
                 price = (await Coupon.findOne({where: {id: coupon_id}}));
 
@@ -90,6 +92,7 @@ const getOrderById = async (req, res) => {
                     coupon_token: coupon.dataValues.coupon_token || null,
                     package_token: coupon.dataValues.package_token || null,
                     price: price.dataValues.price,
+                    verifier: verifier,
                     coupon_id: coupon_id
                 })
             }
