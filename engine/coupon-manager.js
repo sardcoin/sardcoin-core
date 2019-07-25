@@ -1,19 +1,24 @@
 'use strict';
 
+/** Models and DB **/
+const Order = require('../models/index').Order;
 const Coupon = require('../models/index').Coupon;
-const CouponBroker = require('../models/index').CouponBroker;
-const CouponToken = require('../models/index').CouponToken;
-const CouponsCategories = require('../models/index').CouponsCategories;
+const Op = require('../models/index').Sequelize.Op;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
-const Op = require('../models/index').Sequelize.Op;
+const CouponToken = require('../models/index').CouponToken;
+const OrderCoupon = require('../models/index').OrderCoupon;
+const PackageTokens = require('../models/index').PackageTokens;
+const CouponsCategories = require('../models/index').CouponsCategories;
+
+/** Managers **/
 const CouponBrokerManager = require('./coupon-broker-manager');
 const CategoriesManager = require('./categories-manager');
-const PackageTokens = require('../models/index').PackageTokens;
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const PackageManager = require('./package-manager');
 
+/** Libraries and costants **/
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -26,7 +31,6 @@ const ITEM_TYPE = {
 };
 
 /** Exported REST functions **/
-
 const createCoupon = async (req, res) => {
     const data = req.body;
     console.log('data', data)
@@ -196,24 +200,50 @@ const getProducerCoupons = (req, res) => {
             })
         })
 };
-const getPurchasedCoupons = (req, res) => {
-    Coupon.findAll({
-        include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
-    })
-        .then(coupons => {
-            if (coupons.length === 0) {
-                return res.status(HttpStatus.NO_CONTENT).send({});
-            }
+const getPurchasedCoupons = async (req, res) => {
+    let coupons, order;
 
-            return res.status(HttpStatus.OK).send(coupons);
+    try {
+        coupons = await Sequelize.query('SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+            'FROM coupons  ' +
+            'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
+            'JOIN orders_coupons ON orders_coupons.coupon_token = coupon_tokens.token ' +
+            'JOIN orders ON orders.ID = orders_coupons.order_id ' +
+            'WHERE coupon_tokens.consumer = :consumer ' +
+            'UNION ( ' +
+            '    SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+            '    FROM coupons  ' +
+            '    JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
+            '    JOIN orders_coupons ON orders_coupons.package_token = coupon_tokens.package ' +
+            '    JOIN orders ON orders.ID = orders_coupons.order_id ' +
+            '    WHERE coupon_tokens.consumer = :consumer ' +
+            ')  ' +
+            'ORDER BY `id` ASC',
+            {replacements: {consumer: req.user.id}, type: Sequelize.QueryTypes.SELECT},
+            {model: Coupon});
+
+        //await Coupon.findAll({include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}]});
+
+        if (coupons.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+
+        for(let coupon of coupons) {
+            coupon = formatCoupon(coupon);
+        }
+
+        // coupons = _.groupBy(coupons, 'id');
+
+        return res.status(HttpStatus.OK).send(coupons);
+
+    } catch (e) {
+        console.log(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Error retrieving purchased coupons'
         })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Error retrieving purchased coupons'
-            })
-        });
+    }
+
 };
 const getPurchasedCouponsById = (req, res) => {
     Coupon.findAll({
@@ -1059,6 +1089,25 @@ const getFromIdIntern = async function (id) {
                 }
             });
     })
+};
+const formatCoupon = (coupon) => {
+    let CouponTokens = {
+        token: coupon.token,
+        coupon_id: coupon.coupon_id,
+        consumer: coupon.consumer,
+        package: coupon.package,
+        verifier: coupon.verifier
+    };
+
+    delete coupon['token'];
+    delete coupon['coupon_id'];
+    delete coupon['consumer'];
+    delete coupon['package'];
+    delete coupon['verifier'];
+
+    coupon.token = CouponTokens;
+
+    return coupon;
 };
 
 module.exports = {
