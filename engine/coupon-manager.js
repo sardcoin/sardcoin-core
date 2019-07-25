@@ -857,11 +857,13 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                     isPurchasable = isPurchasable && await isItemPurchasable(coupon.coupon_id, user_id, ITEM_TYPE.COUPON);
                 }
 
+                console.warn('UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=\' + user_id + \' WHERE `package`=\'' + pack[0].token + '\';');
+
                 if (isNotExpired && isPurchasable) {
                     result = {
                         error: false,
                         token: pack[0].token,
-                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=\' + user_id + \' WHERE `package`=\\\'\' + pack[0].token + \'\\\';'
+                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=' + user_id + ' WHERE `token`=\'' + pack[0].token + '\';'
                     };
                 } else {
                     console.log('ERROR in COUPON MANAGER:\nPackage with ID=' + package_id + ' is not purchasable or expired');
@@ -917,13 +919,14 @@ const isItemPurchasable = async (coupon_id, user_id, type = ITEM_TYPE.COUPON) =>
     let queryResult;
     let query = type === ITEM_TYPE.COUPON
         // Coupon query
-        ? 'SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS available, ' +
+        ? 'SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN CouponTokens.consumer IS NULL THEN 1 END) AS available, ' +
         'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS bought FROM coupons AS Coupon JOIN coupon_tokens AS CouponTokens ' +
         'ON Coupon.id = CouponTokens.coupon_id WHERE id = $2 GROUP BY id'
+
         // Package query
         : 'SELECT PackageTokens.package_id, Coupon.purchasable, COUNT(DISTINCT PackageTokens.token) AS quantity, ' +
-        'COUNT(DISTINCT CASE WHEN consumer IS NULL THEN 1 END) AS available, ' +
-        'COUNT(DISTINCT CASE WHEN consumer = $1 THEN 1 END) AS bought ' +
+        'COUNT(DISTINCT CASE WHEN PackageTokens.consumer IS NULL THEN 1 END) AS available, ' +
+        'COUNT(DISTINCT CASE WHEN PackageTokens.consumer = $1 THEN 1 END) AS bought ' +
         'FROM package_tokens AS PackageTokens JOIN coupons AS Coupon ON PackageTokens.package_id = Coupon.id ' +
         'JOIN coupon_tokens AS CouponTokens ON CouponTokens.package = PackageTokens.token ' +
         'WHERE PackageTokens.package_id = $2';
