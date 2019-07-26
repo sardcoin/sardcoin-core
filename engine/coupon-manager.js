@@ -10,7 +10,8 @@ const CouponToken = require('../models/index').CouponToken;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const PackageTokens = require('../models/index').PackageTokens;
 const CouponsCategories = require('../models/index').CouponsCategories;
-
+const CouponsBrokers = require('../models/index').CouponBroker;
+const User = require('../models/index').User;
 /** Managers **/
 const CouponBrokerManager = require('./coupon-broker-manager');
 const CategoriesManager = require('./categories-manager');
@@ -122,6 +123,7 @@ const createCoupon = async (req, res) => {
         });
     }
 };
+
 const getFromId = (req, res) => {
 
     Coupon.findOne({
@@ -1112,6 +1114,46 @@ const formatCoupon = (coupon) => {
     return coupon;
 };
 
+// return brokers username list associated at coupon
+const getBrokerFromCouponId = (req, res) => {
+    console.log('req.params', req.params)
+    let brokerResult = [];
+    CouponsBrokers.findAll({
+        where: {coupon_id: req.params.id}
+    })
+        .then(async broker => {
+            if (broker === null) {
+                return res.status(HttpStatus.NO_CONTENT).send({
+                    error: 'No broker found with the given id.',
+                    coupon_id: parseInt(req.params.coupon_id),
+                })
+            } else {
+                console.log('broker', broker)
+
+                for (const id of broker) {
+
+                    await User.findOne({
+                        where: {id: id.dataValues.broker_id}
+                    }).then( br => {
+
+                        brokerResult.push(br)
+                    }).catch();
+                }
+                console.log('brokerResult', brokerResult)
+
+                return res.status(HttpStatus.OK).send(brokerResult)
+            }
+
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot GET broker.'
+            })
+        });
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1130,5 +1172,6 @@ module.exports = {
     importOfflineCoupon,
     redeemCoupon,
     addImage,
-    getFromIdIntern
+    getFromIdIntern,
+    getBrokerFromCouponId
 };
