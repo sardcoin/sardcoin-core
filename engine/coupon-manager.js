@@ -402,6 +402,7 @@ const buyCoupons = async (req, res) => {
 };
 const editCoupon = (req, res) => {
     const data = req.body;
+    console.log('editCouponFunction', data);
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
     let visible_from = data.visible_from === null ? null : Number(data.visible_from);
     Coupon.update({
@@ -450,7 +451,7 @@ const editCoupon = (req, res) => {
                         message: 'Error deleted categories.'
                     });
                 }
-                if (data.categories.length > 0) {
+                if (data.categories) {
                     for (let i = 0; i < data.categories.length; i++) {
                         try {
                             await CategoriesManager.assignCategory({
@@ -467,10 +468,11 @@ const editCoupon = (req, res) => {
 
                     }
                 }
-                    for (let broker of data.brokers) {
-                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
-                    } // for each broker it associates the coupon created to him
-                // Broker association
+                    if (data.brokers) {
+                        for (let broker of data.brokers) {
+                            const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                        }// for each broker it associates the coupon created to him
+                    }// Broker association
 
                 return res.status(HttpStatus.OK).json({
                     updated: true,

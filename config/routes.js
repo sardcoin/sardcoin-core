@@ -88,7 +88,7 @@ module.exports = function (app, passport, config) {
 
     /****************** CATEGORIES *****************/
     app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),
-
+    app.get(catPath + 'getCategoryCoupon/:id', CatManager.getCategoryCoupon);
     app.put(catPath + 'update', reqAuth, AcM.roleAuth([admin]), CatManager.update);
     app.post(catPath + 'insert', reqAuth, AcM.roleAuth([admin]), CatManager.insert);
     app.delete(catPath + 'delete', reqAuth, AcM.roleAuth([admin]), CatManager.remove);

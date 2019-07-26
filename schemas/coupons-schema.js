@@ -33,12 +33,12 @@ const updateCouponSchema = {
         valid_from:     Joi.number().required().label("Valid From is required"),
         valid_until:    Joi.number().allow(null),
         constraints:    Joi.string().allow(null),
-        quantity:       Joi.number().integer(),
+        quantity:       Joi.number().allow(null),
         purchasable:    Joi.number().allow(null),
         brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
         categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
-        coupons:        Joi.array().allow(null).error(new Error("couponns must be a array or null")),
         type:           Joi.number().integer().allow(null).error(new Error("Type must be a number or null")),
+        package:           Joi.array().allow(null).error(new Error("coupons must be a array or null")),
 
     },
     params: {}
