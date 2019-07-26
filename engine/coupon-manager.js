@@ -1,19 +1,24 @@
 'use strict';
 
+/** Models and DB **/
+const Order = require('../models/index').Order;
 const Coupon = require('../models/index').Coupon;
-const CouponBroker = require('../models/index').CouponBroker;
-const CouponToken = require('../models/index').CouponToken;
-const CouponsCategories = require('../models/index').CouponsCategories;
+const Op = require('../models/index').Sequelize.Op;
 const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
-const Op = require('../models/index').Sequelize.Op;
+const CouponToken = require('../models/index').CouponToken;
+const OrderCoupon = require('../models/index').OrderCoupon;
+const PackageTokens = require('../models/index').PackageTokens;
+const CouponsCategories = require('../models/index').CouponsCategories;
+
+/** Managers **/
 const CouponBrokerManager = require('./coupon-broker-manager');
 const CategoriesManager = require('./categories-manager');
-const PackageTokens = require('../models/index').PackageTokens;
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const PackageManager = require('./package-manager');
 
+/** Libraries and costants **/
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
@@ -26,7 +31,6 @@ const ITEM_TYPE = {
 };
 
 /** Exported REST functions **/
-
 const createCoupon = async (req, res) => {
     const data = req.body;
     console.log('data', data)
@@ -196,24 +200,50 @@ const getProducerCoupons = (req, res) => {
             })
         })
 };
-const getPurchasedCoupons = (req, res) => {
-    Coupon.findAll({
-        include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}],
-    })
-        .then(coupons => {
-            if (coupons.length === 0) {
-                return res.status(HttpStatus.NO_CONTENT).send({});
-            }
+const getPurchasedCoupons = async (req, res) => {
+    let coupons, order;
 
-            return res.status(HttpStatus.OK).send(coupons);
+    try {
+        coupons = await Sequelize.query('SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+            'FROM coupons  ' +
+            'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
+            'JOIN orders_coupons ON orders_coupons.coupon_token = coupon_tokens.token ' +
+            'JOIN orders ON orders.ID = orders_coupons.order_id ' +
+            'WHERE coupon_tokens.consumer = :consumer ' +
+            'UNION ( ' +
+            '    SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+            '    FROM coupons  ' +
+            '    JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
+            '    JOIN orders_coupons ON orders_coupons.package_token = coupon_tokens.package ' +
+            '    JOIN orders ON orders.ID = orders_coupons.order_id ' +
+            '    WHERE coupon_tokens.consumer = :consumer ' +
+            ')  ' +
+            'ORDER BY `id` ASC',
+            {replacements: {consumer: req.user.id}, type: Sequelize.QueryTypes.SELECT},
+            {model: Coupon});
+
+        //await Coupon.findAll({include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}]});
+
+        if (coupons.length === 0) {
+            return res.status(HttpStatus.NO_CONTENT).send({});
+        }
+
+        for(let coupon of coupons) {
+            coupon = formatCoupon(coupon);
+        }
+
+        // coupons = _.groupBy(coupons, 'id');
+
+        return res.status(HttpStatus.OK).send(coupons);
+
+    } catch (e) {
+        console.log(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Error retrieving purchased coupons'
         })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Error retrieving purchased coupons'
-            })
-        });
+    }
+
 };
 const getPurchasedCouponsById = (req, res) => {
     Coupon.findAll({
@@ -688,9 +718,9 @@ const filterCouponsByText = (coupons, text) => {
 };
 const availableCoupons = async () => {
     return await Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, 0 AS quantity_pack ' +
         'FROM coupons ' +
-        'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  ' +
+        'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
         'WHERE coupon_tokens.consumer IS NULL ' +
         'AND coupon_tokens.package IS NULL ' +
         'AND coupons.visible_from IS NOT NULL ' +
@@ -698,9 +728,10 @@ const availableCoupons = async () => {
         'AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
         'GROUP BY coupons.id ' +
         'UNION ( ' +
-        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity ' +
+        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, COUNT(coupon_tokens.package) AS quantity_pack  ' +
         '  FROM coupons ' +
         '  JOIN package_tokens ON coupons.id = package_tokens.package_id' +
+        '  JOIN coupon_tokens ON package_tokens.token = coupon_tokens.package ' +
         '  WHERE package_tokens.consumer IS NULL ' +
         '  AND coupons.visible_from IS NOT NULL ' +
         '  AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
@@ -858,11 +889,13 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                     isPurchasable = isPurchasable && await isItemPurchasable(coupon.coupon_id, user_id, ITEM_TYPE.COUPON);
                 }
 
+                console.warn('UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=\' + user_id + \' WHERE `package`=\'' + pack[0].token + '\';');
+
                 if (isNotExpired && isPurchasable) {
                     result = {
                         error: false,
                         token: pack[0].token,
-                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=\' + user_id + \' WHERE `package`=\\\'\' + pack[0].token + \'\\\';'
+                        query: 'UPDATE `coupon_tokens` SET `consumer`=' + user_id + ' WHERE `package`=\'' + pack[0].token + '\'; UPDATE `package_tokens` SET `consumer`=' + user_id + ' WHERE `token`=\'' + pack[0].token + '\';'
                     };
                 } else {
                     console.log('ERROR in COUPON MANAGER:\nPackage with ID=' + package_id + ' is not purchasable or expired');
@@ -918,13 +951,14 @@ const isItemPurchasable = async (coupon_id, user_id, type = ITEM_TYPE.COUPON) =>
     let queryResult;
     let query = type === ITEM_TYPE.COUPON
         // Coupon query
-        ? 'SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN consumer IS NULL THEN 1 END) AS available, ' +
+        ? 'SELECT id, purchasable, COUNT(*) AS quantity, COUNT(CASE WHEN CouponTokens.consumer IS NULL THEN 1 END) AS available, ' +
         'COUNT(CASE WHEN consumer = $1 THEN 1 END) AS bought FROM coupons AS Coupon JOIN coupon_tokens AS CouponTokens ' +
         'ON Coupon.id = CouponTokens.coupon_id WHERE id = $2 GROUP BY id'
+
         // Package query
         : 'SELECT PackageTokens.package_id, Coupon.purchasable, COUNT(DISTINCT PackageTokens.token) AS quantity, ' +
-        'COUNT(DISTINCT CASE WHEN consumer IS NULL THEN 1 END) AS available, ' +
-        'COUNT(DISTINCT CASE WHEN consumer = $1 THEN 1 END) AS bought ' +
+        'COUNT(DISTINCT CASE WHEN PackageTokens.consumer IS NULL THEN 1 END) AS available, ' +
+        'COUNT(DISTINCT CASE WHEN PackageTokens.consumer = $1 THEN 1 END) AS bought ' +
         'FROM package_tokens AS PackageTokens JOIN coupons AS Coupon ON PackageTokens.package_id = Coupon.id ' +
         'JOIN coupon_tokens AS CouponTokens ON CouponTokens.package = PackageTokens.token ' +
         'WHERE PackageTokens.package_id = $2';
@@ -1057,6 +1091,25 @@ const getFromIdIntern = async function (id) {
                 }
             });
     })
+};
+const formatCoupon = (coupon) => {
+    let CouponTokens = {
+        token: coupon.token,
+        coupon_id: coupon.coupon_id,
+        consumer: coupon.consumer,
+        package: coupon.package,
+        verifier: coupon.verifier
+    };
+
+    delete coupon['token'];
+    delete coupon['coupon_id'];
+    delete coupon['consumer'];
+    delete coupon['package'];
+    delete coupon['verifier'];
+
+    coupon.token = CouponTokens;
+
+    return coupon;
 };
 
 module.exports = {
