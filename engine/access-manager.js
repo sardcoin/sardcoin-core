@@ -217,27 +217,18 @@ exports.basicLogin = function (req, res, next) {
     })(req, res, next);
 };
 
-exports.roleAuth = function(roles){
+exports.roleAuth = (roles) => {
+    return async (req, res, next) =>{
+        const user = req.user;
 
-    return function(req, res, next){
+        console.log(roles);
+        console.warn(roles.indexOf(user.user_type) > -1);
 
-        let user = req.user;
-
-        Users.findById(user.id)
-            .then(userFound => {
-                // console.log(roles);
-
-                if(roles.indexOf(userFound.user_type) > -1){
-                    return next();
-                }
-
-                res.status(401).json({error: 'You are not authorized to view this content'});
-                return next('Unauthorized');
-            })
-            .catch(err => {
-                res.status(422).json({error: 'No user found.'});
-                return next(err);
-            });
+        if(roles.indexOf(user.user_type) > -1) {
+            return next();
+        } else {
+            return res.status(401).json({error: true, message:'You are not authorized to view this content'});
+        }
     }
 };
 

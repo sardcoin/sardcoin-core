@@ -201,7 +201,7 @@ const getProducerCoupons = (req, res) => {
         })
 };
 const getPurchasedCoupons = async (req, res) => {
-    let coupons, order;
+    let coupons;
 
     try {
         coupons = await Sequelize.query('SELECT coupons.*, coupon_tokens.*, purchase_time ' +
@@ -222,8 +222,6 @@ const getPurchasedCoupons = async (req, res) => {
             {replacements: {consumer: req.user.id}, type: Sequelize.QueryTypes.SELECT},
             {model: Coupon});
 
-        //await Coupon.findAll({include: [{model: CouponToken, required: true, where: {consumer: req.user.id}}]});
-
         if (coupons.length === 0) {
             return res.status(HttpStatus.NO_CONTENT).send({});
         }
@@ -231,8 +229,6 @@ const getPurchasedCoupons = async (req, res) => {
         for(let coupon of coupons) {
             coupon = formatCoupon(coupon);
         }
-
-        // coupons = _.groupBy(coupons, 'id');
 
         return res.status(HttpStatus.OK).send(coupons);
 
