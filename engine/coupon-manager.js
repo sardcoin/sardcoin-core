@@ -552,8 +552,6 @@ const importOfflineCoupon = (req, res) => {
 
     CouponToken.findOne({
         where: {
-
-
             [Op.and]: [
                 {consumer: {[Op.is]: null}},
                 {verifier: {[Op.is]: null}},
