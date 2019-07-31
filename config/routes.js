@@ -46,7 +46,7 @@ module.exports = function (app, passport, config) {
 
     /****************** COUPONS **********************/
     // Open methods
-    app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId);
+    app.get(cmPath    + 'getById/:coupon_id', CouponManager.getFromId); //  reqAuth, AcM.roleAuth([consumer, admin, verifier]),
     app.get(cmPath    + 'getAvailableCoupons/', CouponManager.getAvailableCoupons);
     app.get(cmPath    + 'getAvailableByCatId/:category_id', CouponManager.getAvailableCouponsByCategory);
     app.get(cmPath    + 'getAvailableByTextAndCatId/:text/:category_id', CouponManager.getAvailableByTextAndCatId);
