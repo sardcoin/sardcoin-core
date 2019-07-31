@@ -1108,40 +1108,42 @@ const formatCoupon = (coupon) => {
 };
 
 // return brokers username list associated at coupon
-const getBrokerFromCouponId = (req, res) => {
-    let brokerResult = [];
-    CouponsBrokers.findAll({
-        where: {coupon_id: req.params.id}
-    })
-        .then(async broker => {
-            if (broker === null) {
-                return res.status(HttpStatus.NO_CONTENT).send({
-                    error: 'No broker found with the given id.',
-                    coupon_id: parseInt(req.params.coupon_id),
+const getBrokerFromCouponId = async (req, res) => {
+    let couponBrokers, brokerTmp, brokers = [];
+
+    try {
+        couponBrokers = await CouponsBrokers.findAll({
+            where: {coupon_id: req.params.id}
+        });
+
+        if(!couponBrokers) {
+            return res.status(HttpStatus.NO_CONTENT).send({
+                error: 'There are no authorization given to brokers for this coupon.',
+                coupon_id: parseInt(req.params.coupon_id)
+            })
+        }
+
+        for(const el of couponBrokers) {
+            brokerTmp = await User.findOne({where: {id: el.dataValues.broker_id}});
+
+            if(!brokerTmp) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: `Cannot retrieve a user with id ${el.dataValues.id}`
                 })
-            } else {
-                for (const id of broker) {
-
-                    await User.findOne({
-                        where: {id: id.dataValues.broker_id}
-                    }).then( br => {
-
-                        brokerResult.push(br)
-                    }).catch();
-                }
-                console.log('brokerResult', brokerResult)
-
-                return res.status(HttpStatus.OK).send(brokerResult)
             }
 
+            brokers.push(brokerTmp);
+        }
+
+        return res.status(HttpStatus.OK).send(brokers);
+    } catch (err) {
+        console.log(err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Cannot GET the brokers authorized to the given coupon.'
         })
-        .catch(err => {
-            console.log(err);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Cannot GET broker.'
-            })
-        });
+    }
 };
 
 module.exports = {
