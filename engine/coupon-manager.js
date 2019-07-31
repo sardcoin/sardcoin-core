@@ -10,7 +10,8 @@ const CouponToken = require('../models/index').CouponToken;
 const OrderCoupon = require('../models/index').OrderCoupon;
 const PackageTokens = require('../models/index').PackageTokens;
 const CouponsCategories = require('../models/index').CouponsCategories;
-
+const CouponsBrokers = require('../models/index').CouponBroker;
+const User = require('../models/index').User;
 /** Managers **/
 const CouponBrokerManager = require('./coupon-broker-manager');
 const CategoriesManager = require('./categories-manager');
@@ -122,6 +123,7 @@ const createCoupon = async (req, res) => {
         });
     }
 };
+
 const getFromId = (req, res) => {
 
     Coupon.findOne({
@@ -476,7 +478,7 @@ const editCoupon = (req, res) => {
                         message: 'Error deleted categories.'
                     });
                 }
-                if (data.categories.length > 0) {
+                if (data.categories) {
                     for (let i = 0; i < data.categories.length; i++) {
                         try {
                             await CategoriesManager.assignCategory({
@@ -493,10 +495,11 @@ const editCoupon = (req, res) => {
 
                     }
                 }
-                    for (let broker of data.brokers) {
-                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
-                    } // for each broker it associates the coupon created to him
-                // Broker association
+                    if (data.brokers) {
+                        for (let broker of data.brokers) {
+                            const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                        }// for each broker it associates the coupon created to him
+                    }// Broker association
 
                 return res.status(HttpStatus.OK).json({
                     updated: true,
@@ -1104,6 +1107,43 @@ const formatCoupon = (coupon) => {
     return coupon;
 };
 
+// return brokers username list associated at coupon
+const getBrokerFromCouponId = (req, res) => {
+    let brokerResult = [];
+    CouponsBrokers.findAll({
+        where: {coupon_id: req.params.id}
+    })
+        .then(async broker => {
+            if (broker === null) {
+                return res.status(HttpStatus.NO_CONTENT).send({
+                    error: 'No broker found with the given id.',
+                    coupon_id: parseInt(req.params.coupon_id),
+                })
+            } else {
+                for (const id of broker) {
+
+                    await User.findOne({
+                        where: {id: id.dataValues.broker_id}
+                    }).then( br => {
+
+                        brokerResult.push(br)
+                    }).catch();
+                }
+                console.log('brokerResult', brokerResult)
+
+                return res.status(HttpStatus.OK).send(brokerResult)
+            }
+
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot GET broker.'
+            })
+        });
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1122,5 +1162,6 @@ module.exports = {
     importOfflineCoupon,
     redeemCoupon,
     addImage,
-    getFromIdIntern
+    getFromIdIntern,
+    getBrokerFromCouponId
 };
