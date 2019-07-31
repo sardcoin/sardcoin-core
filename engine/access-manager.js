@@ -1,11 +1,10 @@
 'use strict';
 
-const Op    = require('../models/index').Sequelize.Op;
+const Op = require('../models/index').Sequelize.Op;
 const passport = require('../app').passport;
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
-const request = require("request");
 const Users = require('../models/index').User;
 
 exports.createUser = function (req, res, next) {
@@ -14,9 +13,9 @@ exports.createUser = function (req, res, next) {
 
     Users.findAll({
         where: {
-            [Op.or] : [
-                { username: user.username },
-                { email: user.email }
+            [Op.or]: [
+                {username: user.username},
+                {email: user.email}
             ]
         }
     })
@@ -24,7 +23,7 @@ exports.createUser = function (req, res, next) {
             // user !== null then a username or an email already exists in the sistem
             // the registration has to be rejected
 
-            if(userbn.length !== 0) {
+            if (userbn.length !== 0) {
                 return res.status(HttpStatus.BAD_REQUEST).send({
                     created: false,
                     error: 'Username or email already exists'
@@ -53,14 +52,14 @@ exports.createUser = function (req, res, next) {
                 })
                     .then(newUser => {
                         return res.status(HttpStatus.CREATED).send({
-                            created:    true,
+                            created: true,
                             first_name: newUser.get('first_name'),
-                            last_name:  newUser.get('last_name')
+                            last_name: newUser.get('last_name')
                         });
                     })
                     .catch(err => {
                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                            created:  false,
+                            created: false,
                             username: user.username
                         });
                     })
@@ -70,7 +69,7 @@ exports.createUser = function (req, res, next) {
 };
 
 exports.getUserFromToken = function (req, res, next) {
-    Users.findById(req.user.id)
+    Users.findOne({where: {id: req.user.id}})
         .then(user => {
             return res.status(HttpStatus.OK).send(user);
         })
@@ -90,8 +89,8 @@ exports.getProducerFromId = function (req, res, next) {
             user_type: 1
         },
         attributes: ['username', 'email', 'company_name',
-                    'vat_number', 'first_name', 'last_name', 'address', 'province',
-                    'city', 'zip']
+            'vat_number', 'first_name', 'last_name', 'address', 'province',
+            'city', 'zip']
     })
         .then(user => {
             if (user === null) {
@@ -116,7 +115,7 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-   // console.log(user);
+    // console.log(user);
 
     Users.update({
         company_name: user.company_name,
@@ -165,23 +164,28 @@ exports.updateUser = function (req, res, next) {
 
 exports.deleteUser = function (req, res, next) {
     Users.destroy({
-        where: {[Op.and]: [
+        where: {
+            [Op.and]: [
                 {username: req.body.username}
-            ]}})
+            ]
+        }
+    })
         .then((user) => {
-            if(user == 0){
-            return res.status(HttpStatus.BAD_REQUEST).json({
-                deleted: false,
-                username: req.body.username,
-                message: "The request user does not exist."
-            })}
+            if (user == 0) {
+                return res.status(HttpStatus.BAD_REQUEST).json({
+                    deleted: false,
+                    username: req.body.username,
+                    message: "The request user does not exist."
+                })
+            }
             else {
                 return res.status(HttpStatus.OK).json({
                     deleted: true,
                     username: req.body.username
 
-            })
-        }})
+                })
+            }
+        })
         .catch(err => {
             console.log(err);
 
@@ -205,29 +209,28 @@ exports.basicLogin = function (req, res, next) {
             })
         } else {
             const token = jwt.sign(user.dataValues, 'your_jwt_secret');
-            return res.status(HttpStatus.OK).json({'user': {
+            return res.status(HttpStatus.OK).json({
+                'user': {
                     'id': user.id,
                     'username': user.username,
                     'email': user.email,
                     'first_name': user.first_name,
                     'last_name': user.last_name,
                     "user_type": user.user_type,
-                }, token});
+                }, token
+            });
         }
     })(req, res, next);
 };
 
 exports.roleAuth = (roles) => {
-    return async (req, res, next) =>{
+    return async (req, res, next) => {
         const user = req.user;
 
-        console.log(roles);
-        console.warn(roles.indexOf(user.user_type) > -1);
-
-        if(roles.indexOf(user.user_type) > -1) {
+        if (roles.indexOf(user.user_type) > -1) {
             return next();
         } else {
-            return res.status(401).json({error: true, message:'You are not authorized to view this content'});
+            return res.status(401).json({error: true, message: 'You are not authorized to view this content'});
         }
     }
 };
@@ -337,7 +340,7 @@ exports.getBrokers = function (req, res, next) {
         where: {
             user_type: 4
         },
-        attributes: ['id','username', 'email', 'company_name',
+        attributes: ['id', 'username', 'email', 'company_name',
             'vat_number', 'first_name', 'last_name', 'address', 'province',
             'city', 'zip']
     })
