@@ -14,7 +14,7 @@ const getReportProducerCoupons = (req, res) => {
     Sequelize.query(
         "SELECT id, title, description, EXTRACT(YEAR FROM timestamp) AS year, EXTRACT(month FROM timestamp) AS month, " +
         "EXTRACT(day FROM timestamp) AS day,timestamp," +
-        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, ' +
+        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS bougth, ' +
         'COUNT(CASE WHEN consumer IS  null AND' +
         ' (coupons.visible_from <= CURRENT_TIMESTAMP OR coupons.visible_from IS null)  AND ' +
         '(coupons.valid_from <= CURRENT_TIMESTAMP OR coupons.valid_from IS null) AND ' +
@@ -132,9 +132,35 @@ const getReportBrokerProducerCouponFromId = (req, res) => {
         })
 };
 
+// get coupons bought to user
+const getReportBoughtProducerCoupons = (req, res) => {
+    Sequelize.query(
+        'select COUNT(*) as bought, coupon_id, package, timestamp, price, ' +
+        'EXTRACT(YEAR FROM coupons.timestamp) AS year, ' +
+        'EXTRACT(month FROM coupons.timestamp) AS month, ' +
+        'EXTRACT(day FROM coupons.timestamp) AS day ' +
+        'FROM coupon_tokens JOIN coupons ON coupons.id = coupon_tokens.coupon_id ' +
+        'WHERE consumer IS not null and coupons.owner = $1 GROUP BY id',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send(null);
+            }
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons report with broker'
+            })
+        })
+};
+
 module.exports = {
     getReportProducerCoupons,
     getReportProducerCouponFromId,
-    getReportBrokerProducerCoupons,
+    getReportBoughtProducerCoupons,
     getReportBrokerProducerCouponFromId
 }

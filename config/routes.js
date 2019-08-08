@@ -96,7 +96,7 @@ module.exports = function (app, passport, config) {
     /****************** REPORTS *****************/
     app.get(rpPath + 'getReportProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCoupons);
     app.get(rpPath + 'getReportProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCouponFromId);
-    app.get(rpPath + 'getReportBrokerProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCoupons);
+    app.get(rpPath + 'getReportBoughtProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBoughtProducerCoupons);
     app.get(rpPath + 'getReportBrokerProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCouponFromId);
 
     /****************** ERROR HANDLER *********************/
