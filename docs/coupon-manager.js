@@ -490,7 +490,6 @@
  * @apiParam {String} constraints constraints of the coupon .
  * @apiParam {String} owner owner of the coupon (required) .
  * @apiParam {String} consumer consumer of the coupon .
- * @apiParam {String} constraints constraints of the coupon .
 
  * @apiHeader {String} Authorization Json Web Token retrieved from login request.
  * @apiHeaderExample {json} Header-Example:

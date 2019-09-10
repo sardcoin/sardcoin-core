@@ -179,7 +179,7 @@
  */
 
 /**
- * @api {put} /users/editCoupon Update user
+ * @api {put} /users/editUser Update user
  * @apiName UpdateUser
  * @apiGroup User
  * @apiPermission admin
@@ -223,7 +223,7 @@
  */
 
 /**
- * @api {deleteCoupon} /users/deleteCoupon deleteCoupon user
+ * @api {deleteUser} /users/deleteUser delete user
  * @apiName Delete
  * @apiGroup User
  *
@@ -266,7 +266,7 @@
  *     HTTP/1.1 500 Internal Server Error
  *         {
                 "deleted": false,
-                "error": "Cannot deleteCoupon the user"
+                "error": "Cannot delete the user"
             }
  *
  *
@@ -275,7 +275,7 @@
  *         {
                 "deleted": false,
                 "user": "Girolandia"
-                "error": "Cannot deleteCoupon the user"
+                "error": "Cannot delete the user"
             }
  *
  */

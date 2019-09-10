@@ -131,6 +131,29 @@ const getReportBrokerProducerCouponFromId = (req, res) => {
             })
         })
 };
+// get broker from id coupon
+const getBrokerFromCouponId = (req, res) => {
+    console.log('reqqqqqqqqqq', req)
+    Sequelize.query(
+        'SELECT username, coupon_broker.coupon_id FROM `users` JOIN coupon_broker ' +
+        'ON coupon_broker.broker_id = users.id  WHERE coupon_broker.coupon_id =  $1',
+        {bind: [req.params.coupon_id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(broker => {
+            if (broker.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send(null);
+            }
+            console.log('broker', broker)
+            return res.status(HttpStatus.OK).send(broker[0]);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the coupon report with broker'
+            })
+        })
+};
 
 // get coupons bought to user
 const getReportBoughtProducerCoupons = (req, res) => {
@@ -147,13 +170,14 @@ const getReportBoughtProducerCoupons = (req, res) => {
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send(null);
             }
+            console.log('couponsBought', coupons)
             return res.status(HttpStatus.OK).send(coupons);
         })
         .catch(err => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
-                message: 'Cannot get the distinct coupons report with broker'
+                message: 'Cannot get the distinct coupons report'
             })
         })
 };
@@ -162,5 +186,6 @@ module.exports = {
     getReportProducerCoupons,
     getReportProducerCouponFromId,
     getReportBoughtProducerCoupons,
-    getReportBrokerProducerCouponFromId
+    getReportBrokerProducerCouponFromId,
+    getBrokerFromCouponId
 }

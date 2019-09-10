@@ -58,7 +58,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);
     app.put(cmPath    + 'importOfflineCoupon/', expressJoi(Schemas.validateCouponSchema), reqAuth, AcM.roleAuth([consumer]), CouponManager.importOfflineCoupon);
-    app.get(cmPath    + 'isCouponRedeemed/', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.redeemCoupon);
+    // app.get(cmPath    + 'isCouponRedeemed/', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.redeemCoupon);
 
     // Producer + broker
     app.post(cmPath   + 'create/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon); // TODO add again expressJoi(Schemas.createCouponSchema)
@@ -95,9 +95,10 @@ module.exports = function (app, passport, config) {
 
     /****************** REPORTS *****************/
     app.get(rpPath + 'getReportProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCoupons);
-    app.get(rpPath + 'getReportProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCouponFromId);
+    //app.get(rpPath + 'getReportProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportProducerCouponFromId);
     app.get(rpPath + 'getReportBoughtProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBoughtProducerCoupons);
-    app.get(rpPath + 'getReportBrokerProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCouponFromId);
+    //app.get(rpPath + 'getReportBrokerProducerCouponFromId/:id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getReportBrokerProducerCouponFromId);
+    app.get(rpPath + 'getBrokerFromCouponId/:coupon_id', reqAuth, AcM.roleAuth([producer, admin]), ReportManager.getBrokerFromCouponId);
 
     /****************** ERROR HANDLER *********************/
     // app.use(ErrorHandler.validationError);
