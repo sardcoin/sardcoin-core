@@ -596,10 +596,11 @@ const importOfflineCoupon = (req, res) => {
 };
 const redeemCoupon = (req, res) => {
     const data = req.body;
+    let req_value = req;
+    let res_value = res;
     const verifier_id = req.user.id;
-
+    console.log('req', req, 'res', res)
     console.log(data.token);
-
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
         include: [{model: Coupon, required: true}],
@@ -609,29 +610,91 @@ const redeemCoupon = (req, res) => {
             ]
         }
     })
-        .then(result => {
-            console.log(result);
+        .then( async result => {
+            console.log('resuuuult', result);
 
             if (!result) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    error: true,
-                    message: 'Either the coupon is not found, unsold or already redeemed.',
+                CouponToken.findAll({
+                    include: [{model: Coupon, required: true}],
+                    where: {
+                        [Op.and]: [
+                            {package: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
+                        ]
+                    }
+                }).then(async resultPackage =>{
+
+                    if (!resultPackage) {
+                        return res.status(HttpStatus.BAD_REQUEST).send({
+                            error: true,
+                            message: 'Either the coupon is not found, unsold or already redeemed.',
+                        })
+                    }
+                    // if the package contains one redeem coupon
+                    if (resultPackage.length === 1) {
+                        req_value.body.token = resultPackage[0].token
+                        return this.redeemCoupon(req_value, res_value)
+                    } else {
+                        let couponsArray = [];
+                        const verifier_id =  getOwnerIdByTokenPackage(data.token)
+                            for (const cp of resultPackage) {
+                                //trovo l'owner del coupon
+                                const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
+
+                                await isVerifierAuthorized(producer_coupon_id, verifier_id)
+                                    .then(authorization => {
+                                        if (authorization) { // If the verifier is authorized, it redeems the coupon
+                                           couponsArray.push(cp.dataValues)
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.log(err);
+
+                                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                            error: true,
+                                            message: 'Some problem occurred during the operation of redeeming.'
+                                        })
+                                    })
+
+
+
+                            }
+                            if (couponsArray.length === 1) {
+                                req_value.body.token = couponsArray[0].dataValues.token
+                                this.redeemCoupon(req_value, res_value);
+                            }
+                            if (couponsArray.length === 0) {
+                                return res.status(HttpStatus.NO_CONTENT).send(null)
+                            }
+                            if (couponsArray.length > 1) {
+                                return res.status(HttpStatus.OK).send({
+                                    coupons: couponsArray
+                                })
+                            }
+
+                    }
+
+
                 })
+
             }
 
             const couponTkn = {
                 token: data.token,
                 coupon_id: result.dataValues.coupon_id,
-                consumer: result.dataValues.consumer
+                consumer: result.dataValues.consumer,
+                package: result.dataValues.package
             };
+
+
+
             const producer_id = result.dataValues.Coupons[0].dataValues.owner;
 
-            isVerifierAuthorized(producer_id, verifier_id)
+            await isVerifierAuthorized(producer_id, verifier_id)
                 .then(authorization => {
                     if (authorization) { // If the verifier is authorized, it redeems the coupon
                         console.log('I can redeem the coupon');
 
-                        CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, verifier_id)
+                        CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, null, verifier_id)
                             .then(update => {
                                 console.log(update);
                                 if (update) {
@@ -967,7 +1030,7 @@ const isItemPurchasable = async (coupon_id, user_id, type = ITEM_TYPE.COUPON) =>
         ? queryResult.available > 0
         : queryResult.available > 0 && queryResult.bought < queryResult.purchasable;
 };
-const isVerifierAuthorized = (producer_id, verifier_id) => {
+const isVerifierAuthorized = async (producer_id, verifier_id) => {
     return new Promise((resolve, reject) => {
         Verifier.findOne({
             where: {
@@ -1145,7 +1208,48 @@ const getBrokerFromCouponId = async (req, res) => {
         })
     }
 };
+const getOwnerIdByTokenPackage = async (tk) => {
+    let coupon;
+    let token = tk;
 
+    try {
+
+            PackageTokens.findOne({
+                include: [{model: Coupon, required: true}],
+                where: {
+                    [Op.and]: [
+                        {token: token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
+                    ]
+                }
+            }).then( result => {
+
+                if (result) {
+                    Coupon.findOne({where: {id: result.package_id}}).then( coupon => {
+                        if (coupon) {
+                            return coupon.owner;
+                        } else {
+                            return null;
+                        }
+
+                    }).catch(err => {
+                        console.log(err);
+                    });
+
+
+                } else {
+                    return null
+                }
+
+            }).catch(err => {
+                console.log(err);
+            }); ;
+
+
+    } catch (e) {
+        console.error(e);
+       return
+    }
+};
 module.exports = {
     createCoupon,
     getFromId,
@@ -1165,5 +1269,6 @@ module.exports = {
     redeemCoupon,
     addImage,
     getFromIdIntern,
-    getBrokerFromCouponId
+    getBrokerFromCouponId,
+    getOwnerIdByTokenPackage
 };
