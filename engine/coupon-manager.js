@@ -596,11 +596,9 @@ const importOfflineCoupon = (req, res) => {
 };
 const redeemCoupon = (req, res) => {
     const data = req.body;
-    let req_value = req;
-    let res_value = res;
     const verifier_id = req.user.id;
-    console.log('req', req, 'res', res)
-    console.log(data.token);
+    console.log('req1', req, 'res', res)
+    // console.log(data.token);
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
         include: [{model: Coupon, required: true}],
@@ -609,8 +607,7 @@ const redeemCoupon = (req, res) => {
                 {token: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
             ]
         }
-    })
-        .then( async result => {
+    }).then( async result => {
             console.log('resuuuult', result);
 
             if (!result) {
@@ -621,7 +618,8 @@ const redeemCoupon = (req, res) => {
                             {package: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
                         ]
                     }
-                }).then(async resultPackage =>{
+                }).then( async resultPackage =>{
+                    console.log('resultPackage', resultPackage);
 
                     if (!resultPackage) {
                         return res.status(HttpStatus.BAD_REQUEST).send({
@@ -631,19 +629,27 @@ const redeemCoupon = (req, res) => {
                     }
                     // if the package contains one redeem coupon
                     if (resultPackage.length === 1) {
-                        req_value.body.token = resultPackage[0].token
-                        return this.redeemCoupon(req_value, res_value)
+                        console.log('resultPackage=1');
+
+                        res.body.token = resultPackage[0].token
+                        return this.redeemCoupon(res, req)
                     } else {
                         let couponsArray = [];
-                        const verifier_id =  getOwnerIdByTokenPackage(data.token)
-                            for (const cp of resultPackage) {
+                        //const verifier_id = await getOwnerIdByTokenPackage(data.token)
+                        console.log('verifier_id', verifier_id);
+
+                        for (const cp of resultPackage) {
                                 //trovo l'owner del coupon
                                 const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
+                                console.log('producer_coupon_id', producer_coupon_id);
 
                                 await isVerifierAuthorized(producer_coupon_id, verifier_id)
                                     .then(authorization => {
+                                        console.log('authorization', authorization)
+
                                         if (authorization) { // If the verifier is authorized, it redeems the coupon
-                                           couponsArray.push(cp.dataValues)
+
+                                            couponsArray.push(cp.dataValues)
                                         }
                                     })
                                     .catch(err => {
@@ -654,89 +660,82 @@ const redeemCoupon = (req, res) => {
                                             message: 'Some problem occurred during the operation of redeeming.'
                                         })
                                     })
-
-
-
                             }
+                            console.log('couponsArray', couponsArray)
                             if (couponsArray.length === 1) {
-                                req_value.body.token = couponsArray[0].dataValues.token
-                                this.redeemCoupon(req_value, res_value);
+                                req.body.token = couponsArray[0].dataValues.token
+                                console.log('req2', req, 'res', res)
+                                this.redeemCoupon(req, res);
                             }
                             if (couponsArray.length === 0) {
+                                console.log('req3', req, 'res', res)
                                 return res.status(HttpStatus.NO_CONTENT).send(null)
                             }
                             if (couponsArray.length > 1) {
+                                console.log('req4', req, 'res', res)
                                 return res.status(HttpStatus.OK).send({
                                     coupons: couponsArray
                                 })
                             }
-
                     }
-
-
                 })
+            } else {
+                    const couponTkn = {
+                        token: data.token,
+                        coupon_id: result.dataValues.coupon_id,
+                        consumer: result.dataValues.consumer,
+                        package: result.dataValues.package
+                    };
+                    const producer_id = result.dataValues.Coupons[0].dataValues.owner;
 
-            }
+                await isVerifierAuthorized(producer_id, verifier_id)
+                    .then(authorization => {
+                        if (authorization && couponTkn) { // If the verifier is authorized, it redeems the coupon
+                            console.log('I can redeem the coupon');
 
-            const couponTkn = {
-                token: data.token,
-                coupon_id: result.dataValues.coupon_id,
-                consumer: result.dataValues.consumer,
-                package: result.dataValues.package
-            };
+                            CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, null, verifier_id)
+                                .then(update => {
+                                    console.log(update);
+                                    if (update) {
+                                        return res.status(HttpStatus.OK).send({
+                                            redeemed: true,
+                                            token: data.token,
+                                        });
+                                    } else {
+                                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                            error: true,
+                                            message: 'Some problem occurred during the operation of redeeming.'
+                                        });
+                                    }
+                                })
+                                .catch(err => {
+                                    console.log(err);
 
-
-
-            const producer_id = result.dataValues.Coupons[0].dataValues.owner;
-
-            await isVerifierAuthorized(producer_id, verifier_id)
-                .then(authorization => {
-                    if (authorization) { // If the verifier is authorized, it redeems the coupon
-                        console.log('I can redeem the coupon');
-
-                        CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, null, verifier_id)
-                            .then(update => {
-                                console.log(update);
-                                if (update) {
-                                    return res.status(HttpStatus.OK).send({
-                                        redeemed: true,
-                                        token: data.token,
-                                    });
-                                } else {
                                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                         error: true,
                                         message: 'Some problem occurred during the operation of redeeming.'
-                                    });
-                                }
-                            })
-                            .catch(err => {
-                                console.log(err);
-
-                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                    error: true,
-                                    message: 'Some problem occurred during the operation of redeeming.'
+                                    })
                                 })
+                        } else {
+                            console.log("I cant't");
+                            return res.status(HttpStatus.BAD_REQUEST).send({
+                                error: true,
+                                message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
                             })
-                    } else {
-                        console.log("I cant't");
-                        return res.status(HttpStatus.BAD_REQUEST).send({
-                            error: true,
-                            message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
-                        })
-                    }
-                })
-                .catch(err => {
-                    console.log(err);
-
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Some problem occurred during the operation of redeeming.'
+                        }
                     })
-                })
+                    .catch(err => {
+                        console.log(err);
+
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                            error: true,
+                            message: 'Some problem occurred during the operation of redeeming.'
+                        })
+                    })
+            }
         })
         .catch(err => {
             console.log(err);
-
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'Some problem occurred during the redeem of the coupon.'
@@ -1208,48 +1207,61 @@ const getBrokerFromCouponId = async (req, res) => {
         })
     }
 };
-const getOwnerIdByTokenPackage = async (tk) => {
+// unused
+const getIdByTokenPackage = async (tk) => {
     let coupon;
     let token = tk;
+    console.log('getIdByTokenPackage token',token);
 
-    try {
+    return new Promise((resolve, reject) => {
+
 
             PackageTokens.findOne({
                 include: [{model: Coupon, required: true}],
                 where: {
                     [Op.and]: [
-                        {token: token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
+                        {token: token}, {consumer: {[Op.not]: null}}
                     ]
                 }
             }).then( result => {
+                resolve(result)
 
-                if (result) {
-                    Coupon.findOne({where: {id: result.package_id}}).then( coupon => {
-                        if (coupon) {
-                            return coupon.owner;
-                        } else {
-                            return null;
-                        }
-
-                    }).catch(err => {
-                        console.log(err);
-                    });
-
-
-                } else {
-                    return null
-                }
 
             }).catch(err => {
                 console.log(err);
-            }); ;
+                reject(err);
+            });
 
-
-    } catch (e) {
-        console.error(e);
-       return
-    }
+    })
 };
+// unused
+const getIdOwnerFromIdCoupon = async (id) => {
+    console.log('getIdOwnerFromIdCoupon id',id);
+
+    return new Promise((resolve, reject) => {
+        Coupon.findOne({where: {id: id.dataValues.package_id}}).then( coupon => {
+            if (coupon) {
+                resolve(coupon);
+            }
+
+        }).catch(err => {
+            console.log(err);
+            reject(err);
+
+        });
+    })
+}
+// unused
+const getOwnerIdByTokenPackage = async (token) => {
+
+        const id = await getIdByTokenPackage(token);
+        const idOwnerPackage = await getIdOwnerFromIdCoupon(id)
+        console.log('id', id, 'idOwnerPackage', idOwnerPackage)
+        return idOwnerPackage.owner;
+}
+
+
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1270,5 +1282,7 @@ module.exports = {
     addImage,
     getFromIdIntern,
     getBrokerFromCouponId,
-    getOwnerIdByTokenPackage
+    getOwnerIdByTokenPackage,
+    getIdByTokenPackage,
+    getIdOwnerFromIdCoupon
 };
