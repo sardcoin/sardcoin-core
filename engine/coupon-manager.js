@@ -34,12 +34,10 @@ const ITEM_TYPE = {
 /** Exported REST functions **/
 const createCoupon = async (req, res) => {
     const data = req.body;
-    console.log('data', data)
     let insertResult, newToken, couponToken, token, pack_coupon_id;
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-        console.log('insertResult', insertResult)
 
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
@@ -452,7 +450,6 @@ const editCoupon = (req, res) => {
         }
     })
         .then(async couponUpdated => {
-            console.log('couponUpdated', couponUpdated);
             if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).json({
                     updated: false,
@@ -461,8 +458,6 @@ const editCoupon = (req, res) => {
                 })
             }
             else {
-
-                // console.log('data.categoriesss',data.categories)
 
                 try {
                     await CategoriesManager.removeAllCategory({
@@ -597,8 +592,7 @@ const importOfflineCoupon = (req, res) => {
 const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
-    console.log('req1', req, 'res', res)
-    // console.log(data.token);
+
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
         include: [{model: Coupon, required: true}],
@@ -608,18 +602,16 @@ const redeemCoupon = (req, res) => {
             ]
         }
     }).then( async result => {
-            console.log('resuuuult', result);
 
             if (!result) {
                 CouponToken.findAll({
                     include: [{model: Coupon, required: true}],
                     where: {
                         [Op.and]: [
-                            {package: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
+                            {package: data.token}, {consumer: {[Op.not]: null}}
                         ]
                     }
                 }).then( async resultPackage =>{
-                    console.log('resultPackage', resultPackage);
 
                     if (!resultPackage) {
                         return res.status(HttpStatus.BAD_REQUEST).send({
@@ -629,52 +621,38 @@ const redeemCoupon = (req, res) => {
                     }
                     // if the package contains one redeem coupon
                     if (resultPackage.length === 1) {
-                        console.log('resultPackage=1');
 
                         res.body.token = resultPackage[0].token
                         return this.redeemCoupon(res, req)
                     } else {
                         let couponsArray = [];
-                        //const verifier_id = await getOwnerIdByTokenPackage(data.token)
-                        console.log('verifier_id', verifier_id);
-
                         for (const cp of resultPackage) {
                                 //trovo l'owner del coupon
                                 const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
-                                console.log('producer_coupon_id', producer_coupon_id);
-
                                 await isVerifierAuthorized(producer_coupon_id, verifier_id)
                                     .then(authorization => {
-                                        console.log('authorization', authorization)
-
                                         if (authorization) { // If the verifier is authorized, it redeems the coupon
-
                                             couponsArray.push(cp.dataValues)
                                         }
                                     })
                                     .catch(err => {
                                         console.log(err);
-
                                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                             error: true,
                                             message: 'Some problem occurred during the operation of redeeming.'
                                         })
                                     })
                             }
-                            console.log('couponsArray', couponsArray)
                             if (couponsArray.length === 1) {
                                 req.body.token = couponsArray[0].dataValues.token
-                                console.log('req2', req, 'res', res)
                                 this.redeemCoupon(req, res);
                             }
                             if (couponsArray.length === 0) {
-                                console.log('req3', req, 'res', res)
                                 return res.status(HttpStatus.NO_CONTENT).send(null)
                             }
                             if (couponsArray.length > 1) {
-                                console.log('req4', req, 'res', res)
                                 return res.status(HttpStatus.OK).send({
-                                    coupons: couponsArray
+                                    coupons: formatArray(couponsArray)
                                 })
                             }
                     }
@@ -1260,6 +1238,48 @@ const getOwnerIdByTokenPackage = async (token) => {
         return idOwnerPackage.owner;
 }
 
+const formatArray = (arrayCoupons) => {
+    const arrayReduce = getUnique(arrayCoupons, 'coupon_id')
+    let arrayResult = [];
+    let arrayResultFull = [];
+    let arrayItem = {
+        quantity: 0,
+        array: []
+    }
+    for (let i = 0; i<arrayReduce.length; i++) {
+        let count = 0;
+        for (let j = 0; j<arrayCoupons.length; j++){
+            if (arrayReduce[i].coupon_id ===arrayCoupons[j].coupon_id ) {
+                arrayResult.push(arrayCoupons[j]);
+                count = count + 1;
+                }
+        }
+
+        arrayItem.quantity = count;
+        arrayItem.array = arrayResult;
+        arrayResultFull.push(arrayItem)
+        arrayItem = {
+            quantity: 0,
+            array: []
+        }
+        arrayResult = [];
+    }
+    return arrayResultFull;
+}
+
+function getUnique(arr, comp) {
+
+    const unique = arr
+        .map(e => e[comp])
+
+        // store the keys of the unique objects
+        .map((e, i, final) => final.indexOf(e) === i && i)
+
+        // eliminate the dead keys & store unique objects
+        .filter(e => arr[e]).map(e => arr[e]);
+
+    return unique;
+}
 
 
 module.exports = {
