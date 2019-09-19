@@ -590,10 +590,7 @@ const importOfflineCoupon = (req, res) => {
         })
 };
 const redeemCoupon = (req, res) => {
-    let request = req;
-    let response = res;
     const data = req.body;
-    console.log('richiesta', req, 'risposta', res)
     const verifier_id = req.user.id;
 
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
@@ -607,7 +604,6 @@ const redeemCoupon = (req, res) => {
     }).then( async result => {
 
             if (!result) {
-                console.log('!result', result)
                 CouponToken.findAll({
                     include: [{model: Coupon, required: true}],
                     where: {
@@ -616,8 +612,6 @@ const redeemCoupon = (req, res) => {
                         ]
                     }
                 }).then( async resultPackage =>{
-                    console.log('resultPackage', resultPackage)
-
                     if (resultPackage.length === 0) {
 
                         return res.status(HttpStatus.BAD_REQUEST).send({
@@ -627,7 +621,6 @@ const redeemCoupon = (req, res) => {
                     }
                     // if the package contains one redeem coupon
                     if (resultPackage.length === 1) {
-                        console.log( 'resultPackageresultPackage',resultPackage)
                         const couponTkn = {
                             token: resultPackage[0].dataValues.token,
                             coupon_id: resultPackage[0].dataValues.coupon_id,
@@ -635,7 +628,6 @@ const redeemCoupon = (req, res) => {
                             package: resultPackage[0].dataValues.package
                         };
                         const result = await redeemCouponIntern(couponTkn, verifier_id)
-                        console.log('resultresult', result)
                         if(result) {
                             return res.status(HttpStatus.OK).send({
                                 redeemed: true,
@@ -703,7 +695,6 @@ const redeemCoupon = (req, res) => {
                     }
                 })
             } else {
-                console.log('result')
 
                 const couponTkn = {
                         token: data.token,
@@ -716,11 +707,9 @@ const redeemCoupon = (req, res) => {
                 await isVerifierAuthorized(producer_id, verifier_id)
                     .then(authorization => {
                         if (authorization && couponTkn) { // If the verifier is authorized, it redeems the coupon
-                            console.log('I can redeem the coupon');
 
                             CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package, verifier_id)
                                 .then(update => {
-                                    console.log(update);
                                     if (update) {
                                         return res.status(HttpStatus.OK).send({
                                             redeemed: true,
