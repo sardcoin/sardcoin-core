@@ -53,7 +53,7 @@ module.exports = function (app, passport, config) {
 
     // Private methods for user type
     // Consumer
-    app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getByToken);
+    app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([consumer,verifier, admin]), CouponManager.getByToken);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);
@@ -69,6 +69,7 @@ module.exports = function (app, passport, config) {
     app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
     app.get(cmPath    + 'getBrokerFromCouponId/:id', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getBrokerFromCouponId);
+    app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.isCouponFromToken);
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);

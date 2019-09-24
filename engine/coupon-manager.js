@@ -612,6 +612,8 @@ const redeemCoupon = (req, res) => {
                         ]
                     }
                 }).then( async resultPackage =>{
+                    console.log('resultPackage', resultPackage)
+
                     if (resultPackage.length === 0) {
 
                         return res.status(HttpStatus.BAD_REQUEST).send({
@@ -1221,9 +1223,8 @@ const getBrokerFromCouponId = async (req, res) => {
         })
     }
 };
-// unused
+
 const getIdByTokenPackage = async (tk) => {
-    let coupon;
     let token = tk;
     console.log('getIdByTokenPackage token',token);
 
@@ -1336,6 +1337,33 @@ function getUnique(arr, comp) {
      }
  }
 
+const isCouponFromToken =  (req, res) => {
+    const token = req.params.token
+    CouponToken.findOne({
+        where: {token: token}
+    }).then( tk => {
+        if (tk === null) {
+            return res.status(HttpStatus.NO_CONTENT).send({
+                error: true,
+                token: parseInt(token),
+                message: 'This token don\'t is a coupon.',
+            })
+        }
+        return res.status(HttpStatus.OK).send({
+            error: false,
+            message: 'this token is an coupon',
+            token: parseInt(token)
+        })
+
+    }).catch(err => {
+        console.log(err);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: "An error occurred while finding the token"
+        })
+    });
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1356,6 +1384,7 @@ module.exports = {
     addImage,
     getFromIdIntern,
     getBrokerFromCouponId,
+    isCouponFromToken,
     redeemCouponIntern,
     getOwnerIdByTokenPackage,
     getIdByTokenPackage,
