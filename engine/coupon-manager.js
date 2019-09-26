@@ -204,19 +204,20 @@ const getPurchasedCoupons = async (req, res) => {
     let coupons;
 
     try {
-        coupons = await Sequelize.query('SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+        coupons = await Sequelize.query('' +
+            'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, purchase_time ' +
             'FROM coupons  ' +
             'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
             'JOIN orders_coupons ON orders_coupons.coupon_token = coupon_tokens.token ' +
             'JOIN orders ON orders.ID = orders_coupons.order_id ' +
             'WHERE coupon_tokens.consumer = :consumer ' +
             'UNION ( ' +
-            '    SELECT coupons.*, coupon_tokens.*, purchase_time ' +
+            '    SELECT coupons.*, package_tokens.token, package_tokens.consumer, purchase_time ' +
             '    FROM coupons  ' +
-            '    JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
-            '    JOIN orders_coupons ON orders_coupons.package_token = coupon_tokens.package ' +
+            '    JOIN package_tokens ON coupons.id = package_tokens.package_id ' +
+            '    JOIN orders_coupons ON orders_coupons.package_token = package_tokens.token ' +
             '    JOIN orders ON orders.ID = orders_coupons.order_id ' +
-            '    WHERE coupon_tokens.consumer = :consumer ' +
+            '    WHERE package_tokens.consumer = :consumer ' +
             ')  ' +
             'ORDER BY `id` ASC',
             {replacements: {consumer: req.user.id}, type: Sequelize.QueryTypes.SELECT},
