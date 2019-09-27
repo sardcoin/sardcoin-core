@@ -5,7 +5,7 @@ IT cluster project funded by Autonomous Region of Sardinia (Italy).
 
 This software is distributed under MIT/X11 license
 
-Copyright (c) 2019 Sebastian Podda & Federico Ibba & Raffaele Porcu - University of Cagliari
+Copyright (c) 2019 Sebastian Podda & Federico Ibba & Raffaele Porcu - University of Cagliari -
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
 files (the "Software"), to deal in the Software without
