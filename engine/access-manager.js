@@ -83,9 +83,10 @@ exports.getUserFromToken = function (req, res, next) {
 };
 
 exports.getProducerFromId = function (req, res, next) {
+    const id = Number(req.params.producer_id);
     Users.findOne({
         where: {
-            id: req.params.producer_id,
+            id: id,
             user_type: 1
         },
         attributes: ['username', 'email', 'company_name',
@@ -96,7 +97,7 @@ exports.getProducerFromId = function (req, res, next) {
             if (user === null) {
                 return res.status(HttpStatus.OK).json({
                     error: 'Either the user does not exist or it is not a producer',
-                    producer_id: req.params.producer_id,
+                    producer_id: id,
                 })
             }
             // console.log('userForimId', user);
