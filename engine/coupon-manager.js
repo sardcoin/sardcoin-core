@@ -936,7 +936,7 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
     return result;
 };
 const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
-    let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND token NOT IN ' + formatNotIn(tokenExcluded);
+    let lastPieceOfQuery = tokenExcluded.length === 0 ? '' : 'AND PackageTokens.token NOT IN ' + formatNotIn(tokenExcluded);
     let isNotExpired = true, isPurchasable = true;
     let pack, result = [];
 

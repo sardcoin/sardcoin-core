@@ -35,9 +35,9 @@ const setCheckout = (config) => {
             }
 
             query = await setQuery(grouped, config['siteURL']);
-            console.warn(query);
+            console.warn('queryquery',query);
             resultSet = await Paypal.request('SetExpressCheckout', query);
-            console.log(resultSet);
+            console.log('resultSetresultSet', resultSet);
             link += 'checkoutnow?token=' + resultSet.TOKEN;
 
             return res.status(HttpStatus.OK).send({link: link});
