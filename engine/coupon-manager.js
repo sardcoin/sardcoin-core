@@ -810,7 +810,7 @@ const availableCoupons = async () => {
         '  AND coupons.visible_from IS NOT NULL ' +
         '  AND coupons.visible_from <= CURRENT_TIMESTAMP AND coupons.valid_from <= CURRENT_TIMESTAMP ' +
         '  AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
-        '  GROUP BY coupon_tokens.package  ' +
+        '  GROUP BY  coupons.id  ' +
         ')',
         {type: Sequelize.QueryTypes.SELECT},
         {model: Coupon}
