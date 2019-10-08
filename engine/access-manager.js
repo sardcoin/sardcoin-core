@@ -86,8 +86,8 @@ exports.getProducerFromId = function (req, res, next) {
     const id = Number(req.params.producer_id);
     Users.findOne({
         where: {
-            id: id,
-            user_type: 1
+            id: id
+
         },
         attributes: ['username', 'email', 'company_name',
             'vat_number', 'first_name', 'last_name', 'address', 'province',
