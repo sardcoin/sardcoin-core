@@ -205,18 +205,19 @@ const getPurchasedCoupons = async (req, res) => {
 
     try {
         coupons = await Sequelize.query('' +
-            'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, purchase_time ' +
+            'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier,  purchase_time ' +
             'FROM coupons  ' +
             'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
             'JOIN orders_coupons ON orders_coupons.coupon_token = coupon_tokens.token ' +
             'JOIN orders ON orders.ID = orders_coupons.order_id ' +
             'WHERE coupon_tokens.consumer = :consumer ' +
             'UNION ( ' +
-            '    SELECT coupons.*, package_tokens.token, package_tokens.consumer, purchase_time ' +
+            '    SELECT coupons.*, package_tokens.token, package_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier, purchase_time ' +
             '    FROM coupons  ' +
             '    JOIN package_tokens ON coupons.id = package_tokens.package_id ' +
             '    JOIN orders_coupons ON orders_coupons.package_token = package_tokens.token ' +
             '    JOIN orders ON orders.ID = orders_coupons.order_id ' +
+            '    JOIN coupon_tokens ON coupon_tokens.package = orders_coupons.package_token ' +
             '    WHERE package_tokens.consumer = :consumer ' +
             ')  ' +
             'ORDER BY `id` ASC',
@@ -230,7 +231,6 @@ const getPurchasedCoupons = async (req, res) => {
         for(let coupon of coupons) {
             coupon = formatCoupon(coupon);
         }
-
         return res.status(HttpStatus.OK).send(coupons);
 
     } catch (e) {
