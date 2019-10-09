@@ -102,8 +102,13 @@ const getBrokerPackages = async (req, res) => {
 const getCouponsPackage = async (req, res) => {
     let coupons = []
     const id = req.params.package_id;
+    console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
+    console.log('tokentokentoken', token)
+
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+    console.log('cpTokens', cpTokens)
+
     for (const cpToken of cpTokens) {
         const id = cpToken.dataValues.coupon_id
 

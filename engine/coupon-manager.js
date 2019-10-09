@@ -567,8 +567,27 @@ const importOfflineCoupon = (req, res) => {
             }
 
             CouponTokenManager.updateCouponToken(data.token, coupon.dataValues.coupon_id, req.user.id)
-                .then(update => {
+                .then(async update => {
                     if (update) {
+                        let newOrder, order_id, newOrderCoupon
+                        try {
+                            newOrder = await Order.create({consumer: req.user.id, purchase_time: (new Date()).getTime()});
+                            order_id = newOrder.dataValues.id;
+                            newOrderCoupon = await OrderCoupon.create({
+                                order_id: order_id,
+                                coupon_token: data.token,
+                                package_token: null
+                            });
+
+                        } catch (e) {
+                            if (order_id) {
+                                await OrderCoupon.destroy({where: {order_id: order_id}});
+                                await Order.destroy({where: {id: order_id}});
+                            }
+
+                            console.error(e);
+                            throw new Error('createOrderFromCart -> Error creating the order');
+                        }
                         return res.status(HttpStatus.OK).send({
                             imported: true,
                             token: data.token,
@@ -590,6 +609,66 @@ const importOfflineCoupon = (req, res) => {
             })
         })
 };
+
+const importOfflinePackage = async (req, res) => {
+    const data = req.body;
+    const coupons = await CouponTokenManager.getCouponsByTokenPackage(data.token)
+    console.log('couponscoupons', coupons)
+    if (coupons.length === 0){
+        return res.status(HttpStatus.NO_CONTENT).json({
+            message: 'No package found with the given token.',
+            token: data.token,
+            error: true,
+
+        })
+    }
+    for (const coupon of coupons){
+        CouponTokenManager.updatePackageToken(coupon.token, coupon.coupon_id, req.user.id, coupon.package, null)
+            .then(async update => {
+                if (!update) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Some problem occurred during the import of the offline package.'
+                    })
+                }
+                let newOrder, order_id, newOrderCoupon
+                try {
+                    newOrder = await Order.create({consumer: req.user.id, purchase_time: (new Date()).getTime()});
+                    order_id = newOrder.dataValues.id;
+                    newOrderCoupon = await OrderCoupon.create({
+                        order_id: order_id,
+                        coupon_token: null,
+                        package_token: coupon.package
+                    });
+                    await PackageTokens.update({consumer: req.user.id},
+                        {
+                            where: {token: coupon.package
+                            }
+                    })
+
+                } catch (e) {
+                    if (order_id) {
+                        await OrderCoupon.destroy({where: {order_id: order_id}});
+                        await Order.destroy({where: {id: order_id}});
+                        await PackageTokens.destroy({where: {token: coupon.package}});
+
+                    }
+
+                    console.error(e);
+                    throw new Error('createOrderFromCart -> Error creating the order');
+                }
+
+
+
+            });
+    }
+    return res.status(HttpStatus.OK).send({
+        error: false,
+        package: data.token,
+    })
+};
+
+
 const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
@@ -1338,22 +1417,23 @@ function getUnique(arr, comp) {
      }
  }
 
+
 const isCouponFromToken =  (req, res) => {
     const token = req.params.token
     CouponToken.findOne({
         where: {token: token}
     }).then( tk => {
         if (tk === null) {
-            return res.status(HttpStatus.NO_CONTENT).send({
+            return res.status(HttpStatus.OK).send({
                 error: true,
-                token: parseInt(token),
+                token: token,
                 message: 'This token don\'t is a coupon.',
             })
         }
         return res.status(HttpStatus.OK).send({
             error: false,
             message: 'this token is an coupon',
-            token: parseInt(token)
+            token: token
         })
 
     }).catch(err => {
@@ -1381,6 +1461,7 @@ module.exports = {
     editCoupon,
     deleteCoupon,
     importOfflineCoupon,
+    importOfflinePackage,
     redeemCoupon,
     addImage,
     getFromIdIntern,

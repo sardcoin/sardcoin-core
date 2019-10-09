@@ -70,6 +70,27 @@ exports.updateCouponToken = function (token, coupon_id, consumer = null, pack = 
     });
 };
 
+exports.updatePackageToken = function (token, coupon_id, consumer = null, pack = null, verifier = null) {
+    return new Promise((resolve, reject) => {
+        CouponToken.update({
+            consumer: consumer,
+            verifier: verifier,
+            package: pack
+        }, {
+            where: {package: pack, verifier: null}
+        })
+            .then(packageTokenUpdated => {
+                const result = packageTokenUpdated[0] !== 0; // If the update is fine, it returns true
+                resolve(result);
+            })
+            .catch(err => {
+                console.log("The package token cannot be updated.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
 
 exports.getTokenByIdCoupon = (coupon_id) => {
     return new Promise((resolve, reject) => {
@@ -86,9 +107,9 @@ exports.getTokenByIdCoupon = (coupon_id) => {
             })
     });
 };
-
 exports.getCouponsByTokenPackage = async (token) => {
 
+    console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -107,7 +128,6 @@ exports.getCouponsByTokenPackage = async (token) => {
             })
     });
 };
-
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {
@@ -127,5 +147,9 @@ exports.getTokenByIdPackage = async function (token_id) {
             })
     });
 };
+
+
+
+
 
 
