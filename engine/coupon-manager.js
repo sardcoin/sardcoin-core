@@ -429,6 +429,7 @@ const buyCoupons = async (req, res) => {
 };
 const editCoupon = (req, res) => {
     const data = req.body;
+    console.log('datadatadata', data)
     let valid_until = data.valid_until === null ? null : Number(data.valid_until);
     let visible_from = data.visible_from === null ? null : Number(data.visible_from);
     Coupon.update({

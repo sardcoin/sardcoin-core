@@ -25,7 +25,7 @@ const updateCouponSchema = {
     query: {},
     body: {
         id:             Joi.number().required().label("Id is required"),
-        title:          Joi.string().allow('').min(5).max(50).required().error(new Error("Title is required, between 5 and 255 characters long")),
+        title:          Joi.string().allow('').min(5).max(70).required().error(new Error("Title is required, between 5 and 255 characters long")),
         description:    Joi.string().min(5).max(255).allow(null).label("The description must be between 5 and 255 characters long "),
         image:          Joi.string().required().label("Image is required"),
         price:          Joi.number().required().label("Price is required"),
@@ -38,7 +38,7 @@ const updateCouponSchema = {
         brokers:        Joi.array().allow(null).error(new Error("broker must be a array or null")),
         categories:     Joi.array().allow(null).error(new Error("categories must be a array or null")),
         type:           Joi.number().integer().allow(null).error(new Error("Type must be a number or null")),
-        package:           Joi.array().allow(null).error(new Error("coupons must be a array or null")),
+        package:        Joi.array().allow(null).error(new Error("coupons must be a array or null")),
 
     },
     params: {}
