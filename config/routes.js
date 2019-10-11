@@ -65,6 +65,7 @@ module.exports = function (app, passport, config) {
     // Producer + broker
     app.post(cmPath   + 'create/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.createCoupon); // TODO add again expressJoi(Schemas.createCouponSchema)
     app.get(cmPath    + 'getProducerCoupons/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCoupons);
+    app.get(cmPath    + 'getProducerCouponsOffline/', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getProducerCouponsOffline);
     app.get(cmPath    + 'getBrokerCoupons/', reqAuth, AcM.roleAuth([broker, admin]), CouponManager.getBrokerCoupons);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer,broker, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.deleteCoupon);
