@@ -243,6 +243,7 @@ const getPurchasedCoupons = async (req, res) => {
 
 };
 const getPurchasedCouponsById = (req, res) => {
+    console.log('req.params.coupon_idreq.params.coupon_id',req.params)
     Coupon.findAll({
         include: [{
             model: CouponToken,
@@ -252,14 +253,39 @@ const getPurchasedCouponsById = (req, res) => {
         attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']]}
     })
         .then(coupons => {
-            if (coupons.length === 0) {
-                return res.status(HttpStatus.NO_CONTENT).send({});
+            console.log('coupons, coupons', coupons)
+            if (coupons[0].dataValues.CouponTokens.length === 0) {
+                PackageTokens.findAll({
+
+                        where: {consumer: req.user.id, package_id: req.params.coupon_id},
+
+                    attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('package_id')), 'bought']]}
+                }).then( packages => {
+                    if (packages.length === 0) {
+                        return res.status(HttpStatus.NO_CONTENT).send({});
+
+                    }
+                    return res.status(HttpStatus.OK).send({
+                        coupon_id: req.params.coupon_id,
+                        bought: packages[0].dataValues.bought,
+                        type: 1
+                    });
+                }).catch(err => {
+                    console.log(err);
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Error retrieving purchased packages'
+                    })
+                });
+            } else {
+                return res.status(HttpStatus.OK).send({
+                    coupon_id: req.params.coupon_id,
+                    bought: coupons[0].dataValues.bought,
+                    type: 0
+                });
             }
 
-            return res.status(HttpStatus.OK).send({
-                coupon_id: req.params.coupon_id,
-                bought: coupons[0].dataValues.bought
-            });
+
         })
         .catch(err => {
             console.log(err);
@@ -275,6 +301,7 @@ const getAvailableCoupons = async (req, res) => {
     try {
         coupons = await availableCoupons();
 
+        console.log('couponscoupons', coupons )
         if (coupons.length === 0) {
             return res.status(HttpStatus.NO_CONTENT).send({});
         }
@@ -515,37 +542,59 @@ const editCoupon = (req, res) => {
         });
 };
 const deleteCoupon = (req, res) => {
-    Coupon.destroy({
+    console.log('couponscouponscoupons', req.body)
+    CouponsBrokers.destroy({
         where: {
-            [Op.and]: [
-                {id: req.body.id},
-                {owner: req.user.id}
-            ]
+          coupon_id: req.body.id
         }
-    })
-        .then(coupon => {
-            if (coupon === 0) {
-                return res.status(HttpStatus.NO_CONTENT).json({
-                    deleted: false,
-                    coupon: parseInt(req.body.id),
-                    message: "This coupon doesn't exist or you doesn't own the coupon!"
-                });
-            } else {
-                return res.status(HttpStatus.OK).json({
-                    deleted: true,
-                    coupon: parseInt(req.body.id),
-                });
-            }
-        })
-        .catch(err => {
-            console.log(err);
-
+    }).then( result => {
+        if((!result || result === 0 ) && req.body.type === 1){
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 coupon: parseInt(req.body.id),
-                error: 'Cannot deleteCoupon the coupon'
+                error: 'Cannot deleteCoupon the coupon, internal error'
             })
+        } else {
+            Coupon.destroy({
+                where: {
+                    [Op.and]: [
+                        {id: req.body.id},
+                        {owner: req.user.id}
+                    ]
+                }
+            })
+                .then(coupon => {
+                    if (coupon === 0) {
+                        return res.status(HttpStatus.NO_CONTENT).json({
+                            deleted: false,
+                            coupon: parseInt(req.body.id),
+                            message: "This coupon doesn't exist or you doesn't own the coupon!"
+                        });
+                    } else {
+                        return res.status(HttpStatus.OK).json({
+                            deleted: true,
+                            coupon: parseInt(req.body.id),
+                        });
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                        deleted: false,
+                        coupon: parseInt(req.body.id),
+                        error: 'Cannot deleteCoupon the coupon'
+                    })
+                })
+        }
+    }).catch( err => {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            deleted: false,
+            coupon: parseInt(req.body.id),
+            error: 'Cannot deleteCoupon the coupon, internal error'
         })
+    })
+
 };
 const importOfflineCoupon = (req, res) => {
     const data = req.body;
