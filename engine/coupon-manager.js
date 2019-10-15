@@ -1499,9 +1499,10 @@ const getProducerCouponsOffline = (req, res) => {
     Sequelize.query(
         'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
         'COUNT(CASE WHEN consumer = 5 AND verifier IS null AND package IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
-        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 AND visible_from IS null ' +
+        'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = :id ' +
+        'AND visible_from IS null AND coupon_tokens.package is null AND (coupon_tokens.consumer is null OR  coupon_tokens.consumer = 5) ' +
         'GROUP BY id',
-        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {replacements: {id:req.user.id}, type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
             if (coupons.length === 0) {

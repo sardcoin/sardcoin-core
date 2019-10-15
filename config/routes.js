@@ -11,7 +11,7 @@ const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
 const ReportManager = require('../engine/report-manager');
-
+const TokenManager = require('../engine/coupon-token-manager')
 module.exports = function (app, passport, config) {
 
     /* PATHs */
@@ -73,6 +73,9 @@ module.exports = function (app, passport, config) {
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
     app.get(cmPath    + 'getBrokerFromCouponId/:id', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getBrokerFromCouponId);
     app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponFromToken);
+    app.get(cmPath    + 'getProducerTokensOfflineById/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.getProducerTokensOfflineById);
+    app.get(cmPath    + 'buyProducerTokensOfflineByToken/:token/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.buyProducerTokensOfflineByToken);
+
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
