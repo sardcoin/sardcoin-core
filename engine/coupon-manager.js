@@ -457,8 +457,8 @@ const buyCoupons = async (req, res) => {
 const editCoupon = (req, res) => {
     const data = req.body;
     console.log('datadatadata', data)
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until);
-    let visible_from = data.visible_from === null ? null : Number(data.visible_from);
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
+    let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
     Coupon.update({
         title: data.title,
         description: data.description,
@@ -1201,9 +1201,11 @@ const insertCoupon = (coupon, owner) => {
             image: coupon.image,
             timestamp: Number(Date.now()),
             price: coupon.price,
-            visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from),
+            visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from) === 0?
+                            null:  Number(coupon.visible_from),
             valid_from: Number(coupon.valid_from),
-            valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until),
+            valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until) === 0 ?
+                        null: Number(coupon.valid_until),
             purchasable: coupon.purchasable,
             constraints: coupon.constraints,
             type: coupon.type,
