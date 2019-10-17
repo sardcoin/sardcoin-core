@@ -116,6 +116,28 @@ exports.getCouponsByTokenPackage = async (token) => {
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
 
+            where: {package: token}
+
+        })
+            .then(couponsIntoPackage => {
+                resolve(couponsIntoPackage);
+            })
+            .catch(err => {
+                console.log("The coupons don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
+exports.getCouponsByTokenPackageNotConsumed = async (token) => {
+
+    console.log('tokentoken', token)
+
+    return new Promise((resolve, reject) => {
+        CouponToken.findAll({
+
             where: {package: token, verifier: null}
 
         })
@@ -130,6 +152,7 @@ exports.getCouponsByTokenPackage = async (token) => {
             })
     });
 };
+
 exports.getTokenByIdPackage = async function (token_id) {
 
     return new Promise((resolve, reject) => {

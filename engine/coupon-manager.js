@@ -383,14 +383,13 @@ const buyCoupons = async (req, res) => {
             message: 'An error occurred while finalizing the purchase'
         });
     }
-
+    console.log('console.log(list)', list)
     for (let i = 0; i < list.length; i++) {
         try {
             tokenToExclude = [];
 
             for (let j = 0; j < list[i].quantity; j++) {
                 buyQueryResult = await getBuyQuery(list[i].id, req.user.id, list[i].type, tokenToExclude);
-
                 if (!buyQueryResult.error) {
                     query += buyQueryResult.query;
                     tokenToExclude.push(buyQueryResult.token);
@@ -1026,7 +1025,7 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
 
         if (isNotExpired && isPurchasable) {
             coupon = await Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL ' +
-                'AND coupon_id = :coupon_id ' + lastPieceOfQuery + 'LIMIT 1',
+                'AND coupon_id = :coupon_id AND package IS NUll ' + lastPieceOfQuery + 'LIMIT 1',
                 {replacements: {coupon_id: coupon_id}, type: Sequelize.QueryTypes.SELECT},
                 {model: CouponToken}
             );
