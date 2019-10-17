@@ -53,7 +53,7 @@ module.exports = function (app, passport, config) {
 
     // Private methods for user type
     // Consumer
-    app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([consumer,verifier, admin]), CouponManager.getByToken);
+    app.get(cmPath    + 'getByToken/:token/:type', reqAuth, AcM.roleAuth([producer, consumer,verifier, admin]), CouponManager.getByToken);
     app.get(cmPath    + 'getPurchasedCoupons', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCoupons);
     app.get(cmPath    + 'getPurchasedCouponsById/:coupon_id', reqAuth, AcM.roleAuth([consumer, admin]), CouponManager.getPurchasedCouponsById);
     app.put(cmPath    + 'buyCoupons/', reqAuth, AcM.roleAuth([consumer]), CouponManager.buyCoupons);

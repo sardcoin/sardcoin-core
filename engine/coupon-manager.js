@@ -738,7 +738,7 @@ const redeemCoupon = (req, res) => {
                     include: [{model: Coupon, required: true}],
                     where: {
                         [Op.and]: [
-                            {package: data.token}, {consumer: {[Op.not]: null}}
+                            {package: data.token}, {consumer: {[Op.not]: null}},  {verifier: null}
                         ]
                     }
                 }).then( async resultPackage =>{
