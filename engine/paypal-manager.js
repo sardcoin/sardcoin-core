@@ -34,12 +34,9 @@ const setCheckout = (config) => {
         });
       }
 
-      console.warn(config);
 
       query = await setQuery(grouped, config['siteURL']);
-      console.warn('queryquery', query);
       resultSet = await Paypal.request('SetExpressCheckout', query);
-      console.log('resultSetresultSet', resultSet);
       link += 'checkoutnow?token=' + resultSet.TOKEN;
 
       return res.status(HttpStatus.OK).send({link: link});
@@ -54,7 +51,7 @@ const setCheckout = (config) => {
 };
 const confirm = (config) => {
   return async (req, res) => {
-    res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/checkout?token=' + req.query.token);
+    res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/prealpha/#/checkout?token=' + req.query.token);
   };
 };
 const pay = (config) => {
@@ -92,7 +89,7 @@ const setQuery = async (groupedCoupons, siteURL) => {
   let amt;
   let query = {
     'RETURNURL': siteURL + ':8080/paypal/confirm',
-    'CANCELURL': siteURL + (siteURL.includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
+    'CANCELURL': siteURL + (siteURL.includes('localhost') ? ':4200' : '') + '/prealpha/#/reserved-area/checkout?err=true'
   };
 
   /** L_PAYMENTREQUEST_n_NAMEm **/
