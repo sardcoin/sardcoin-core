@@ -71,7 +71,7 @@ const formatNotIn = (tokenList) => {
 
     return result + ')';
 };
-// return all package with categories and coupons associate
+// return all package for broker
 const getBrokerPackages = async (req, res) => {
     let result = [];
 
@@ -98,17 +98,26 @@ const getBrokerPackages = async (req, res) => {
             })
         })
 };
-
+// get coupons from package TODO ADD SEND ERROR MESSAGE
 const getCouponsPackage = async (req, res) => {
     let coupons = []
     const id = req.params.package_id;
+    console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
+    console.log('tokentokentoken', token)
+
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+    console.log('cpTokens', cpTokens)
+
     for (const cpToken of cpTokens) {
         const id = cpToken.dataValues.coupon_id
 
         const cp = await CouponManager.getFromIdIntern(id)
         coupons.push(cp.dataValues)
+    }
+    if (coupons.length === 0) {
+        return res.status(HttpStatus.NO_CONTENT).send({
+        })
     }
     return res.status(HttpStatus.OK).send({
         coupons_count: coupons.length,

@@ -3,6 +3,8 @@
 const CouponToken = require('../models/index').CouponToken;
 const Op = require('../models/index').Sequelize.Op;
 const PackageTokens = require('../models/index').PackageTokens;
+const Sequelize = require('../models/index').sequelize;
+const HttpStatus = require('http-status-codes');
 
 exports.insertCouponToken = async function (coupon_id, token) {
 
@@ -70,6 +72,27 @@ exports.updateCouponToken = function (token, coupon_id, consumer = null, pack = 
     });
 };
 
+exports.updatePackageToken = function (token, coupon_id, consumer = null, pack = null, verifier = null) {
+    return new Promise((resolve, reject) => {
+        CouponToken.update({
+            consumer: consumer,
+            verifier: verifier,
+            package: pack
+        }, {
+            where: {package: pack, verifier: null}
+        })
+            .then(packageTokenUpdated => {
+                const result = packageTokenUpdated[0] !== 0; // If the update is fine, it returns true
+                resolve(result);
+            })
+            .catch(err => {
+                console.log("The package token cannot be updated.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
 
 exports.getTokenByIdCoupon = (coupon_id) => {
     return new Promise((resolve, reject) => {
@@ -86,9 +109,31 @@ exports.getTokenByIdCoupon = (coupon_id) => {
             })
     });
 };
-
 exports.getCouponsByTokenPackage = async (token) => {
 
+    console.log('tokentoken', token)
+
+    return new Promise((resolve, reject) => {
+        CouponToken.findAll({
+
+            where: {package: token}
+
+        })
+            .then(couponsIntoPackage => {
+                resolve(couponsIntoPackage);
+            })
+            .catch(err => {
+                console.log("The coupons don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
+exports.getCouponsByTokenPackageNotConsumed = async (token) => {
+
+    console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -127,5 +172,47 @@ exports.getTokenByIdPackage = async function (token_id) {
             })
     });
 };
+
+exports.getProducerTokensOfflineById = (req, res) => {
+    console.log('req.params.id', req.params.id)
+    const id = Number(req.params.id);
+    Sequelize.query(
+        'SELECT * ' +
+        'FROM coupon_tokens WHERE coupon_id = :id AND consumer IS null AND package IS null ',
+        {replacements: {id: id}, type: Sequelize.QueryTypes.SELECT})
+        .then(tokens => {
+            console.log('tokenstokens', tokens)
+            if (tokens.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({});
+            }
+            return res.status(HttpStatus.OK).send(tokens);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons created'
+            })
+        })
+};
+
+exports.buyProducerTokensOfflineByToken = async (req, res) => {
+    try {
+        const result = await this.updateCouponToken(req.params.token, req.params.id, 5, null, null)
+        if (result) {
+            return res.status(HttpStatus.OK).send(true);
+        } else {
+            return res.status(HttpStatus.OK).send(false);
+        }
+    }
+    catch (e) {
+        console.log('error buy offline', e)
+        return res.status(HttpStatus.OK).send(false);
+    }
+
+};
+
+
+
 
 

@@ -4,6 +4,7 @@
     "password": "",
     "database": "sardcoin",
     "host": "127.0.0.1",
+    "siteURL": "http://localhost",
     "port": 3306,
     "dialect": "mysql",
     "dialectOptions": {
@@ -21,6 +22,7 @@
     "password": "",
     "database": "sardcoin",
     "host": "127.0.0.1",
+    "siteURL": "https://platform.sardcoin.eu",
     "port": 3306,
     "dialect": "mysql",
     "dialectOptions": {
