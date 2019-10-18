@@ -10,74 +10,76 @@ const User = require('../models/index').User;
 
 /** PUBLIC METHODS **/
 const setCheckout = (config) => {
-    return async (req, res) => {
-        const Paypal = paypalApi(config['Paypal']);
-        let link = config['Paypal']['mode'] === 'sandbox' ? 'https://www.sandbox.paypal.com/' : 'https://www.paypal.com/';
+  return async (req, res) => {
+    const Paypal = paypalApi(config['Paypal']);
+    let link = config['Paypal']['mode'] === 'sandbox' ? 'https://www.sandbox.paypal.com/' : 'https://www.paypal.com/';
 
-        const order = req.body;
-        let coupon, grouped, query, resultSet;
-        const coupons = [];
+    const order = req.body;
+    let coupon, grouped, query, resultSet;
+    const coupons = [];
 
-        try {
-            for (const i in order) {
-                coupon = await getCouponByID(order[i]['id']);
-                coupon.dataValues['quantity'] = order[i]['quantity'];
-                coupons.push(coupon);
-            }
+    try {
+      for (const i in order) {
+        coupon = await getCouponByID(order[i]['id']);
+        coupon.dataValues['quantity'] = order[i]['quantity'];
+        coupons.push(coupon);
+      }
 
-            grouped = _.groupBy(coupons, 'owner');
+      grouped = _.groupBy(coupons, 'owner');
 
-            if (Object.keys(grouped).length > 10) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    status: HttpStatus.BAD_REQUEST,
-                    message: 'You can\'t buy more than 10 products at time'
-                });
-            }
+      if (Object.keys(grouped).length > 10) {
+        return res.status(HttpStatus.BAD_REQUEST).send({
+          status: HttpStatus.BAD_REQUEST,
+          message: 'You can\'t buy more than 10 products at time'
+        });
+      }
 
-            query = await setQuery(grouped, config['siteURL']);
-            console.warn('queryquery',query);
-            resultSet = await Paypal.request('SetExpressCheckout', query);
-            console.log('resultSetresultSet', resultSet);
-            link += 'checkoutnow?token=' + resultSet.TOKEN;
+      console.warn(config);
 
-            return res.status(HttpStatus.OK).send({link: link});
+      query = await setQuery(grouped, config['siteURL']);
+      console.warn('queryquery', query);
+      resultSet = await Paypal.request('SetExpressCheckout', query);
+      console.log('resultSetresultSet', resultSet);
+      link += 'checkoutnow?token=' + resultSet.TOKEN;
 
-        } catch (e) {
-            console.error(e);
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                message: 'Error doing something'
-            })
-        }
+      return res.status(HttpStatus.OK).send({link: link});
+
+    } catch (e) {
+      console.error(e);
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        message: 'Error doing something'
+      })
     }
+  }
 };
 const confirm = (config) => {
-    return async (req, res) => {
-        res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/checkout?token=' + req.query.token);
-    };
+  return async (req, res) => {
+    res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/#/checkout?token=' + req.query.token);
+  };
 };
 const pay = (config) => {
-    return async (req, res) => {
-        const Paypal = paypalApi(config['Paypal']);
-        let resultGet, resultDo, revert;
+  return async (req, res) => {
+    const Paypal = paypalApi(config['Paypal']);
+    let resultGet, resultDo, revert;
 
-        try {
-            resultGet = await Paypal.request('GetExpressCheckoutDetails', {token: req.body.token});
-            resultDo = await Paypal.request('DoExpressCheckoutPayment', resultGet);
+    try {
+      resultGet = await Paypal.request('GetExpressCheckoutDetails', {token: req.body.token});
+      resultDo = await Paypal.request('DoExpressCheckoutPayment', resultGet);
 
-            return res.status(HttpStatus.OK).send({
-                paid: true,
-                result: resultDo
-            })
-        } catch (e) {
-            console.error(e);
-            revert = await OrderManager.revertOrder(req.body.order_id);
+      return res.status(HttpStatus.OK).send({
+        paid: true,
+        result: resultDo
+      })
+    } catch (e) {
+      console.error(e);
+      revert = await OrderManager.revertOrder(req.body.order_id);
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                call: 'pay',
-                message: 'Error doing the payment'
-            });
-        }
+      return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+        call: 'pay',
+        message: 'Error doing the payment'
+      });
     }
+  }
 };
 
 /** EXPORT **/
@@ -85,64 +87,64 @@ module.exports = {setCheckout, confirm, pay};
 
 /** PRIVATE METHODS **/
 const setQuery = async (groupedCoupons, siteURL) => {
-    let m, n = 0;
-    let userOwner;
-    let amt;
-    let query = {
-        'RETURNURL': siteURL + ':8080/paypal/confirm',
-        'CANCELURL': siteURL + (siteURL.includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
-    };
+  let m, n = 0;
+  let userOwner;
+  let amt;
+  let query = {
+    'RETURNURL': siteURL + ':8080/paypal/confirm',
+    'CANCELURL': siteURL + (siteURL.includes('localhost') ? ':4200' : '') + '/#/reserved-area/consumer/checkout?err=true'
+  };
 
-    /** L_PAYMENTREQUEST_n_NAMEm **/
-    // n (numero di pagamento all'interno dello stesso) -> dev'essere compreso tra 0 e 9 (max 10 pagamenti a produttori diversi)
-    // m (numero del prodotto) -> non ha limiti
-    for (const owner in groupedCoupons) {
-        userOwner = await getOwnerById(owner);
+  /** L_PAYMENTREQUEST_n_NAMEm **/
+  // n (numero di pagamento all'interno dello stesso) -> dev'essere compreso tra 0 e 9 (max 10 pagamenti a produttori diversi)
+  // m (numero del prodotto) -> non ha limiti
+  for (const owner in groupedCoupons) {
+    userOwner = await getOwnerById(owner);
 
-        amt = 0; // Ammontare spettante ad ogni produttore
-        m = 1;
+    amt = 0; // Ammontare spettante ad ogni produttore
+    m = 1;
 
-        for (const coupon in groupedCoupons[owner]) {
-            if(groupedCoupons[owner][coupon].dataValues.price > 0) { // Non sono permessi ITEM con PRICE = 0
-                query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
-                amt += groupedCoupons[owner][coupon].dataValues.quantity * groupedCoupons[owner][coupon].dataValues.price;
-                m++;
-            }
-        }
-
-        query['PAYMENTREQUEST_' + n + '_PAYMENTACTION'] = 'Sale';
-        query['PAYMENTREQUEST_' + n + '_CURRENCYCODE'] = 'EUR';
-        query['PAYMENTREQUEST_' + n + '_AMT'] = amt;
-
-        query['PAYMENTREQUEST_' + n + '_PAYMENTREQUESTID'] = getPaymentRequestId(userOwner, amt);
-        query['PAYMENTREQUEST_' + n + '_SELLERPAYPALACCOUNTID'] = userOwner.email_paypal;
-
-        n++;
+    for (const coupon in groupedCoupons[owner]) {
+      if (groupedCoupons[owner][coupon].dataValues.price > 0) { // Non sono permessi ITEM con PRICE = 0
+        query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
+        amt += groupedCoupons[owner][coupon].dataValues.quantity * groupedCoupons[owner][coupon].dataValues.price;
+        m++;
+      }
     }
 
-    return query;
+    query['PAYMENTREQUEST_' + n + '_PAYMENTACTION'] = 'Sale';
+    query['PAYMENTREQUEST_' + n + '_CURRENCYCODE'] = 'EUR';
+    query['PAYMENTREQUEST_' + n + '_AMT'] = amt;
+
+    query['PAYMENTREQUEST_' + n + '_PAYMENTREQUESTID'] = getPaymentRequestId(userOwner, amt);
+    query['PAYMENTREQUEST_' + n + '_SELLERPAYPALACCOUNTID'] = userOwner.email_paypal;
+
+    n++;
+  }
+
+  return query;
 };
 const getCouponByID = async (coupon_id) => {
-    return await Coupon.findOne({where: {id: coupon_id}});
+  return await Coupon.findOne({where: {id: coupon_id}});
 };
 const getOwnerById = async (owner_id) => {
-    return await User.findOne({where: {id: owner_id}});
+  return await User.findOne({where: {id: owner_id}});
 };
 const getPaymentRequestId = (userOwner, amt) => {
-    const min = Math.ceil(1);
-    const max = Math.floor(1000000);
-    const total = Math.floor(Math.random() * (max - min)) + min;
+  const min = Math.ceil(1);
+  const max = Math.floor(1000000);
+  const total = Math.floor(Math.random() * (max - min)) + min;
 
-    return crypto.createHash('sha256').update(userOwner.email_paypal + amt + +total.toString()).digest('hex');
+  return crypto.createHash('sha256').update(userOwner.email_paypal + amt + +total.toString()).digest('hex');
 };
 const getQueryItem = (query, coupon, n, m) => {
-    query['L_PAYMENTREQUEST_' + n + '_NAME' + m] = coupon.title;
-    query['L_PAYMENTREQUEST_' + n + '_DESC' + m] = coupon.description;
-    query['L_PAYMENTREQUEST_' + n + '_AMT' + m] = coupon.price;
-    query['L_PAYMENTREQUEST_' + n + '_QTY' + m] = coupon.quantity;
-    query['L_PAYMENTREQUEST_' + n + '_NUMBER' + m] = m;
-    // query['L_PAYMENTREQUEST_' + n + '_ITEMCATEGORY' + m] = 'Physical';
+  query['L_PAYMENTREQUEST_' + n + '_NAME' + m] = coupon.title;
+  query['L_PAYMENTREQUEST_' + n + '_DESC' + m] = coupon.description;
+  query['L_PAYMENTREQUEST_' + n + '_AMT' + m] = coupon.price;
+  query['L_PAYMENTREQUEST_' + n + '_QTY' + m] = coupon.quantity;
+  query['L_PAYMENTREQUEST_' + n + '_NUMBER' + m] = m;
+  // query['L_PAYMENTREQUEST_' + n + '_ITEMCATEGORY' + m] = 'Physical';
 
-    return query;
+  return query;
 };
 
