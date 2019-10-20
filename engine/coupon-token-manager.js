@@ -111,7 +111,7 @@ exports.getTokenByIdCoupon = (coupon_id) => {
 };
 exports.getCouponsByTokenPackage = async (token) => {
 
-    console.log('tokentoken', token)
+    //console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -133,7 +133,7 @@ exports.getCouponsByTokenPackage = async (token) => {
 
 exports.getCouponsByTokenPackageNotConsumed = async (token) => {
 
-    console.log('tokentoken', token)
+    //console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -174,14 +174,14 @@ exports.getTokenByIdPackage = async function (token_id) {
 };
 
 exports.getProducerTokensOfflineById = (req, res) => {
-    console.log('req.params.id', req.params.id)
+    //console.log('req.params.id', req.params.id)
     const id = Number(req.params.id);
     Sequelize.query(
         'SELECT * ' +
         'FROM coupon_tokens WHERE coupon_id = :id AND consumer IS null AND package IS null ',
         {replacements: {id: id}, type: Sequelize.QueryTypes.SELECT})
         .then(tokens => {
-            console.log('tokenstokens', tokens)
+            //console.log('tokenstokens', tokens)
             if (tokens.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             }
