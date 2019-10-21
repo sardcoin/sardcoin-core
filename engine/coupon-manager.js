@@ -224,19 +224,23 @@ const getPurchasedCoupons = async (req, res) => {
     try {
         coupons = await Sequelize.query('' +
             'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier,  purchase_time ' +
+            ', COUNT(CASE WHEN coupon_tokens.verifier IS not null THEN 1 END) AS consumed ' +
+            ', COUNT(CASE WHEN coupon_tokens.verifier IS null THEN 1 END) AS verifiable ' +
             'FROM coupons  ' +
             'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
             'JOIN orders_coupons ON orders_coupons.coupon_token = coupon_tokens.token ' +
             'JOIN orders ON orders.ID = orders_coupons.order_id ' +
-            'WHERE coupon_tokens.consumer = :consumer ' +
+            'WHERE coupon_tokens.consumer = :consumer group by coupon_tokens.token ' +
             'UNION ( ' +
             '    SELECT coupons.*, package_tokens.token, package_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier, purchase_time ' +
+            ', COUNT(CASE WHEN coupon_tokens.verifier IS not null THEN 1 END) AS consumed ' +
+            ', COUNT(CASE WHEN coupon_tokens.verifier IS null THEN 1 END) AS verifiable ' +
             '    FROM coupons  ' +
             '    JOIN package_tokens ON coupons.id = package_tokens.package_id ' +
             '    JOIN orders_coupons ON orders_coupons.package_token = package_tokens.token ' +
             '    JOIN orders ON orders.ID = orders_coupons.order_id ' +
             '    JOIN coupon_tokens ON coupon_tokens.package = orders_coupons.package_token ' +
-            '    WHERE package_tokens.consumer = :consumer ' +
+            '    WHERE package_tokens.consumer = :consumer group by package_tokens.token' +
             ')  ' +
             'ORDER BY `id` ASC',
             {replacements: {consumer: req.user.id}, type: Sequelize.QueryTypes.SELECT},

@@ -50,8 +50,10 @@ const setCheckout = (config) => {
   }
 };
 const confirm = (config) => {
+  console.log('config', config)
   return async (req, res) => {
-    res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') + '/prealpha/#/checkout?token=' + req.query.token);
+    res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') +
+        (config['siteURL'].includes('localhost') ? '#/checkout?token' : '/prealpha/#/checkout?token=') + req.query.token);
   };
 };
 const pay = (config) => {
@@ -84,6 +86,7 @@ module.exports = {setCheckout, confirm, pay};
 
 /** PRIVATE METHODS **/
 const setQuery = async (groupedCoupons, siteURL) => {
+  console.log('groupedCoupons', groupedCoupons)
   let m, n = 0;
   let userOwner;
   let amt;
@@ -102,23 +105,25 @@ const setQuery = async (groupedCoupons, siteURL) => {
     m = 1;
 
     for (const coupon in groupedCoupons[owner]) {
-      if (groupedCoupons[owner][coupon].dataValues.price > 0) { // Non sono permessi ITEM con PRICE = 0
+
+        if (groupedCoupons[owner][coupon].dataValues.price > 0) { // Non sono permessi ITEM con PRICE = 0
         query = getQueryItem(query, groupedCoupons[owner][coupon].dataValues, n, m);
         amt += groupedCoupons[owner][coupon].dataValues.quantity * groupedCoupons[owner][coupon].dataValues.price;
         m++;
       }
     }
 
-    query['PAYMENTREQUEST_' + n + '_PAYMENTACTION'] = 'Sale';
-    query['PAYMENTREQUEST_' + n + '_CURRENCYCODE'] = 'EUR';
-    query['PAYMENTREQUEST_' + n + '_AMT'] = amt;
+    if (amt > 0) {
+        query['PAYMENTREQUEST_' + n + '_PAYMENTACTION'] = 'Sale';
+        query['PAYMENTREQUEST_' + n + '_CURRENCYCODE'] = 'EUR';
+        query['PAYMENTREQUEST_' + n + '_AMT'] = amt;
 
-    query['PAYMENTREQUEST_' + n + '_PAYMENTREQUESTID'] = getPaymentRequestId(userOwner, amt);
-    query['PAYMENTREQUEST_' + n + '_SELLERPAYPALACCOUNTID'] = userOwner.email_paypal;
+        query['PAYMENTREQUEST_' + n + '_PAYMENTREQUESTID'] = getPaymentRequestId(userOwner, amt);
+        query['PAYMENTREQUEST_' + n + '_SELLERPAYPALACCOUNTID'] = userOwner.email_paypal;
 
-    n++;
+        n++;
+    }
   }
-
   return query;
 };
 const getCouponByID = async (coupon_id) => {
