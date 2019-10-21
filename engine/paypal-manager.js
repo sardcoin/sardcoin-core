@@ -50,7 +50,6 @@ const setCheckout = (config) => {
   }
 };
 const confirm = (config) => {
-  console.log('config', config)
   return async (req, res) => {
     res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') +
         (config['siteURL'].includes('localhost') ? '/#/checkout?token=' : '/prealpha/#/checkout?token=') + req.query.token);
