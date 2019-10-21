@@ -198,16 +198,23 @@ exports.getProducerTokensOfflineById = (req, res) => {
 
 exports.buyProducerTokensOfflineByToken = async (req, res) => {
     try {
-        const result = await this.updateCouponToken(req.params.token, req.params.id, 5, null, null)
+        const result = await this.updateCouponToken(req.params.token, req.params.id, 5, null, null);
         if (result) {
             return res.status(HttpStatus.OK).send(true);
         } else {
-            return res.status(HttpStatus.OK).send(false);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot update the coupon to the anonymous user.'
+            });
         }
     }
     catch (e) {
-        console.log('error buy offline', e)
-        return res.status(HttpStatus.OK).send(false);
+        console.error('error buy offline', e);
+
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'An error occurred while giving a coupon to an anonymous consumer'
+        });
     }
 
 };

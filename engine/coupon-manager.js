@@ -223,7 +223,7 @@ const getPurchasedCoupons = async (req, res) => {
 
     try {
         coupons = await Sequelize.query('' +
-            'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier,  purchase_time ' +
+            'SELECT coupons.*, coupon_tokens.token, coupon_tokens.consumer, coupon_tokens.package, coupon_tokens.verifier, purchase_time ' +
             ', COUNT(CASE WHEN coupon_tokens.verifier IS not null THEN 1 END) AS consumed ' +
             ', COUNT(CASE WHEN coupon_tokens.verifier IS null THEN 1 END) AS verifiable ' +
             'FROM coupons  ' +
