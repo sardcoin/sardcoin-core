@@ -12,8 +12,8 @@ let port = 8080;
 
 if(process.env.PEM_PATH) { // If using certificates, enable SSL
     options = {
-        key: fs.readFileSync(process.env.PEM_PATH + 'privkey2.pem').toString(),
-        cert: fs.readFileSync(process.env.PEM_PATH + 'cert2.pem').toString()
+        key: fs.readFileSync(process.env.PEM_PATH + 'privkey.pem').toString(),
+        cert: fs.readFileSync(process.env.PEM_PATH + 'cert.pem').toString()
     };
 
     server = https.createServer(options, app);
