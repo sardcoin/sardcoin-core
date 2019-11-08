@@ -1,12 +1,6 @@
 'use strict';
 const Sequelize = require('../models/index').sequelize;
 const Coupon = require('../models/index').Coupon;
-const CouponToken = require('../models/index').CouponToken;
-const CouponBroker = require('../models/index').CouponBroker;
-const Op = require('../models/index').Sequelize.Op;
-const Package_id = require('../models/index').Package_id;
-const CouponTokenManager = require('./coupon-token-manager');
-const PackageManager = require('../engine/package-manager');
 const HttpStatus = require('http-status-codes');
 
 // get total coupons to user with generated,active,buyed,verified
@@ -33,7 +27,6 @@ const getReportProducerCoupons = (req, res) => {
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
-            console.log('cpr', coupons)
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send(null);
             }
@@ -133,7 +126,6 @@ const getReportBrokerProducerCouponFromId = (req, res) => {
 };
 // get broker from id coupon
 const getBrokerFromCouponId = (req, res) => {
-    console.log('reqqqqqqqqqq', req)
     Sequelize.query(
         'SELECT username, coupon_broker.coupon_id FROM `users` JOIN coupon_broker ' +
         'ON coupon_broker.broker_id = users.id  WHERE coupon_broker.coupon_id =  $1',
@@ -170,7 +162,6 @@ const getReportBoughtProducerCoupons = (req, res) => {
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send(null);
             }
-            console.log('couponsBought', coupons)
             return res.status(HttpStatus.OK).send(coupons);
         })
         .catch(err => {

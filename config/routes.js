@@ -75,8 +75,6 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponFromToken);
     app.get(cmPath    + 'getProducerTokensOfflineById/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.getProducerTokensOfflineById);
     app.get(cmPath    + 'buyProducerTokensOfflineByToken/:token/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.buyProducerTokensOfflineByToken);
-    app.get(cmPath    + 'isCouponOrPackageFromTokenVerifiable/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponOrPackageFromTokenVerifiable);
-
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);

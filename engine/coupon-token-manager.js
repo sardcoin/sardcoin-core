@@ -1,7 +1,6 @@
 'use strict';
 
 const CouponToken = require('../models/index').CouponToken;
-const Op = require('../models/index').Sequelize.Op;
 const PackageTokens = require('../models/index').PackageTokens;
 const Sequelize = require('../models/index').sequelize;
 const HttpStatus = require('http-status-codes');
