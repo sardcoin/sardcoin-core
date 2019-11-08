@@ -1,19 +1,13 @@
 'use strict';
 
 const PackageTokens = require('../models/index').PackageTokens;
-const CouponToken = require('../models/index').CouponToken;
 const Coupon = require('../models/index').Coupon;
-const CouponsCategories = require('../models/index').CouponsCategories;
-const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
-const Op = require('../models/index').Sequelize.Op;
 const CouponManager = require('./coupon-manager');
 const CouponTokenManager = require('./coupon-token-manager');
-const OrdersManager = require('./orders-manager');
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
-const crypto = require('crypto');
 const _ = require('lodash');
 
 /** Exported REST functions **/
@@ -49,28 +43,6 @@ const addImage = (req, res) => {
 
 /** Private methods **/
 
-const generateUniqueToken = (title, token) => {
-
-    const min = Math.ceil(1);
-    const max = Math.floor(1000000);
-    const total = Math.floor(Math.random() * (max - min)) + min;
-
-    return crypto.createHash('sha256').update(title + token + total.toString()).digest('hex').substr(0, 8).toUpperCase();
-
-}; // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
-
-const formatNotIn = (tokenList) => {
-    let result = '(';
-
-    for (let i = 0; i < tokenList.length; i++) {
-        result += '"' + tokenList[i] + '"';
-        if (i + 1 !== tokenList.length) {
-            result += ',';
-        }
-    }
-
-    return result + ')';
-};
 // return all package for broker
 const getBrokerPackages = async (req, res) => {
     let result = [];
@@ -102,12 +74,11 @@ const getBrokerPackages = async (req, res) => {
 const getCouponsPackage = async (req, res) => {
     let coupons = []
     const id = req.params.package_id;
-    console.log('ididididid', id)
+    //console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
-    console.log('tokentokentoken', token)
+    //console.log('tokentokentoken', token)
 
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-    console.log('cpTokens', cpTokens)
 
     for (const cpToken of cpTokens) {
         const id = cpToken.dataValues.coupon_id
@@ -142,61 +113,10 @@ exports.insertTokenPackage = async (package_id, token) => {
     });
 };
 
-// unused get complete informations from package
-/*const getAllData = async function (packages) {
-    let result = []
 
-    for (let pack of packages) {
-        let coupons = []
-        const categories = await getCategories(pack)
-        const token = await CouponTokenManager.getTokenByIdPackage(pack.id)
-
-
-        const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-        console.log('ccpToken', cpTokens)
-
-        for (const cpToken of cpTokens) {
-            let p = {coupon: null, token: null}
-
-            const id = cpToken.dataValues.coupon_id
-
-            const cp = await CouponManager.getFromIdIntern(id)
-            p.coupon = cp.dataValues
-            console.log('cpcpcpcpcpcpcp', cp)
-
-            p.token = cpToken.dataValues
-            coupons.push(p)
-        }
-
-        console.log('coupons getAllData', coupons)
-        result.push({package: pack, categories: categories, coupons: coupons})
-    }
-    console.log('getAllData', result)
-    return result;
-
-
-};*/
-
-const getCategories = async function (pack) {
-
-    return new Promise((resolve, reject) => {
-        CouponsCategories.findAll({
-            attributes: ['category_id'],
-            where: {
-                coupon_id: pack.id
-            }
-        }).then(categories => {
-            resolve(categories)
-
-        })
-    })
-
-};
 
 module.exports = {
-    generateUniqueToken,
     getBrokerPackages,
     addImage,
-    getCategories,
     getCouponsPackage
 };
