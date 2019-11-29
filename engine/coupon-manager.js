@@ -460,9 +460,29 @@ const buyCoupons = async (req, res) => {
             });
         });
 };
-const editCoupon = (req, res) => {
+const editCoupon = async (req, res) => {
     const data = req.body;
-    //console.log('datadatadata', data)
+    console.log('datadatadata', data)
+    if (data.type === ITEM_TYPE.PACKAGE) {
+        const result = await getPackageBought(data.id)
+        if (result) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Is not possible update package, This package is bought.'
+            });
+        } else {
+            console.log('modificabile')
+        }
+    }
+    if (data.type === ITEM_TYPE.COUPON) {
+        const result = await getCouponBought(data.id)
+        if (result) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Is not possible update coupon, This coupon is bought.'
+            });
+        }
+    }
     let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
     let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
     Coupon.update({
@@ -1445,6 +1465,54 @@ const returnRedeemCouponList = ( token, verifier) =>
             })
         }
 
+const getPackageBought = async function (id) {
+
+    return new Promise((resolve, reject) => {
+        PackageTokens.findOne(
+            {
+                where: {
+                    [Op.and]: [
+                        {package_id: id},
+                        {consumer: {[Op.gte]: 1} }
+                    ]
+                }
+            }
+        ).then( pack => {
+                resolve(pack);
+            })
+            .catch(err => {
+                console.log("This package token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
+const getCouponBought = async function (id) {
+
+    return new Promise((resolve, reject) => {
+        CouponToken.findOne(
+            {
+                where: {
+                    [Op.and]: [
+                        {coupon_id: id},
+                        {consumer: {[Op.gte]: 1} }
+                    ]
+                }
+            }
+        ).then( cp => {
+            resolve(cp);
+        })
+            .catch(err => {
+                console.log("This coupon token don't available.");
+                console.log(err);
+
+                reject(err);
+            })
+    });
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1466,5 +1534,7 @@ module.exports = {
     addImage,
     getFromIdIntern,
     getBrokerFromCouponId,
-    isCouponFromToken
+    isCouponFromToken,
+    getPackageBuyed: getPackageBought,
+    getCouponBought
 };
