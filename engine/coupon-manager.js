@@ -462,27 +462,35 @@ const buyCoupons = async (req, res) => {
 };
 const editCoupon = async (req, res) => {
     const data = req.body;
-    console.log('datadatadata', data)
-    if (data.type === ITEM_TYPE.PACKAGE) {
-        const result = await getPackageBought(data.id)
-        if (result) {
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Is not possible update package, This package is bought.'
-            });
-        } else {
-            console.log('modificabile')
+    try {
+        if (data.type === ITEM_TYPE.PACKAGE) {
+            const result = await getPackageBought(data.id)
+            if (result) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Is not possible update package, This package is bought.'
+                });
+            } else {
+                console.log('modificabile')
+            }
         }
-    }
-    if (data.type === ITEM_TYPE.COUPON) {
-        const result = await getCouponBought(data.id)
-        if (result) {
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                message: 'Is not possible update coupon, This coupon is bought.'
-            });
+        if (data.type === ITEM_TYPE.COUPON) {
+            const result = await getCouponBought(data.id)
+            if (result) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Is not possible update coupon, This coupon is bought.'
+                });
+            }
         }
+    } catch (e) {
+        console.warn(e)
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Is not possible update coupon or package, error from server.'
+        });
     }
+
     let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
     let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
     Coupon.update({
@@ -567,8 +575,38 @@ const editCoupon = async (req, res) => {
             })
         });
 };
-const deleteCoupon = (req, res) => {
-    //console.log('couponscouponscoupons', req.body)
+const deleteCoupon = async (req, res) => {
+    try {
+        const data = (await getFromIdIntern(req.body.id)).dataValues
+        if (data.type === ITEM_TYPE.PACKAGE) {
+            const result = await getPackageBought(data.id)
+            if (result) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Is not possible delete package, This package is bought.'
+                });
+            } else {
+                console.log('modificabile')
+            }
+        }
+        if (data.type === ITEM_TYPE.COUPON) {
+            const result = await getCouponBought(data.id)
+            if (result) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Is not possible delete coupon, This coupon is bought.'
+                });
+            }
+        }
+    } catch (e) {
+        console.warn(e)
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Is not possible delete coupon, error from server.'
+        });
+
+    }
+
     CouponsBrokers.destroy({
         where: {
           coupon_id: req.body.id
