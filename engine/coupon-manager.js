@@ -468,6 +468,7 @@ const editCoupon = async (req, res) => {
             if (result) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
+                    bought: true,
                     message: 'Is not possible update package, This package is bought.'
                 });
             } else {
@@ -479,6 +480,7 @@ const editCoupon = async (req, res) => {
             if (result) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
+                    bought: true,
                     message: 'Is not possible update coupon, This coupon is bought.'
                 });
             }
@@ -583,6 +585,7 @@ const deleteCoupon = async (req, res) => {
             if (result) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
+                    bought: true,
                     message: 'Is not possible delete package, This package is bought.'
                 });
             } else {
@@ -594,6 +597,7 @@ const deleteCoupon = async (req, res) => {
             if (result) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
+                    bought: true,
                     message: 'Is not possible delete coupon, This coupon is bought.'
                 });
             }
@@ -616,7 +620,7 @@ const deleteCoupon = async (req, res) => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 coupon: parseInt(req.body.id),
-                error: 'Cannot deleteCoupon the coupon, internal error'
+                error: 'Cannot delete Coupon the coupon, internal error'
             })
         } else {
             Coupon.destroy({
