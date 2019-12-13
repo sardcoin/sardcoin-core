@@ -41,7 +41,7 @@ const getLastOrder = async (req, res) => {
         ).then((maxId) =>{
 
 
-            console.log('max id', maxId)
+            //console.log('max id', maxId)
             if (!maxId) {
                 return res.status(HttpStatus.NO_CONTENT).send({});
             } else {
@@ -124,7 +124,7 @@ const createOrderFromCart = async (user_id, coupon_list) => {
         // console.log(coupon_list);
 
         for (const coupon of coupon_list) {
-            console.log('createOrderFromCart', coupon);
+            //console.log('createOrderFromCart', coupon);
             package_token = coupon.type === ITEM_TYPE.PACKAGE ? coupon.token : null;
             coupon_token = coupon.type === ITEM_TYPE.COUPON ? coupon.token : null;
 

@@ -135,7 +135,7 @@ const getBrokerFromCouponId = (req, res) => {
             if (broker.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send(null);
             }
-            console.log('broker', broker)
+            //console.log('broker', broker)
             return res.status(HttpStatus.OK).send(broker[0]);
         })
         .catch(err => {

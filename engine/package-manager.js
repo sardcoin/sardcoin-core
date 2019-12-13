@@ -13,7 +13,7 @@ const _ = require('lodash');
 /** Exported REST functions **/
 
 const addImage = (req, res) => {
-    console.log(req);
+    //console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
@@ -103,7 +103,7 @@ exports.insertTokenPackage = async (package_id, token) => {
             package_id: package_id
         })
             .then(newPackage => {
-                console.log('\nNEW PACKAGE: ', newPackage.dataValues);
+                //console.log('\nNEW PACKAGE: ', newPackage.dataValues);
                 resolve(newPackage);
             })
             .catch(err => {

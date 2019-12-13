@@ -11,6 +11,7 @@ const User = require('../models/index').User;
 /** PUBLIC METHODS **/
 const setCheckout = (config) => {
   return async (req, res) => {
+    //console.log('config', config)
     const Paypal = paypalApi(config['Paypal']);
     let link = config['Paypal']['mode'] === 'sandbox' ? 'https://www.sandbox.paypal.com/' : 'https://www.paypal.com/';
 
@@ -37,8 +38,10 @@ const setCheckout = (config) => {
 
       query = await setQuery(grouped, config['siteURL']);
       resultSet = await Paypal.request('SetExpressCheckout', query);
-      link += 'checkoutnow?token=' + resultSet.TOKEN;
+      //console.log('resultSet', resultSet);
 
+      link += 'checkoutnow?token=' + resultSet.TOKEN;
+      //console.log('link', link);
       return res.status(HttpStatus.OK).send({link: link});
 
     } catch (e) {
@@ -52,7 +55,7 @@ const setCheckout = (config) => {
 
 // TODO IS SECURE? WORING BECAUSE THE CALL IS FREE
 const confirm = (config) => {
-  console.log('confirm calling')
+  //console.log('confirm calling')
   return async (req, res) => {
     res.redirect(config['siteURL'] + (config['siteURL'].includes('localhost') ? ':4200' : '') +
         (config['siteURL'].includes('localhost') ? '/#/checkout?token=' : '/prealpha/#/checkout?token=') + req.query.token);
@@ -88,7 +91,7 @@ module.exports = {setCheckout, confirm, pay};
 
 /** PRIVATE METHODS **/
 const setQuery = async (groupedCoupons, siteURL) => {
-  console.log('groupedCoupons', groupedCoupons)
+  //console.log('groupedCoupons', groupedCoupons)
   let m, n = 0;
   let userOwner;
   let amt;

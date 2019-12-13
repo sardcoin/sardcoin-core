@@ -82,7 +82,7 @@ exports.updateCouponBroken = async function(coupon_id, broker_id, quantita=null)
 
 exports.removeAllCouponsBroker = async (req, res) => {
     let couponBrokerRemoved;
-    console.log('req removeAllCategory', req)
+    //console.log('req removeAllCategory', req)
     try {
         couponBrokerRemoved = await CouponBroker.destroy({where: {coupon_id: req.coupon_id}});
 

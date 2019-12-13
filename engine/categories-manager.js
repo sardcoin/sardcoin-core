@@ -103,7 +103,7 @@ const remove = async (req, res) => {
 const assignCategory = async (req, res) => {
     let creation;
 
-    console.log('req assignCategory', req)
+    //console.log('req assignCategory', req)
     try {
         creation = await CouponsCategories.create({
             coupon_id: req.coupon_id,
@@ -171,10 +171,10 @@ const removeAllCategory = async (req, res) => {
 
 const getCategoryCoupon = async (req, res) => {
     let couponCat;
- console.log('req.body', req.params)
+ //console.log('req.body', req.params)
     try {
         couponCat = await CouponsCategories.findAll({where: {coupon_id: req.params.id}});
-        console.log('couponCat', couponCat)
+        //console.log('couponCat', couponCat)
         return res.status(HttpStatus.OK).send({
             coupon_id: req.body.coupon_id,
             category: couponCat

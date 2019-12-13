@@ -472,7 +472,7 @@ const editCoupon = async (req, res) => {
                     message: 'Is not possible update package, This package is bought.'
                 });
             } else {
-                console.log('modificabile')
+                //console.log('modificabile')
             }
         }
         if (data.type === ITEM_TYPE.COUPON) {
@@ -589,7 +589,7 @@ const deleteCoupon = async (req, res) => {
                     message: 'Is not possible delete package, This package is bought.'
                 });
             } else {
-                console.log('modificabile')
+                //console.log('modificabile')
             }
         }
         if (data.type === ITEM_TYPE.COUPON) {
