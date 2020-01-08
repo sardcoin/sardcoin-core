@@ -10,6 +10,7 @@ const User = require('../models/index').User;
 
 /** PUBLIC METHODS **/
 const setCheckout = (config) => {
+  //console.log('config', config)
   return async (req, res) => {
     //console.log('config', config)
     const Paypal = paypalApi(config['Paypal']);
@@ -37,6 +38,8 @@ const setCheckout = (config) => {
 
 
       query = await setQuery(grouped, config['siteURL']);
+      console.log('query', query);
+
       resultSet = await Paypal.request('SetExpressCheckout', query);
       //console.log('resultSet', resultSet);
 
