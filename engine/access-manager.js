@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 const Users = require('../models/index').User;
+const CryptoJS = require('crypto-js');
+const config = require('../config/config')
 
 exports.createUser = function (req, res, next) {
     const user = req.body;
@@ -258,5 +260,25 @@ exports.getBrokers = function (req, res, next) {
             })
         });
 };
+
+exports.encryptKey = (string) => {
+    const secretPhrase = config.development.Paypal.secretPhrase ? config.development.Paypal.secretPhrase : '';
+    let encrypted = CryptoJS.AES.encrypt(string, secretPhrase).toString();
+    return encrypted;
+};
+
+exports.decryptKey = (idUser) => {
+    const secretPhrase = config.development.Paypal.secretPhrase ? config.development.Paypal.secretPhrase : '';
+    Users.findOne({where: {id: idUser}})
+        .then(user => {
+            let decrypted = CryptoJS.AES.decrypt(user.password_secret, secretPhrase);
+            decrypted = decrypted.toString(CryptoJS.enc.Utf8);
+            return decrypted;
+        })
+        .catch(err => {
+            console.log(err);
+            return '';
+        })
+}
 
 
