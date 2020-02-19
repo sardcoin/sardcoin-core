@@ -281,4 +281,39 @@ exports.decryptKey = (idUser) => {
         })
 }
 
+exports.getClientId = async function (producer_id) {
+
+    return new Promise( ((resolve, reject) => {
+        Users.findOne({
+            attributes: ["client_id"],
+            where: {id: producer_id}
+
+        }).then(client_id => {
+            resolve(client_id);
+        }).catch(err => {
+            console.log(err);
+
+        })
+    }))
+
+
+}
+
+// done funzione per prelevare la secret dell'app paypal situata nel db
+exports.getPasswordSecret =async function (producer_id) {
+
+    return new Promise( ((resolve, reject) => {
+        Users.findOne({
+            attributes: ["password_secret"],
+            where: {id: producer_id}
+
+        }).then(password_secret => {
+            resolve(password_secret);
+            return password_secret;
+        }).catch(err => {
+            console.log(err);
+        })
+    }))
+}
+
 

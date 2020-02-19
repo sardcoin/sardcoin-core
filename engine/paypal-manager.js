@@ -193,6 +193,7 @@ let createOrder  = async function(req, res){
   let totalPrice
   try {
     const isPending = await CouponTokenManager.isCouponsPendening(consumer, coupon_id, quantity)
+    //console.log('is pending', isPending)
     if (!isPending) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
           {
@@ -206,23 +207,24 @@ let createOrder  = async function(req, res){
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
-          message: 'Internal server error'
+          message: 'Internal server error isCouponsPendening'
         }
 
     );
   }
   try {
     client_id = (await AccessManager.getClientId(producer_id)).getDataValue('client_id')
+    //console.log('reqreqreq client_id', client_id)
+
     password_secret = (await AccessManager.getPasswordSecret(producer_id)).getDataValue('password_secret')
-    // console.log('reqreqreq client_id', client_id)
-    // console.log('reqreqreq password_secret', password_secret)
+    //console.log('reqreqreq password_secret', password_secret)
 
     totalPrice = (price * quantity).toFixed(2)
   } catch (e) {
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
-          message: 'Internal server error'
+          message: 'Internal server errorclient_id or password_secret'
         }
 
     );
