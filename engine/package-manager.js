@@ -9,6 +9,7 @@ const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
 const _ = require('lodash');
+// const AM = require('../engine/access-manager');
 
 /** Exported REST functions **/
 
@@ -77,7 +78,6 @@ const getCouponsPackage = async (req, res) => {
     //console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
     //console.log('tokentokentoken', token)
-
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
 
     for (const cpToken of cpTokens) {

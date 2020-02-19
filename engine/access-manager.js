@@ -6,6 +6,8 @@ const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 const Users = require('../models/index').User;
+const CryptoJS = require('crypto-js');
+const config = require('../config/config')
 
 exports.createUser = function (req, res, next) {
     const user = req.body;
@@ -259,104 +261,24 @@ exports.getBrokers = function (req, res, next) {
         });
 };
 
-// exports.getAccessToken = function (req, res, next) {
-//     Users.findById(req.user.id)
-//         .then(user => {
-//             return res.status(HttpStatus.OK).send(user);
-//         })
-//         .catch(err => {
-//             console.log(err);
-//             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-//                 error: true,
-//                 message: 'Cannot retrieve the personal informations of the user'
-//             });
-//         })
-// };
-
-
-// funzione per prelevare l'<access-token>
-exports.getAccessToken = async function (producer_id, callback) {
-
-    var accessToken = null;
-
-    const _getClientId = await getClientId(producer_id);
-    const  clientId = _getClientId.dataValues.client_id;
-    const _getPasswordSecret = await getPasswordSecret(producer_id);
-    const  passwordSecret = _getPasswordSecret.dataValues.password_secret;
-
-    //console.log('clientId', clientId);
-    //console.log('passwordSecret', passwordSecret);
-
-
-
-    var headers = {
-        'Accept': 'application/json',
-        'Accept-Language': 'en_US'
-    };
-
-    var dataString = 'grant_type=client_credentials';
-    var options = {
-        url: 'https://api.sandbox.paypal.com/v1/oauth2/token',
-        method: 'POST',
-        headers: headers,
-        body: dataString,
-        auth: {
-            'user': clientId,
-            'pass': passwordSecret
-        }
-    };
-
-    request(options, call);
-
-   function  call(error, response, body) {
-
-            if (!error && response.statusCode == 200) {
-                if (body != undefined) {
-                    const _body =JSON.parse(body);
-                    accessToken = _body.access_token;
-                    return callback(accessToken);
-
-                }
-            }
-    }
-
-    return this;
+exports.encryptKey = (string) => {
+    const secretPhrase = config.development.Paypal.secretPhrase ? config.development.Paypal.secretPhrase : '';
+    let encrypted = CryptoJS.AES.encrypt(string, secretPhrase).toString();
+    return encrypted;
 };
-// done, funzione per prelevare id dell'app paypal situata nel db
-exports.getClientId = async function (producer_id) {
 
-    return new Promise( ((resolve, reject) => {
-        Users.findOne({
-            attributes: ["client_id"],
-            where: {id: producer_id}
-
-        }).then(client_id => {
-            resolve(client_id);
-        }).catch(err => {
-            console.log(err);
-
+exports.decryptKey = (idUser) => {
+    const secretPhrase = config.development.Paypal.secretPhrase ? config.development.Paypal.secretPhrase : '';
+    Users.findOne({where: {id: idUser}})
+        .then(user => {
+            let decrypted = CryptoJS.AES.decrypt(user.password_secret, secretPhrase);
+            decrypted = decrypted.toString(CryptoJS.enc.Utf8);
+            return decrypted;
         })
-    }))
-
-
-}
-
-// done funzione per prelevare la secret dell'app paypal situata nel db
-exports.getPasswordSecret =async function (producer_id) {
-
-    return new Promise( ((resolve, reject) => {
-        Users.findOne({
-            attributes: ["password_secret"],
-            where: {id: producer_id}
-
-        }).then(password_secret => {
-            resolve(password_secret);
-            return password_secret;
-        }).catch(err => {
+        .catch(err => {
             console.log(err);
+            return '';
         })
-    }))
 }
-
 
 
