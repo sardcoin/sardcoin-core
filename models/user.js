@@ -20,6 +20,8 @@ module.exports = (sequelize, DataType) => {
         user_type:      DataType.STRING(100),
         checksum:       DataType.STRING(100),
         email_paypal:   DataType.STRING(50),
+        client_id:      DataType.STRING(64),
+        password_secret:DataType.STRING(64),
     }, {
         freezeTableName: true,
         timestamps: false,

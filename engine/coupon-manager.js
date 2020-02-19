@@ -18,6 +18,7 @@ const CategoriesManager = require('./categories-manager');
 const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const PackageManager = require('./package-manager');
+const PaypalManager = require('./paypal-manager');
 
 /** Libraries and costants **/
 const HttpStatus = require('http-status-codes');
@@ -373,8 +374,61 @@ const isCouponRedeemed = async (req, res) => { // TODO
 
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
+    //console.log('req.body', req.body)
 
     const list = req.body.coupon_list;
+    const quantity = req.body.coupon_list[0].quantity
+    const price = req.body.coupon_list[0].price
+
+    const producer_id = req.body.producer_id
+    const payment_id = req.body.payment_id
+    //console.log('payment_id buyCoupons', payment_id)
+    // verifica che è in stallo
+
+        try {
+            const isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
+            //console.log('is prepared', isPrepared)
+            if (!isPrepared) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
+                });
+            } else if (payment_id) {
+                     // TODO facilmente raggirabile se si modifica il frontend, occorre controllare che il coupon da acquistare
+                    //TODO  ha effettivabente quel prezzo altrimenti si può prendere gratis!!!!
+                const payment = await PaypalManager.captureOrder(payment_id, producer_id)
+                //console.log('payment description', payment)
+                //console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
+                //console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
+                const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
+                if (valute != 'EUR') {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        call: 'buyCoupons',
+                        message: 'An error occurred while finalizing the purchase, error valute'
+                    })
+                }
+                const value = payment.purchase_units[0].payments.captures[0].amount.value
+                if (price * quantity != value) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        call: 'buyCoupons',
+                        message: 'An error occurred while finalizing the purchase, error total amount'
+                    })
+                }
+
+            }
+        } catch (e) {
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                call: 'buyCoupons',
+                message: 'An error occurred while finalizing the purchase, error result prepare coupon'
+            })
+        }
+    //TODO verifica che è acquistato...... captureOrder DI PAYPAL
+
+
     let order_list = [];
     let query = 'START TRANSACTION; ';
     let tokenToExclude = [];
@@ -1020,10 +1074,12 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
         isNotExpired = await isCouponNotExpired(coupon_id);
         isPurchasable = await isItemPurchasable(coupon_id, user_id, ITEM_TYPE.COUPON);
 
+        // TODO aggiungere prepare = user_id (utente intenzionato all'acquisto)
+
         if (isNotExpired && isPurchasable) {
-            coupon = await Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL ' +
+            coupon = await Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL AND prepare = :user_id ' +
                 'AND coupon_id = :coupon_id AND package IS NUll ' + lastPieceOfQuery + 'LIMIT 1',
-                {replacements: {coupon_id: coupon_id}, type: Sequelize.QueryTypes.SELECT},
+                {replacements: {coupon_id: coupon_id, user_id: user_id}, type: Sequelize.QueryTypes.SELECT},
                 {model: CouponToken}
             );
 
@@ -1076,8 +1132,8 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                 'SELECT PackageTokens.token, CouponTokens.coupon_id, CouponTokens.consumer ' +
                 'FROM package_tokens AS PackageTokens JOIN coupons AS Coupon ON PackageTokens.package_id = Coupon.id ' +
                 'JOIN coupon_tokens AS CouponTokens ON CouponTokens.package = PackageTokens.token ' +
-                'WHERE CouponTokens.consumer IS NULL AND PackageTokens.package_id = :package_id ' + lastPieceOfQuery + ' LIMIT 1',
-                {replacements: {package_id: package_id}, type: Sequelize.QueryTypes.SELECT},
+                'WHERE CouponTokens.consumer IS NULL AND PackageTokens.package_id = :package_id AND prepare = :user_id' + lastPieceOfQuery + ' LIMIT 1',
+                {replacements: {package_id: package_id, user_id: user_id}, type: Sequelize.QueryTypes.SELECT},
                 {model: PackageTokens}
             );
 
@@ -1555,6 +1611,77 @@ const getCouponBought = async function (id) {
     });
 };
 
+const preBuy = async function (req, res) {
+    const time = 100000  // 5 minuti sono 300000
+    console.log('richiesta preBuy', req.body.coupon_list)
+    console.log('richiesta preBuy fatta da:', req.user.id)
+
+
+    let coupon_id = req.body.coupon_list[0].id // il coupon che modifico
+    let user_id = req.user.id     // l'user del db originale è 3 (consumer = 3)
+    let quantity = req.body.coupon_list[0].quantity
+    // TODO devo controllare che non è venduto
+    try {
+            const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+            console.log('pending remove preBuy', pending_remove)
+            const pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
+            console.log('pending activate preBuy', pending)
+            let result
+            if(pending.length == 0) {
+                return res.status(HttpStatus.OK).send({
+                    error: true,
+                    message: 'This coupon is unavailable'
+                });
+            } else {
+                await sleep(time)
+                result = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+                return res.status(HttpStatus.OK).send({
+                    error: true,
+                    message: 'Time expired',
+                    time: time
+                });
+            }
+
+
+            console.log('pending', pending)
+
+
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Internal server error',
+        });
+    }
+
+};
+
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
+
+const removePreBuy = async function (req, res) {
+
+    console.log('richiesta rimozione removePreBuy', req.body.coupon_list)
+    console.log('richiesta rimozione removePreBuy fatta da:', req.user.id)
+
+    let coupon_id = req.body.coupon_list[0].id //il coupon che modifico
+    let user_id = req.user.id //l'user del coupon del db è 3 (consumer = 3)
+    let consumer = null
+    const quantity = req.body.coupon_list[0].quantity
+    // TODO devo controllare che non è venduto
+    if (!consumer) {
+        const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+        console.log('pending remove removePreBuy', pending_remove)
+        return res.status(HttpStatus.OK).send({
+            error: false,
+            message: 'Remove pending'
+        });
+    }
+};
+
 module.exports = {
     createCoupon,
     getFromId,
@@ -1578,5 +1705,8 @@ module.exports = {
     getBrokerFromCouponId,
     isCouponFromToken,
     getPackageBuyed: getPackageBought,
-    getCouponBought
+    getCouponBought,
+    preBuy,
+    removePreBuy
+
 };
