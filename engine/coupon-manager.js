@@ -520,7 +520,7 @@ const editCoupon = async (req, res) => {
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
             if (result) {
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                return res.status(HttpStatus.OK).send({
                     error: true,
                     bought: true,
                     message: 'Is not possible update package, This package is bought.'
@@ -532,7 +532,7 @@ const editCoupon = async (req, res) => {
         if (data.type === ITEM_TYPE.COUPON) {
             const result = await getCouponBought(data.id)
             if (result) {
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                return res.status(HttpStatus.OK).send({
                     error: true,
                     bought: true,
                     message: 'Is not possible update coupon, This coupon is bought.'
