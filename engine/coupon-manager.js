@@ -477,7 +477,6 @@ const buyCoupons = async (req, res) => {
 
     query += 'COMMIT';
 
-    console.log('FINAL QUERY');
     //console.log(query);
     // return res.send({query: query, order_list: order_list});
 
@@ -940,27 +939,31 @@ const redeemCoupon = (req, res) => {
 };
 const addImage = (req, res) => {
     fs.readFile(req.files.file.path, function (err, data) {
+        Coupon.findAll()
+            .then(async coupon => {
+                file.name = coupon[coupon.length -1].image;
+
+                file.path = path.join(__dirname, "../media/images/" + file.name);
+                // copy the data from the req.files.file.path and paste it to file.path
+                fs.writeFile(file.path, data, function (err) {
+                    if (err) {
+                        console.warn(err);
+
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                            name: 'Upload Image Error',
+                            message: 'A problem occurred during upload of the image'
+                        })
+                    }
+
+                    return res.status(HttpStatus.CREATED).send({
+                        inserted: true,
+                        image: file.name,
+                        path: file.path
+                    });
+                });
+            });
         // set the correct path for the file not the temporary one from the API:
         const file = req.files.file;
-        file.path = path.join(__dirname, "../media/images/" + file.name);
-
-        // copy the data from the req.files.file.path and paste it to file.path
-        fs.writeFile(file.path, data, function (err) {
-            if (err) {
-                console.warn(err);
-
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    name: 'Upload Image Error',
-                    message: 'A problem occurred during upload of the image'
-                })
-            }
-
-            return res.status(HttpStatus.CREATED).send({
-                inserted: true,
-                image: file.name,
-                path: file.path
-            });
-        });
     });
 };
 
@@ -1253,6 +1256,8 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
 };
 const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
+        coupon.image = coupon.title.replace(/ /g, '_') + '.png';
+
         Coupon.create({
             title: coupon.title,
             description: coupon.description,
@@ -1613,8 +1618,6 @@ const getCouponBought = async function (id) {
 
 const preBuy = async function (req, res) {
     const time = 100000  // 5 minuti sono 300000
-    console.log('richiesta preBuy', req.body.coupon_list)
-    console.log('richiesta preBuy fatta da:', req.user.id)
 
 
     let coupon_id = req.body.coupon_list[0].id // il coupon che modifico
@@ -1623,9 +1626,7 @@ const preBuy = async function (req, res) {
     // TODO devo controllare che non è venduto
     try {
             const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
-            console.log('pending remove preBuy', pending_remove)
             const pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
-            console.log('pending activate preBuy', pending)
             let result
             if(pending.length == 0) {
                 return res.status(HttpStatus.OK).send({
@@ -1643,7 +1644,6 @@ const preBuy = async function (req, res) {
             }
 
 
-            console.log('pending', pending)
 
 
     } catch (e) {
@@ -1664,9 +1664,6 @@ function sleep(ms) {
 
 const removePreBuy = async function (req, res) {
 
-    console.log('richiesta rimozione removePreBuy', req.body.coupon_list)
-    console.log('richiesta rimozione removePreBuy fatta da:', req.user.id)
-
     let coupon_id = req.body.coupon_list[0].id //il coupon che modifico
     let user_id = req.user.id //l'user del coupon del db è 3 (consumer = 3)
     let consumer = null
@@ -1674,7 +1671,6 @@ const removePreBuy = async function (req, res) {
     // TODO devo controllare che non è venduto
     if (!consumer) {
         const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
-        console.log('pending remove removePreBuy', pending_remove)
         return res.status(HttpStatus.OK).send({
             error: false,
             message: 'Remove pending'
