@@ -8,6 +8,7 @@ const OrderManager = require('../engine/orders-manager');
 const Coupon = require('../models/index').Coupon;
 const User = require('../models/index').User;
 const CouponTokenManager = require('./coupon-token-manager');
+const PackageManager = require('./package-manager');
 
 // new payment paypal
 const paypal = require('@paypal/checkout-server-sdk');
@@ -191,8 +192,13 @@ let createOrder  = async function(req, res){
   let client_id
   let password_secret
   let totalPrice
+  let isPending
   try {
-    const isPending = await CouponTokenManager.isCouponsPendening(consumer, coupon_id, quantity)
+    isPending = await CouponTokenManager.isCouponsPendening(consumer, coupon_id, quantity)
+    if (!isPending) {
+      isPending = await  PackageManager.isPackagePendening(consumer, coupon_id, quantity)
+
+    }
     //console.log('is pending', isPending)
     if (!isPending) {
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(

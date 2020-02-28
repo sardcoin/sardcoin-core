@@ -7,7 +7,8 @@ module.exports = (sequelize, DataType) => {
             primaryKey: true
         },
         package_id:   DataType.INTEGER(10),
-        consumer: DataType.INTEGER(11)
+        consumer: DataType.INTEGER(11),
+        prepare: DataType.INTEGER(11)
     }, {
         freezeTableName: true,
         timestamps: false,

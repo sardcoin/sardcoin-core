@@ -271,7 +271,7 @@ exports.isCouponsPendening = async function ( user_id, coupon_id, quantity) {
             {replacements: {coupon_id: coupon_id, user_id: user_id }, type: Sequelize.QueryTypes.SELECT},
             {model: CouponToken}
         );
-        console.log('risultato isCouponsPendening', result)
+        //console.log('risultato isPackagePendening', result)
 
         if (result.length == quantity) {
             return true

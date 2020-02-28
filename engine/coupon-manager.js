@@ -378,6 +378,7 @@ const buyCoupons = async (req, res) => {
 
     const list = req.body.coupon_list;
     const quantity = req.body.coupon_list[0].quantity
+    const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
 
     const producer_id = req.body.producer_id
@@ -386,7 +387,14 @@ const buyCoupons = async (req, res) => {
     // verifica che è in stallo
 
         try {
-            const isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
+            let isPrepared = undefined
+            if (type == 0){
+                isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
+
+            } else if (type == 1) {
+                isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
+
+            }
             //console.log('is prepared', isPrepared)
             if (!isPrepared) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -395,8 +403,6 @@ const buyCoupons = async (req, res) => {
                     message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
                 });
             } else if (payment_id) {
-                     // TODO facilmente raggirabile se si modifica il frontend, occorre controllare che il coupon da acquistare
-                    //TODO  ha effettivabente quel prezzo altrimenti si può prendere gratis!!!!
                 const payment = await PaypalManager.captureOrder(payment_id, producer_id)
                 //console.log('payment description', payment)
                 //console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
@@ -1135,7 +1141,7 @@ const getBuyPackageQuery = async (package_id, user_id, tokenExcluded = []) => {
                 'SELECT PackageTokens.token, CouponTokens.coupon_id, CouponTokens.consumer ' +
                 'FROM package_tokens AS PackageTokens JOIN coupons AS Coupon ON PackageTokens.package_id = Coupon.id ' +
                 'JOIN coupon_tokens AS CouponTokens ON CouponTokens.package = PackageTokens.token ' +
-                'WHERE CouponTokens.consumer IS NULL AND PackageTokens.package_id = :package_id AND prepare = :user_id' + lastPieceOfQuery + ' LIMIT 1',
+                'WHERE CouponTokens.consumer IS NULL AND PackageTokens.package_id = :package_id AND PackageTokens.prepare = :user_id' + lastPieceOfQuery + ' LIMIT 1',
                 {replacements: {package_id: package_id, user_id: user_id}, type: Sequelize.QueryTypes.SELECT},
                 {model: PackageTokens}
             );
@@ -1618,15 +1624,21 @@ const getCouponBought = async function (id) {
 
 const preBuy = async function (req, res) {
     const time = 100000  // 5 minuti sono 300000
-
-
+    console.log('rreq.body.coupon_list[0]', req.body.coupon_list[0])
+    let type = req.body.coupon_list[0].type
     let coupon_id = req.body.coupon_list[0].id // il coupon che modifico
     let user_id = req.user.id     // l'user del db originale è 3 (consumer = 3)
     let quantity = req.body.coupon_list[0].quantity
-    // TODO devo controllare che non è venduto
+    let pending = []
     try {
-            const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
-            const pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
+            if(type == 0) {
+                const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+                pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
+            } else if (type == 1) {
+                const pending_remove = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
+                pending = await PackageManager.pendingPackageToken(user_id, coupon_id, quantity)
+            }
+
             let result
             if(pending.length == 0) {
                 return res.status(HttpStatus.OK).send({
@@ -1635,7 +1647,15 @@ const preBuy = async function (req, res) {
                 });
             } else {
                 await sleep(time)
-                result = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+
+                if(type == 0) {
+                    result = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+
+                } else if (type == 1) {
+                    result = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
+
+                }
+                console.log( 'result', result)
                 return res.status(HttpStatus.OK).send({
                     error: true,
                     message: 'Time expired',
@@ -1664,18 +1684,31 @@ function sleep(ms) {
 
 const removePreBuy = async function (req, res) {
 
+    let type = req.body.coupon_list[0].type
     let coupon_id = req.body.coupon_list[0].id //il coupon che modifico
     let user_id = req.user.id //l'user del coupon del db è 3 (consumer = 3)
-    let consumer = null
     const quantity = req.body.coupon_list[0].quantity
     // TODO devo controllare che non è venduto
-    if (!consumer) {
-        const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+    try {
+        if (type == 0) {
+            const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+
+        } else if (type == 1) {
+            const pending_remove = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
+
+        }
         return res.status(HttpStatus.OK).send({
             error: false,
             message: 'Remove pending'
         });
+    } catch (e) {
+        console.log('error remove preBuy', e)
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'Remove pending fails'
+        });
     }
+
 };
 
 module.exports = {
