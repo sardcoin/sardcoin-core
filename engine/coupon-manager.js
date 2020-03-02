@@ -19,6 +19,7 @@ const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const PackageManager = require('./package-manager');
 const PaypalManager = require('./paypal-manager');
+const BlockchainManager = require('./blockchain-manager');
 
 /** Libraries and costants **/
 const HttpStatus = require('http-status-codes');
@@ -36,6 +37,7 @@ const ITEM_TYPE = {
 const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
+    //let tokensArray = [];
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
@@ -61,6 +63,9 @@ const createCoupon = async (req, res) => {
             // It creates 'quantity' tokens for the coupon inserted
             for (let i = 0; i < data.quantity; i++) {
                 token = generateUniqueToken(data.title, req.user.password);
+
+                // Aggiunta del token all'array
+                // tokensArray.push(token);
 
                 if (data.type === ITEM_TYPE.COUPON) {
                     newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
@@ -91,6 +96,11 @@ const createCoupon = async (req, res) => {
                     });
                 }
             }
+
+            // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
+            // se la scrittura è andata a buon fine, lancia la res 200, altrimenti la 500
+
+            BlockchainManager.createBlockchainCoupon(insertResult, newToken, );
 
             return res.status(HttpStatus.CREATED).send({
                 created: true,
