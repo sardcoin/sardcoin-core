@@ -218,6 +218,75 @@ exports.buyProducerTokensOfflineByToken = async (req, res) => {
 
 };
 
+exports.pendingCouponToken = async function ( user_id, coupon_id, quantity) {
+
+    //console.log('user pendingCouponToken', user_id)
+    //console.log('coupon_id pendingCouponToken', coupon_id)
+    //console.log('coupon_id pendingCouponToken', quantity)
+
+    // se c'è già pending allora si azzera e si rifà
+    try {
+        const result = await Sequelize.query('UPDATE `coupon_tokens` AS `CouponTokens` SET prepare = :user_id  WHERE  consumer IS NULL ' +
+            'AND coupon_id = :coupon_id AND package IS NUll AND verifier IS NULL LIMIT :quantity ',
+            {replacements: {coupon_id: coupon_id, user_id: user_id, quantity: quantity}, type: Sequelize.QueryTypes.UPDATE},
+            {model: CouponToken}
+        );
+
+        //console.log('risultato pendingCouponToken', result)
+        return result;
+
+    } catch (e) {
+        console.log('errore imprevisto', e)
+    }
+};
+
+exports.removePendingCouponToken = async function ( user_id, coupon_id, quantity) {
+
+    //console.log('user removePendingCouponToken', user_id)
+    //console.log('coupon_id removePendingCouponToken', coupon_id)
+    try {
+        const result = await Sequelize.query('UPDATE `coupon_tokens` AS `CouponTokens` SET prepare = null  WHERE  consumer IS NULL ' +
+            'AND coupon_id = :coupon_id AND prepare = :user_id AND package IS NUll  AND verifier IS NULL LIMIT :quantity ',
+            {replacements: {coupon_id: coupon_id, user_id: user_id, quantity: quantity}, type: Sequelize.QueryTypes.UPDATE},
+            {model: CouponToken}
+        );
+
+        //console.log('risultato removePendingCouponToken', result)
+        return result;
+
+    } catch (e) {
+        console.log('errore imprevisto', e)
+    }
+};
+
+exports.isCouponsPendening = async function ( user_id, coupon_id, quantity) {
+
+
+    //console.log('user isCouponsPendening', user_id)
+    //console.log('coupon_id isCouponsPendening', coupon_id)
+    try {
+        const result = await  Sequelize.query(
+            'SELECT * ' +
+            'FROM coupon_tokens WHERE coupon_id = :coupon_id AND consumer IS null AND package IS null AND prepare = :user_id',
+            {replacements: {coupon_id: coupon_id, user_id: user_id }, type: Sequelize.QueryTypes.SELECT},
+            {model: CouponToken}
+        );
+        //console.log('risultato isPackagePendening', result)
+
+        if (result.length == quantity) {
+            return true
+        } else {
+
+            return false
+        }
+    } catch (e) {
+        console.log("Coupon don't  correct prepared", e)
+        return undefined
+    }
+};
+
+
+
 
 
 
