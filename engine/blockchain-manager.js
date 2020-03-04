@@ -20,20 +20,28 @@ async function createBlockchainCoupon(coupon, token, quantity) {
         //verifica i parametri inseriti e
         //inserisci il coupon nella blockchain
 
-    } catch (err){
+    } catch (err) {
         throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
     }
 }
 
-async function editBlockchainCoupon() {
+async function editBlockchainCoupon(coupon, campaignid) {
+    try {
 
+    } catch (err){
+        throw new Error ('editBlockchainCoupon - an error occurred when editing the coupon in the blockchain');
+    }
 }
 
-async function deleteBlockchainCoupon() {
+async function deleteBlockchainCoupon(coupon, campaignid) {
+    try {
 
+    } catch (err){
+        throw new Error ('deleteBlockchainCoupon - an error occurred when removing the coupon in the blockchain');
+    }
 }
 
-async function getBlockchainAvaiableCoupons() {
+async function getBlockchainAvaiableCoupons(user) {
 
 }
 

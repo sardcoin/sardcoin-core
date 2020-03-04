@@ -100,7 +100,7 @@ const createCoupon = async (req, res) => {
             // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
             // se la scrittura è andata a buon fine, lancia la res 200, altrimenti la 500
 
-            BlockchainManager.createBlockchainCoupon(insertResult, newToken, );
+           await BlockchainManager.createBlockchainCoupon(insertResult, newToken, data.quantity);
 
             return res.status(HttpStatus.CREATED).send({
                 created: true,
