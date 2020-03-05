@@ -37,11 +37,11 @@ const ITEM_TYPE = {
 const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
-    //let tokensArray = [];
+    let tokensArray = [];
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-
+        console.log ("insertResult ", insertResult);
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
                 await CategoriesManager.assignCategory({coupon_id: insertResult.dataValues.id, category_id: category.id})
@@ -65,7 +65,7 @@ const createCoupon = async (req, res) => {
                 token = generateUniqueToken(data.title, req.user.password);
 
                 // Aggiunta del token all'array
-                // tokensArray.push(token);
+                 tokensArray.push(token);
 
                 if (data.type === ITEM_TYPE.COUPON) {
                     newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
@@ -100,7 +100,10 @@ const createCoupon = async (req, res) => {
             // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
             // se la scrittura è andata a buon fine, lancia la res 200, altrimenti la 500
 
-           //await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
+            await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
+
+            console.log ("tokens Array", tokensArray);
+
 
 
             return res.status(HttpStatus.CREATED).send({

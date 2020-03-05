@@ -15,14 +15,18 @@ async function deleteBlockchainUser() {
 }
 
 async function createBlockchainCoupon(coupon, tokensArray) {
-    try {
         //Parametri: Il Coupon ed il numero di coupon da inserire
         //verifica i parametri inseriti e
         //inserisci il coupon nella blockchain
 
-    } catch (err) {
-        throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
-    }
+        console.log("coupon " ,coupon, "tokenArray ", tokensArray.length);
+
+        if (coupon || tokensArray.length === 0){
+            console.log ("STO SCRIVENDO SU BLOCKCHAIN");
+        }
+        else {
+            throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
+        }
 }
 
 async function editBlockchainCoupon(coupon, campaignid) {
