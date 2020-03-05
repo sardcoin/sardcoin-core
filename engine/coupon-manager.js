@@ -530,6 +530,7 @@ const buyCoupons = async (req, res) => {
             });
         });
 };
+
 const editCoupon = async (req, res) => {
     const data = req.body;
     try {
