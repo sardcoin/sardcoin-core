@@ -14,7 +14,7 @@ async function deleteBlockchainUser() {
 
 }
 
-async function createBlockchainCoupon(coupon, token, quantity) {
+async function createBlockchainCoupon(coupon, tokensArray) {
     try {
         //Parametri: Il Coupon ed il numero di coupon da inserire
         //verifica i parametri inseriti e
