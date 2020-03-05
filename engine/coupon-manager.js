@@ -946,31 +946,27 @@ const redeemCoupon = (req, res) => {
 };
 const addImage = (req, res) => {
     fs.readFile(req.files.file.path, function (err, data) {
-        Coupon.findAll()
-            .then(async coupon => {
-                file.name = coupon[coupon.length -1].image;
-
-                file.path = path.join(__dirname, "../media/images/" + file.name);
-                // copy the data from the req.files.file.path and paste it to file.path
-                fs.writeFile(file.path, data, function (err) {
-                    if (err) {
-                        console.warn(err);
-
-                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                            name: 'Upload Image Error',
-                            message: 'A problem occurred during upload of the image'
-                        })
-                    }
-
-                    return res.status(HttpStatus.CREATED).send({
-                        inserted: true,
-                        image: file.name,
-                        path: file.path
-                    });
-                });
-            });
         // set the correct path for the file not the temporary one from the API:
         const file = req.files.file;
+        file.path = path.join(__dirname, "../media/images/" + file.name);
+
+        // copy the data from the req.files.file.path and paste it to file.path
+        fs.writeFile(file.path, data, function (err) {
+            if (err) {
+                console.warn(err);
+
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    name: 'Upload Image Error',
+                    message: 'A problem occurred during upload of the image'
+                })
+            }
+
+            return res.status(HttpStatus.CREATED).send({
+                inserted: true,
+                image: file.name,
+                path: file.path
+            });
+        });
     });
 };
 
@@ -1263,8 +1259,6 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
 };
 const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
-        coupon.image = coupon.title.replace(/ /g, '_') + '.png';
-
         Coupon.create({
             title: coupon.title,
             description: coupon.description,
