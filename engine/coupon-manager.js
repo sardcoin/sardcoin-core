@@ -514,7 +514,11 @@ const buyCoupons = async (req, res) => {
 
             // The purchase is done
             await unlockTables();
+
+
             order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
+
+            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
 
             return res.status(HttpStatus.OK).send({
                 success: true,
@@ -525,6 +529,11 @@ const buyCoupons = async (req, res) => {
         .catch(async err => {
             console.log(err);
             await unlockTables();
+
+            if (order_id) {
+                await OrderCoupon.destroy({where: {order_id: order_id}});
+                await Order.destroy({where: {id: order_id}});
+            }
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,

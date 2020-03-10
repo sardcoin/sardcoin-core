@@ -15,33 +15,33 @@ async function deleteBlockchainUser() {
 }
 
 async function createBlockchainCoupon(coupon, tokensArray) {
-        //Parametri: Il Coupon ed il numero di coupon da inserire
-        //verifica i parametri inseriti e
-        //inserisci il coupon nella blockchain
+    //Parametri: Il Coupon ed il numero di coupon da inserire
+    //verifica i parametri inseriti e
+    //inserisci il coupon nella blockchain
 
-        console.log("coupon " ,coupon, "tokenArray ", tokensArray.length);
+    console.log("coupon ", coupon, "tokenArray ", tokensArray.length);
 
-        if (coupon || tokensArray.length === 0){
-            console.log ("STO SCRIVENDO SU BLOCKCHAIN");
-        }
-        else {
-            throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
-        }
+    if (coupon || tokensArray.length === 0) {
+        console.log("STO SCRIVENDO SU BLOCKCHAIN");
+    }
+    else {
+        throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
+    }
 }
 
 async function editBlockchainCoupon(coupon, campaignid) {
     try {
 
-    } catch (err){
-        throw new Error ('editBlockchainCoupon - an error occurred when editing the coupon in the blockchain');
+    } catch (err) {
+        throw new Error('editBlockchainCoupon - an error occurred when editing the coupon in the blockchain');
     }
 }
 
 async function deleteBlockchainCoupon(coupon, campaignid) {
     try {
 
-    } catch (err){
-        throw new Error ('deleteBlockchainCoupon - an error occurred when removing the coupon in the blockchain');
+    } catch (err) {
+        throw new Error('deleteBlockchainCoupon - an error occurred when removing the coupon in the blockchain');
     }
 }
 
@@ -49,9 +49,19 @@ async function getBlockchainAvaiableCoupons(user) {
 
 }
 
-async function buyBlockchainCoupon() {
+async function buyBlockchainCoupon(user_id, order_list) {
+
+
+    console.log("user_id :", user_id, " order_list :", order_list);
+    if (user_id && order_list.length !== 0) {
+        console.log("STO SCRIVENDO SU BLOCKCHAIN");
+    }
+    else {
+        throw new Error('buyBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
+    }
 
 }
+
 
 async function getBlockchainCouponById() {
 
