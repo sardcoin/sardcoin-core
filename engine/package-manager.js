@@ -1,25 +1,20 @@
 'use strict';
 
 const PackageTokens = require('../models/index').PackageTokens;
-const CouponToken = require('../models/index').CouponToken;
 const Coupon = require('../models/index').Coupon;
-const CouponsCategories = require('../models/index').CouponsCategories;
-const Verifier = require('../models/index').Verifier;
 const Sequelize = require('../models/index').sequelize;
-const Op = require('../models/index').Sequelize.Op;
 const CouponManager = require('./coupon-manager');
 const CouponTokenManager = require('./coupon-token-manager');
-const OrdersManager = require('./orders-manager');
 const HttpStatus = require('http-status-codes');
 const fs = require('file-system');
 const path = require('path');
-const crypto = require('crypto');
 const _ = require('lodash');
+// const AM = require('../engine/access-manager');
 
 /** Exported REST functions **/
 
 const addImage = (req, res) => {
-    console.log(req);
+    //console.log(req);
 
     fs.readFile(req.files.file.path, function (err, data) {
         // set the correct path for the file not the temporary one from the API:
@@ -49,29 +44,7 @@ const addImage = (req, res) => {
 
 /** Private methods **/
 
-const generateUniqueToken = (title, token) => {
-
-    const min = Math.ceil(1);
-    const max = Math.floor(1000000);
-    const total = Math.floor(Math.random() * (max - min)) + min;
-
-    return crypto.createHash('sha256').update(title + token + total.toString()).digest('hex').substr(0, 8).toUpperCase();
-
-}; // Generates a 8-char unique token based on the coupon title and the user (hashed) passwpord
-
-const formatNotIn = (tokenList) => {
-    let result = '(';
-
-    for (let i = 0; i < tokenList.length; i++) {
-        result += '"' + tokenList[i] + '"';
-        if (i + 1 !== tokenList.length) {
-            result += ',';
-        }
-    }
-
-    return result + ')';
-};
-// return all package with categories and coupons associate
+// return all package for broker
 const getBrokerPackages = async (req, res) => {
     let result = [];
 
@@ -98,17 +71,24 @@ const getBrokerPackages = async (req, res) => {
             })
         })
 };
-
+// get coupons from package TODO ADD SEND ERROR MESSAGE
 const getCouponsPackage = async (req, res) => {
     let coupons = []
     const id = req.params.package_id;
+    //console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
+    //console.log('tokentokentoken', token)
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
+
     for (const cpToken of cpTokens) {
         const id = cpToken.dataValues.coupon_id
 
         const cp = await CouponManager.getFromIdIntern(id)
         coupons.push(cp.dataValues)
+    }
+    if (coupons.length === 0) {
+        return res.status(HttpStatus.NO_CONTENT).send({
+        })
     }
     return res.status(HttpStatus.OK).send({
         coupons_count: coupons.length,
@@ -123,7 +103,7 @@ exports.insertTokenPackage = async (package_id, token) => {
             package_id: package_id
         })
             .then(newPackage => {
-                console.log('\nNEW PACKAGE: ', newPackage.dataValues);
+                //console.log('\nNEW PACKAGE: ', newPackage.dataValues);
                 resolve(newPackage);
             })
             .catch(err => {
@@ -133,61 +113,78 @@ exports.insertTokenPackage = async (package_id, token) => {
     });
 };
 
-// unused get complete informations from package
-/*const getAllData = async function (packages) {
-    let result = []
 
-    for (let pack of packages) {
-        let coupons = []
-        const categories = await getCategories(pack)
-        const token = await CouponTokenManager.getTokenByIdPackage(pack.id)
+exports.pendingPackageToken = async function ( user_id, package_id, quantity) {
 
+    //console.log('user pendingCouponToken', user_id)
+    //console.log('coupon_id pendingCouponToken', coupon_id)
+    //console.log('coupon_id pendingCouponToken', quantity)
 
-        const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
-        console.log('ccpToken', cpTokens)
+    // se c'è già pending allora si azzera e si rifà
+    try {
+        const result = await Sequelize.query('UPDATE `package_tokens` AS `PackageTokens` SET prepare = :user_id  WHERE  consumer IS NULL ' +
+            'AND package_id = :package_id LIMIT :quantity ',
+            {replacements: {package_id: package_id, user_id: user_id, quantity: quantity}, type: Sequelize.QueryTypes.UPDATE},
+            {model: PackageTokens}
+        );
 
-        for (const cpToken of cpTokens) {
-            let p = {coupon: null, token: null}
+        //console.log('risultato pendingCouponToken', result)
+        return result;
 
-            const id = cpToken.dataValues.coupon_id
-
-            const cp = await CouponManager.getFromIdIntern(id)
-            p.coupon = cp.dataValues
-            console.log('cpcpcpcpcpcpcp', cp)
-
-            p.token = cpToken.dataValues
-            coupons.push(p)
-        }
-
-        console.log('coupons getAllData', coupons)
-        result.push({package: pack, categories: categories, coupons: coupons})
+    } catch (e) {
+        console.log('errore imprevisto', e)
     }
-    console.log('getAllData', result)
-    return result;
-
-
-};*/
-
-const getCategories = async function (pack) {
-
-    return new Promise((resolve, reject) => {
-        CouponsCategories.findAll({
-            attributes: ['category_id'],
-            where: {
-                coupon_id: pack.id
-            }
-        }).then(categories => {
-            resolve(categories)
-
-        })
-    })
-
 };
 
+exports.removePendingPackageToken = async function ( user_id, package_id, quantity) {
+
+    //console.log('user removePendingCouponToken', user_id)
+    //console.log('coupon_id removePendingCouponToken', coupon_id)
+    try {
+        const result = await Sequelize.query('UPDATE `package_tokens` AS `PackageTokens` SET prepare = null  WHERE  consumer IS NULL ' +
+            'AND package_id = :package_id AND prepare = :user_id LIMIT :quantity ',
+            {replacements: {package_id: package_id, user_id: user_id, quantity: quantity}, type: Sequelize.QueryTypes.UPDATE},
+            {model: PackageTokens}
+        );
+
+        //console.log('risultato removePendingCouponToken', result)
+        return result;
+
+    } catch (e) {
+        console.log('errore imprevisto', e)
+    }
+};
+
+exports.isPackagePendening = async function ( user_id, package_id, quantity) {
+
+
+    //console.log('user isCouponsPendening', user_id)
+    //console.log('coupon_id isCouponsPendening', coupon_id)
+    try {
+        const result = await  Sequelize.query(
+            'SELECT * ' +
+            'FROM package_tokens WHERE package_id = :package_id AND consumer IS null AND prepare = :user_id',
+            {replacements: {package_id: package_id, user_id: user_id }, type: Sequelize.QueryTypes.SELECT},
+            {model: PackageTokens}
+        );
+        // console.log('risultato isCouponsPendening', result)
+
+        if (result.length == quantity) {
+            return true
+        } else {
+
+            return false
+        }
+    } catch (e) {
+        console.log("Coupon don't  correct prepared", e)
+        return undefined
+    }
+};
+
+
+
 module.exports = {
-    generateUniqueToken,
     getBrokerPackages,
     addImage,
-    getCategories,
     getCouponsPackage
 };

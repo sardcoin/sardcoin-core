@@ -1,12 +1,6 @@
 'use strict';
 const Sequelize = require('../models/index').sequelize;
 const Coupon = require('../models/index').Coupon;
-const CouponToken = require('../models/index').CouponToken;
-const CouponBroker = require('../models/index').CouponBroker;
-const Op = require('../models/index').Sequelize.Op;
-const Package_id = require('../models/index').Package_id;
-const CouponTokenManager = require('./coupon-token-manager');
-const PackageManager = require('../engine/package-manager');
 const HttpStatus = require('http-status-codes');
 
 // get total coupons to user with generated,active,buyed,verified
@@ -14,7 +8,7 @@ const getReportProducerCoupons = (req, res) => {
     Sequelize.query(
         "SELECT id, title, description, EXTRACT(YEAR FROM timestamp) AS year, EXTRACT(month FROM timestamp) AS month, " +
         "EXTRACT(day FROM timestamp) AS day,timestamp," +
-        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, ' +
+        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS bougth, ' +
         'COUNT(CASE WHEN consumer IS  null AND' +
         ' (coupons.visible_from <= CURRENT_TIMESTAMP OR coupons.visible_from IS null)  AND ' +
         '(coupons.valid_from <= CURRENT_TIMESTAMP OR coupons.valid_from IS null) AND ' +
@@ -33,7 +27,6 @@ const getReportProducerCoupons = (req, res) => {
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
-            console.log('cpr', coupons)
             if (coupons.length === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send(null);
             }
@@ -131,10 +124,59 @@ const getReportBrokerProducerCouponFromId = (req, res) => {
             })
         })
 };
+// get broker from id coupon
+const getBrokerFromCouponId = (req, res) => {
+    Sequelize.query(
+        'SELECT username, coupon_broker.coupon_id FROM `users` JOIN coupon_broker ' +
+        'ON coupon_broker.broker_id = users.id  WHERE coupon_broker.coupon_id =  $1',
+        {bind: [req.params.coupon_id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(broker => {
+            if (broker.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send(null);
+            }
+            //console.log('broker', broker)
+            return res.status(HttpStatus.OK).send(broker[0]);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the coupon report with broker'
+            })
+        })
+};
+
+// get coupons bought to user
+const getReportBoughtProducerCoupons = (req, res) => {
+    Sequelize.query(
+        'select COUNT(*) as bought, coupon_id, package, timestamp, price, ' +
+        'EXTRACT(YEAR FROM coupons.timestamp) AS year, ' +
+        'EXTRACT(month FROM coupons.timestamp) AS month, ' +
+        'EXTRACT(day FROM coupons.timestamp) AS day ' +
+        'FROM coupon_tokens JOIN coupons ON coupons.id = coupon_tokens.coupon_id ' +
+        'WHERE consumer IS not null and coupons.owner = $1 GROUP BY id',
+        {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
+        {model: Coupon})
+        .then(coupons => {
+            if (coupons.length === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send(null);
+            }
+            return res.status(HttpStatus.OK).send(coupons);
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                message: 'Cannot get the distinct coupons report'
+            })
+        })
+};
 
 module.exports = {
     getReportProducerCoupons,
     getReportProducerCouponFromId,
-    getReportBrokerProducerCoupons,
-    getReportBrokerProducerCouponFromId
+    getReportBoughtProducerCoupons,
+    getReportBrokerProducerCouponFromId,
+    getBrokerFromCouponId
 }

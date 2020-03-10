@@ -103,7 +103,7 @@ const remove = async (req, res) => {
 const assignCategory = async (req, res) => {
     let creation;
 
-    // console.log('req', req)
+    //console.log('req assignCategory', req)
     try {
         creation = await CouponsCategories.create({
             coupon_id: req.coupon_id,
@@ -169,5 +169,24 @@ const removeAllCategory = async (req, res) => {
     }
 };
 
+const getCategoryCoupon = async (req, res) => {
+    let couponCat;
+ //console.log('req.body', req.params)
+    try {
+        couponCat = await CouponsCategories.findAll({where: {coupon_id: req.params.id}});
+        //console.log('couponCat', couponCat)
+        return res.status(HttpStatus.OK).send({
+            coupon_id: req.body.coupon_id,
+            category: couponCat
+        });
+    } catch (e) {
+        console.error(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            message: 'An error occurred while finding the category associated to the coupon'
+        })
+    }
+};
 
-module.exports = {removeAllCategory, insert, getAll, update, remove, assignCategory, removeCategory};
+
+module.exports = {getCategoryCoupon, removeAllCategory, insert, getAll, update, remove, assignCategory, removeCategory};

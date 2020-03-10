@@ -100,7 +100,7 @@ const remove = async (req, res) => {
 
 /** CouponCategories Creation and deletion**/
 const assignCategory = async (req) => {
-    console.log('req', req)
+    //console.log('req', req)
     let creation;
 
     try {
