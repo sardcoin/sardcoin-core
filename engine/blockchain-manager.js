@@ -51,8 +51,6 @@ async function getBlockchainAvaiableCoupons(user) {
 
 async function buyBlockchainCoupon(user_id, order_list) {
 
-
-    console.log("user_id :", user_id, " order_list :", order_list);
     if (user_id && order_list.length !== 0) {
         console.log("STO SCRIVENDO SU BLOCKCHAIN");
     }
@@ -67,9 +65,20 @@ async function getBlockchainCouponById() {
 
 }
 
-async function redeemBlockchainCoupon() {
+async function redeemBlockchainCoupon(coupon) {
 
+    if (coupon){
+        //aggiorno lo stato sulla blockchain
+        //se tutto corretto restituisco true
+        console.log("STO AGGIORNANDO LO STATO SU BLOCKCHAIN")
+        return false;
+
+    } else {
+        return false;
+    }
 }
+
+
 
 module.exports = {
     createBlockchainUser, editBlockchainUser, deleteBlockchainUser, createBlockchainCoupon,

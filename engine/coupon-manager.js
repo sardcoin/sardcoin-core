@@ -41,10 +41,13 @@ const createCoupon = async (req, res) => {
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-        console.log ("insertResult ", insertResult);
+        console.log("insertResult ", insertResult);
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
-                await CategoriesManager.assignCategory({coupon_id: insertResult.dataValues.id, category_id: category.id})
+                await CategoriesManager.assignCategory({
+                    coupon_id: insertResult.dataValues.id,
+                    category_id: category.id
+                })
             } // Category association
 
             if (data.brokers) {
@@ -65,7 +68,7 @@ const createCoupon = async (req, res) => {
                 token = generateUniqueToken(data.title, req.user.password);
 
                 // Aggiunta del token all'array
-                 tokensArray.push(token);
+                tokensArray.push(token);
 
                 if (data.type === ITEM_TYPE.COUPON) {
                     newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
@@ -86,7 +89,7 @@ const createCoupon = async (req, res) => {
                     console.error('Error either inserting or updating the CouponToken associated to the coupon');
                     await internal_deleteCoupon(insertResult.dataValues.id);
 
-                    if(couponToken) {
+                    if (couponToken) {
                         await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, pack_coupon_id);
                     }
 
@@ -102,8 +105,7 @@ const createCoupon = async (req, res) => {
 
             await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
 
-            console.log ("tokens Array", tokensArray);
-
+            console.log("tokens Array", tokensArray);
 
 
             return res.status(HttpStatus.CREATED).send({
@@ -248,7 +250,7 @@ const getPurchasedCoupons = async (req, res) => {
             return res.status(HttpStatus.NO_CONTENT).send({});
         }
 
-        for(let coupon of coupons) {
+        for (let coupon of coupons) {
             coupon = formatCoupon(coupon);
         }
         return res.status(HttpStatus.OK).send(coupons);
@@ -277,10 +279,10 @@ const getPurchasedCouponsById = (req, res) => {
             if (coupons[0].dataValues.CouponTokens.length === 0) {
                 PackageTokens.findAll({
 
-                        where: {consumer: req.user.id, package_id: req.params.coupon_id},
+                    where: {consumer: req.user.id, package_id: req.params.coupon_id},
 
                     attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('package_id')), 'bought']]}
-                }).then( packages => {
+                }).then(packages => {
                     if (packages.length === 0) {
                         return res.status(HttpStatus.NO_CONTENT).send({});
 
@@ -400,52 +402,52 @@ const buyCoupons = async (req, res) => {
     //console.log('payment_id buyCoupons', payment_id)
     // verifica che è in stallo
 
-        try {
-            let isPrepared = undefined
-            if (type == 0){
-                isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
+    try {
+        let isPrepared = undefined
+        if (type == 0) {
+            isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
 
-            } else if (type == 1) {
-                isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
+        } else if (type == 1) {
+            isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
 
-            }
-            //console.log('is prepared', isPrepared)
-            if (!isPrepared) {
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    error: true,
-                    call: 'buyCoupons',
-                    message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
-                });
-            } else if (payment_id) {
-                const payment = await PaypalManager.captureOrder(payment_id, producer_id)
-                //console.log('payment description', payment)
-                //console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
-                //console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
-                const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
-                if (valute != 'EUR') {
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        call: 'buyCoupons',
-                        message: 'An error occurred while finalizing the purchase, error valute'
-                    })
-                }
-                const value = payment.purchase_units[0].payments.captures[0].amount.value
-                if (price * quantity != value) {
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        call: 'buyCoupons',
-                        message: 'An error occurred while finalizing the purchase, error total amount'
-                    })
-                }
-
-            }
-        } catch (e) {
+        }
+        //console.log('is prepared', isPrepared)
+        if (!isPrepared) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 call: 'buyCoupons',
-                message: 'An error occurred while finalizing the purchase, error result prepare coupon'
-            })
+                message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
+            });
+        } else if (payment_id) {
+            const payment = await PaypalManager.captureOrder(payment_id, producer_id)
+            //console.log('payment description', payment)
+            //console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
+            //console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
+            const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
+            if (valute != 'EUR') {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, error valute'
+                })
+            }
+            const value = payment.purchase_units[0].payments.captures[0].amount.value
+            if (price * quantity != value) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, error total amount'
+                })
+            }
+
         }
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            call: 'buyCoupons',
+            message: 'An error occurred while finalizing the purchase, error result prepare coupon'
+        })
+    }
     //TODO verifica che è acquistato...... captureOrder DI PAYPAL
 
 
@@ -576,8 +578,8 @@ const editCoupon = async (req, res) => {
         });
     }
 
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
-    let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0 ? null : Number(data.valid_until);
+    let visible_from = data.visible_from === null ? null : Number(data.visible_from) == 0 ? null : Number(data.visible_from);
     Coupon.update({
         title: data.title,
         description: data.description,
@@ -638,11 +640,11 @@ const editCoupon = async (req, res) => {
 
                     }
                 }
-                    if (data.brokers) {
-                        for (let broker of data.brokers) {
-                            const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
-                        }// for each broker it associates the coupon created to him
-                    }// Broker association
+                if (data.brokers) {
+                    for (let broker of data.brokers) {
+                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                    }// for each broker it associates the coupon created to him
+                }// Broker association
 
                 return res.status(HttpStatus.OK).json({
                     updated: true,
@@ -696,10 +698,10 @@ const deleteCoupon = async (req, res) => {
 
     CouponsBrokers.destroy({
         where: {
-          coupon_id: req.body.id
+            coupon_id: req.body.id
         }
-    }).then( result => {
-        if((!result || result === 0 ) && req.body.type === 1){
+    }).then(result => {
+        if ((!result || result === 0) && req.body.type === 1) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 coupon: parseInt(req.body.id),
@@ -738,7 +740,7 @@ const deleteCoupon = async (req, res) => {
                     })
                 })
         }
-    }).catch( err => {
+    }).catch(err => {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
             deleted: false,
             coupon: parseInt(req.body.id),
@@ -772,7 +774,10 @@ const importOfflineCoupon = (req, res) => {
                     if (update) {
                         let newOrder, order_id, newOrderCoupon
                         try {
-                            newOrder = await Order.create({consumer: req.user.id, purchase_time: (new Date()).getTime()});
+                            newOrder = await Order.create({
+                                consumer: req.user.id,
+                                purchase_time: (new Date()).getTime()
+                            });
                             order_id = newOrder.dataValues.id;
                             newOrderCoupon = await OrderCoupon.create({
                                 order_id: order_id,
@@ -815,7 +820,7 @@ const importOfflinePackage = async (req, res) => {
     const data = req.body;
     const coupons = await CouponTokenManager.getCouponsByTokenPackage(data.token)
     //console.log('couponscoupons', coupons)
-    if (coupons.length === 0){
+    if (coupons.length === 0) {
         return res.status(HttpStatus.NO_CONTENT).json({
             message: 'No package found with the given token.',
             token: data.token,
@@ -823,7 +828,7 @@ const importOfflinePackage = async (req, res) => {
 
         })
     }
-    for (const coupon of coupons){
+    for (const coupon of coupons) {
         CouponTokenManager.updatePackageToken(coupon.token, coupon.coupon_id, req.user.id, coupon.package, null)
             .then(async update => {
                 if (!update) {
@@ -843,9 +848,10 @@ const importOfflinePackage = async (req, res) => {
                     });
                     await PackageTokens.update({consumer: req.user.id},
                         {
-                            where: {token: coupon.package
+                            where: {
+                                token: coupon.package
                             }
-                    })
+                        })
 
                 } catch (e) {
                     if (order_id) {
@@ -860,7 +866,6 @@ const importOfflinePackage = async (req, res) => {
                 }
 
 
-
             });
     }
     return res.status(HttpStatus.OK).send({
@@ -873,6 +878,7 @@ const importOfflinePackage = async (req, res) => {
 const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
+    let result;
 
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
@@ -882,83 +888,108 @@ const redeemCoupon = (req, res) => {
                 {token: data.token}, {consumer: {[Op.not]: null}}, {verifier: {[Op.is]: null}}
             ]
         }
-    }).then( async result => {
+    }).then(async result => {
         //console.log( 'resultresultresult', result)
 
-            if (!result) {
-                const resp = await returnRedeemCouponList(data.token, verifier_id)
-                //console.log( 'resp', resp)
-                if (resp.redeemed){
-                    //console.log( 'resp.redeemed', resp.redeemed)
-                    return res.status(HttpStatus.OK).send({
-                        redeemed: true,
-                        token: resp.token,
-                    });
+        if (!result) {
+            const resp = await returnRedeemCouponList(data.token, verifier_id)
+            //console.log( 'resp', resp)
+            if (resp.redeemed) {
+                //console.log( 'resp.redeemed', resp.redeemed)
+                return res.status(HttpStatus.OK).send({
+                    redeemed: true,
+                    token: resp.token,
+                });
 
-                } else if (resp.coupons && resp.coupons.length > 0) {
-                    //console.log('resp.coupons && resp.coupons.length > 0')
-                    return res.status(HttpStatus.OK).send({
-                        coupons: resp.coupons,
-                    });
-                } else {
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                        error: true,
-                        message: 'Some problem occurred during the operation of redeeming.'
-                    });
-                }
+            } else if (resp.coupons && resp.coupons.length > 0) {
+                //console.log('resp.coupons && resp.coupons.length > 0')
+                return res.status(HttpStatus.OK).send({
+                    coupons: resp.coupons,
+                });
             } else {
-                const couponTkn = {
-                        token: data.token,
-                        coupon_id: result.dataValues.coupon_id,
-                        consumer: result.dataValues.consumer,
-                        package: result.dataValues.package
-                    };
-                    const producer_id = result.dataValues.Coupons[0].dataValues.owner;
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    message: 'Some problem occurred during the operation of redeeming.'
+                });
+            }
+        } else {
+            const couponTkn = {
+                token: data.token,
+                coupon_id: result.dataValues.coupon_id,
+                consumer: result.dataValues.consumer,
+                package: result.dataValues.package
+            };
+            const producer_id = result.dataValues.Coupons[0].dataValues.owner;
 
-                await isVerifierAuthorized(producer_id, verifier_id)
-                    .then(authorization => {
-                        if (authorization && couponTkn) { // If the verifier is authorized, it redeems the coupon
+            await isVerifierAuthorized(producer_id, verifier_id)
+                .then(authorization => {
+                    if (authorization && couponTkn) { // If the verifier is authorized, it redeems the coupon
 
-                            CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package, verifier_id)
-                                .then(update => {
-                                    if (update) {
-                                        return res.status(HttpStatus.OK).send({
-                                            redeemed: true,
-                                            token: data.token,
-                                        });
-                                    } else {
-                                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                            error: true,
-                                            message: 'Some problem occurred during the operation of redeeming.'
-                                        });
-                                    }
-                                })
-                                .catch(err => {
-                                    console.log(err);
+                        CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package, verifier_id)
+                            .then(update => {
 
+                                if (update) {
+                                    // return res.status(HttpStatus.OK).send({
+                                    //     redeemed: true,
+                                    //     token: data.token,
+                                    // });
+                                } else {
                                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                         error: true,
                                         message: 'Some problem occurred during the operation of redeeming.'
-                                    })
-                                })
-                        } else {
-                            console.log("I cant't");
-                            return res.status(HttpStatus.BAD_REQUEST).send({
-                                error: true,
-                                message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
+                                    });
+                                }
                             })
-                        }
-                    })
-                    .catch(err => {
-                        console.log(err);
+                            .catch(err => {
+                                console.log(err);
 
-                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the operation of redeeming.'
+                                })
+                            })
+                    } else {
+                        console.log("I cant't");
+                        return res.status(HttpStatus.BAD_REQUEST).send({
                             error: true,
-                            message: 'Some problem occurred during the operation of redeeming.'
+                            message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
                         })
+                    }
+                })
+                .catch(err => {
+                    console.log(err);
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        message: 'Some problem occurred during the operation of redeeming.'
                     })
-            }
-        })
+                });
+
+                result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+
+                if (result){
+                    return res.status(HttpStatus.OK).send({
+                            redeemed: true,
+                            token: data.token,
+                        });
+                } else {
+                    CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package)
+                        .then(update => {
+                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                error: true,
+                                message: 'Some problem occurred during the editing in the blockchain.'
+                            })
+                        })
+                        .catch( err => {
+                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                error: true,
+                                message: 'Some problem occurred during the operation of redeeming.'
+                            })
+                        })
+                }
+
+        }
+    })
         .catch(err => {
             console.log(err);
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
@@ -971,7 +1002,7 @@ const addImage = (req, res) => {
     fs.readFile(req.files.file.path, function (err, data) {
         Coupon.findAll()
             .then(async coupon => {
-                file.name = coupon[coupon.length -1].image;
+                file.name = coupon[coupon.length - 1].image;
 
                 file.path = path.join(__dirname, "../media/images/" + file.name);
                 // copy the data from the req.files.file.path and paste it to file.path
@@ -1261,7 +1292,7 @@ const isItemPurchasable = async (coupon_id, user_id, type = ITEM_TYPE.COUPON) =>
         : queryResult.available > 0 && queryResult.bought < queryResult.purchasable;
 };
 const isVerifierAuthorized = async (producer_id, verifier_id) => {
-    if (producer_id === verifier_id){
+    if (producer_id === verifier_id) {
         return new Promise((resolve, reject) => {
             resolve(producer_id === verifier_id)
         })
@@ -1294,11 +1325,11 @@ const insertCoupon = (coupon, owner) => {
             image: coupon.image,
             timestamp: Number(Date.now()),
             price: coupon.price,
-            visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from) === 0?
-                            null:  Number(coupon.visible_from),
+            visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from) === 0 ?
+                null : Number(coupon.visible_from),
             valid_from: Number(coupon.valid_from),
             valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until) === 0 ?
-                        null: Number(coupon.valid_until),
+                null : Number(coupon.valid_until),
             purchasable: coupon.purchasable,
             constraints: coupon.constraints,
             type: coupon.type,
@@ -1419,17 +1450,17 @@ const getBrokerFromCouponId = async (req, res) => {
             where: {coupon_id: req.params.id}
         });
 
-        if(!couponBrokers) {
+        if (!couponBrokers) {
             return res.status(HttpStatus.NO_CONTENT).send({
                 error: 'There are no authorization given to brokers for this coupon.',
                 coupon_id: parseInt(req.params.coupon_id)
             })
         }
 
-        for(const el of couponBrokers) {
+        for (const el of couponBrokers) {
             brokerTmp = await User.findOne({where: {id: el.dataValues.broker_id}});
 
-            if(!brokerTmp) {
+            if (!brokerTmp) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: `Cannot retrieve a user with id ${el.dataValues.id}`
@@ -1450,17 +1481,16 @@ const getBrokerFromCouponId = async (req, res) => {
 };
 
 
-
 const formatArray = (arrayCoupons) => {
     const arrayReduce = getUnique(arrayCoupons, 'coupon_id')
     let arrayResult = [];
     let arrayResultFull = [];
-    for (let i = 0; i<arrayReduce.length; i++) {
+    for (let i = 0; i < arrayReduce.length; i++) {
 
-        for (let j = 0; j<arrayCoupons.length; j++){
-            if (arrayReduce[i].coupon_id ===arrayCoupons[j].coupon_id ) {
+        for (let j = 0; j < arrayCoupons.length; j++) {
+            if (arrayReduce[i].coupon_id === arrayCoupons[j].coupon_id) {
                 arrayResult.push(arrayCoupons[j]);
-                }
+            }
         }
         arrayResultFull.push(arrayResult)
 
@@ -1485,11 +1515,11 @@ function getUnique(arr, comp) {
 }
 
 
-const isCouponFromToken =  (req, res) => {
+const isCouponFromToken = (req, res) => {
     const token = req.params.token
     CouponToken.findOne({
         where: {token: token}
-    }).then( tk => {
+    }).then(tk => {
         if (tk === null) {
             return res.status(HttpStatus.OK).send({
                 error: true,
@@ -1519,7 +1549,7 @@ const getProducerCouponsOffline = (req, res) => {
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = :id ' +
         'AND visible_from IS null AND coupon_tokens.package is null AND (coupon_tokens.consumer is null OR  coupon_tokens.consumer = 5) ' +
         'GROUP BY id',
-        {replacements: {id:req.user.id}, type: Sequelize.QueryTypes.SELECT},
+        {replacements: {id: req.user.id}, type: Sequelize.QueryTypes.SELECT},
         {model: Coupon})
         .then(coupons => {
             if (coupons.length === 0) {
@@ -1536,67 +1566,66 @@ const getProducerCouponsOffline = (req, res) => {
         })
 };
 
-const returnRedeemCouponList = ( token, verifier) =>
-        {
-            //console.log( 'returnRedeemCouponList', returnRedeemCouponList)
-            return new Promise((resolve, reject) =>{
+const returnRedeemCouponList = (token, verifier) => {
+    //console.log( 'returnRedeemCouponList', returnRedeemCouponList)
+    return new Promise((resolve, reject) => {
 
-                CouponToken.findAll({
-                    include: [{model: Coupon, required: true}],
-                    where: {
-                        [Op.and]: [
-                            {package: token}, {consumer: {[Op.not]: null}},  {verifier: null}
-                        ]
+        CouponToken.findAll({
+            include: [{model: Coupon, required: true}],
+            where: {
+                [Op.and]: [
+                    {package: token}, {consumer: {[Op.not]: null}}, {verifier: null}
+                ]
+            }
+        }).then(async resultPackage => {
+            //console.log('resultPackage', resultPackage)
+
+            if (resultPackage.length === 0) {
+                //console.log('resultPackage 0', resultPackage)
+
+                resolve(false)
+            }
+
+            else {
+                let couponsArray = [];
+                //let count = 0;
+                for (const cp of resultPackage) {
+                    //console.log('count', count++)
+                    //trovo l'owner del coupon
+                    const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
+                    const isVerifier = await isVerifierAuthorized(producer_coupon_id, verifier)
+                    //console.log('isVerifier', isVerifier)
+
+                    if (isVerifier) {
+                        couponsArray.push(cp.dataValues)
                     }
-                }).then( async resultPackage =>{
-                    //console.log('resultPackage', resultPackage)
+                }
+                if (couponsArray.length === 1) {
 
-                    if (resultPackage.length === 0) {
-                        //console.log('resultPackage 0', resultPackage)
+                    resolve({
+                        coupons: formatArray(couponsArray)
+                    })
+                }
+                if (couponsArray.length === 0) {
+                    resolve({
+                        redeemed: false,
+                        coupons: null
+                    })
+                }
+                if (couponsArray.length > 1) {
+                    //console.log('couponsArray > 1', couponsArray)
 
-                       resolve(false)
-                    }
+                    resolve({
+                        coupons: formatArray(couponsArray)
+                    })
+                }
+            }
+        }).catch(err => {
+            reject(err);
 
-                    else {
-                        let couponsArray = [];
-                        //let count = 0;
-                        for (const cp of resultPackage) {
-                            //console.log('count', count++)
-                            //trovo l'owner del coupon
-                            const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
-                            const isVerifier = await isVerifierAuthorized(producer_coupon_id, verifier)
-                            //console.log('isVerifier', isVerifier)
-
-                            if (isVerifier) {
-                                couponsArray.push(cp.dataValues)
-                            }
-                        }
-                        if (couponsArray.length === 1) {
-
-                            resolve({
-                                coupons: formatArray(couponsArray)
-                            })
-                        }
-                        if (couponsArray.length === 0) {
-                            resolve({
-                                redeemed: false,
-                                coupons: null
-                            })
-                        }
-                        if (couponsArray.length > 1) {
-                            //console.log('couponsArray > 1', couponsArray)
-
-                            resolve({
-                                coupons: formatArray(couponsArray)
-                            })
-                        }
-                    }
-                }).catch(err => {
-                    reject(err);
-
-                })
-            })
-        }
+        })
+    })
+};
 
 const getPackageBought = async function (id) {
 
@@ -1606,13 +1635,13 @@ const getPackageBought = async function (id) {
                 where: {
                     [Op.and]: [
                         {package_id: id},
-                        {consumer: {[Op.gte]: 1} }
+                        {consumer: {[Op.gte]: 1}}
                     ]
                 }
             }
-        ).then( pack => {
-                resolve(pack);
-            })
+        ).then(pack => {
+            resolve(pack);
+        })
             .catch(err => {
                 console.log("This package token don't available.");
                 console.log(err);
@@ -1630,11 +1659,11 @@ const getCouponBought = async function (id) {
                 where: {
                     [Op.and]: [
                         {coupon_id: id},
-                        {consumer: {[Op.gte]: 1} }
+                        {consumer: {[Op.gte]: 1}}
                     ]
                 }
             }
-        ).then( cp => {
+        ).then(cp => {
             resolve(cp);
         })
             .catch(err => {
@@ -1655,39 +1684,37 @@ const preBuy = async function (req, res) {
     let quantity = req.body.coupon_list[0].quantity
     let pending = []
     try {
-            if(type == 0) {
-                const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
-                pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
+        if (type == 0) {
+            const pending_remove = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+            pending = await CouponTokenManager.pendingCouponToken(user_id, coupon_id, quantity)
+        } else if (type == 1) {
+            const pending_remove = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
+            pending = await PackageManager.pendingPackageToken(user_id, coupon_id, quantity)
+        }
+
+        let result
+        if (pending.length == 0) {
+            return res.status(HttpStatus.OK).send({
+                error: true,
+                message: 'This coupon is unavailable'
+            });
+        } else {
+            await sleep(time)
+
+            if (type == 0) {
+                result = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
+
             } else if (type == 1) {
-                const pending_remove = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
-                pending = await PackageManager.pendingPackageToken(user_id, coupon_id, quantity)
+                result = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
+
             }
-
-            let result
-            if(pending.length == 0) {
-                return res.status(HttpStatus.OK).send({
-                    error: true,
-                    message: 'This coupon is unavailable'
-                });
-            } else {
-                await sleep(time)
-
-                if(type == 0) {
-                    result = await CouponTokenManager.removePendingCouponToken(user_id, coupon_id, quantity)
-
-                } else if (type == 1) {
-                    result = await PackageManager.removePendingPackageToken(user_id, coupon_id, quantity)
-
-                }
-                console.log( 'result', result)
-                return res.status(HttpStatus.OK).send({
-                    error: true,
-                    message: 'Time expired',
-                    time: time
-                });
-            }
-
-
+            console.log('result', result)
+            return res.status(HttpStatus.OK).send({
+                error: true,
+                message: 'Time expired',
+                time: time
+            });
+        }
 
 
     } catch (e) {
