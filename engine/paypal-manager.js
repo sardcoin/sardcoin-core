@@ -1,6 +1,6 @@
 'use strict';
 const HttpStatus = require('http-status-codes');
-const paypalApi = require('paypal-nvp-api'); //old API payment
+//const paypalApi = require('paypal-nvp-api'); //old API payment
 const crypto = require('crypto');
 const _ = require('lodash');
 const AccessManager = require('../engine/access-manager')
@@ -195,13 +195,20 @@ let createOrder  = async function(req, res){
   let isPending
   try {
     isPending = await CouponTokenManager.isCouponsPendening(consumer, coupon_id, quantity)
+    // console.log('isPending isCouponsPendening', isPending)
+
     if (!isPending) {
       isPending = await  PackageManager.isPackagePendening(consumer, coupon_id, quantity)
+      // console.log('isPending isPackagePendening', isPending)
+
 
     }
     //console.log('is pending', isPending)
     if (!isPending) {
+      // console.log('!isPending ', isPending)
+
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
+
           {
             error: true,
             message: 'This coupon is unavailable'
@@ -210,6 +217,8 @@ let createOrder  = async function(req, res){
       );
     }
   } catch (e) {
+    // console.log('catch isCouponsPendening', e)
+
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
@@ -220,13 +229,17 @@ let createOrder  = async function(req, res){
   }
   try {
     client_id = (await AccessManager.getClientId(producer_id)).getDataValue('client_id')
-    //console.log('reqreqreq client_id', client_id)
+    // console.log('reqreqreq client_id', client_id)
 
     password_secret = (await AccessManager.getPasswordSecret(producer_id)).getDataValue('password_secret')
-    //console.log('reqreqreq password_secret', password_secret)
+    // console.log('reqreqreq password_secret', password_secret)
 
     totalPrice = (price * quantity).toFixed(2)
+    // console.log('reqreqreq totalPrice', totalPrice)
+
   } catch (e) {
+    // console.log('catch  errorclient_id or password_secret', e)
+
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
@@ -239,9 +252,12 @@ let createOrder  = async function(req, res){
 
   try {
 
-    let environment = new paypal.core.SandboxEnvironment(client_id,password_secret);
-    let client = new paypal.core.PayPalHttpClient(environment);
+    let client = getClient(client_id,password_secret, producer_id);
+    console.log(`client: ${JSON.stringify(client)}`);
+
     let request = new paypal.orders.OrdersCreateRequest();
+    console.log(`request: ${JSON.stringify(request)}`);
+
     // add request item description
     // https://developer.paypal.com/docs/api/orders/v2/#definition-purchase_unit_request
     // https://developer.paypal.com/docs/api/orders/v2/#definition-item
@@ -268,9 +284,9 @@ let createOrder  = async function(req, res){
 
     let response = await client.execute(request);
     // console.log(`Response: ${JSON.stringify(response)}`);
-    // If call returns body in response, you can get the deserialized version from the result attribute of the response.
+    // // If call returns body in response, you can get the deserialized version from the result attribute of the response.
     // console.log(`Order: ${JSON.stringify(response.result)}`);
-    //console.log('resresres', res)
+    // console.log('resresres', res)
 
     return res.status(HttpStatus.OK).send(
         JSON.stringify(response.result)
@@ -297,6 +313,7 @@ let captureOrder =  async function(order_id, producer_id) {
   const orderId = order_id;
   // console.log('orderrrrrrCapt',orderId)
   const request = new paypal.orders.OrdersCaptureRequest(orderId);
+
   // console.log('requestrequest',request)
   // console.log('requestrequest producer_id',producer_id)
 
@@ -307,12 +324,15 @@ let captureOrder =  async function(order_id, producer_id) {
     // console.log('reqreqreq client_id', client_id)
     const password_secret = (await AccessManager.getPasswordSecret(producer_id)).getDataValue('password_secret')
     // console.log('reqreqreq password_secret', password_secret)
-    let environment = new paypal.core.SandboxEnvironment(client_id, password_secret);
-    let client = new paypal.core.PayPalHttpClient(environment);
+
+    let client = getClient(client_id,password_secret, producer_id);
+    // console.log(`client: ${JSON.stringify(client)}`);
+    request.requestBody = request.requestBody({});
     let response = await client.execute(request);
-    console.log(`Response: ${JSON.stringify(response)}`);
+
+    // console.log(`Response: ${JSON.stringify(response)}`);
     // If call returns body in response, you can get the deserialized version from the result attribute of the response.
-    console.log(`Capture: ${JSON.stringify(response.result)}`);
+    // console.log(`Capture: ${JSON.stringify(response.result)}`);
     return response.result
 
   } catch (e) {
@@ -395,3 +415,27 @@ const getQueryItem = (query, coupon, n, m) => {
   return query;
 };
 
+const getClient = (client_id, password_secret, user_id) => {
+  // console.log('process.env.NODE_ENV', process.env.NODE_ENV)
+  // const env = process.env.NODE_ENV || 'development'; //TODO verifier if run production return a value
+  // console.log('env', env);
+  // console.log('process', process);
+  // console.log('process.env', process.env);
+  let environment = undefined
+  if (user_id == 1 || user_id == 15) { //if user has 1 or 15 (username producer or broker, paypal running of sandbox
+                                      // this users have client id and password secret generated for sandbox
+    environment = new paypal.core.SandboxEnvironment(client_id, password_secret);
+
+  } else {
+    environment = new paypal.core.LiveEnvironment(client_id,password_secret);
+
+
+  }
+  // console.log(`environmentLive: ${JSON.stringify(environment)}`);
+
+  let client = new paypal.core.PayPalHttpClient(environment);
+  // console.log(`client: ${JSON.stringify(client)}`);
+
+
+  return client
+}
