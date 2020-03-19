@@ -569,8 +569,8 @@ const editCoupon = async (req, res) => {
         });
     }
 
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
-    let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0 ? null:  Number(data.valid_until) ;
+    let visible_from = data.visible_from === null ? null : Number(data.visible_from) === 0 ? null: Number(data.visible_from);
     Coupon.update({
         title: data.title,
         description: data.description,
@@ -589,10 +589,9 @@ const editCoupon = async (req, res) => {
                 {id: data.id}
             ]
         }
-    })
-        .then(async couponUpdated => {
+    }).then(async couponUpdated => {
             if (couponUpdated[0] === 0) {
-                return res.status(HttpStatus.NO_CONTENT).json({
+                return res.status(HttpStatus.NO_CONTENT).send({
                     updated: false,
                     coupon_id: data.id,
                     message: "This coupon doesn't exist"
@@ -614,6 +613,7 @@ const editCoupon = async (req, res) => {
                         message: 'Error deleted categories.'
                     });
                 }
+
                 if (data.categories) {
                     for (let i = 0; i < data.categories.length; i++) {
                         try {
@@ -637,7 +637,7 @@ const editCoupon = async (req, res) => {
                         }// for each broker it associates the coupon created to him
                     }// Broker association
 
-                return res.status(HttpStatus.OK).json({
+                return res.status(HttpStatus.OK).send({
                     updated: true,
                     coupon_id: data.id
                 })
@@ -646,13 +646,14 @@ const editCoupon = async (req, res) => {
         .catch(err => {
             console.log(err);
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 updated: false,
                 coupon_id: data.id,
                 error: 'Cannot edit the coupon'
             })
         });
 };
+
 const deleteCoupon = async (req, res) => {
     try {
         const data = (await getFromIdIntern(req.body.id)).dataValues

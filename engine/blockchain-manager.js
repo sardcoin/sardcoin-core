@@ -29,10 +29,10 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     }
 }
 
-async function editBlockchainCoupon(coupon, campaignid) {
-    try {
+async function editBlockchainCoupon(newCoupon, campaignid) {
+    if (newCoupon && campaignid) {
 
-    } catch (err) {
+    } else {
         throw new Error('editBlockchainCoupon - an error occurred when editing the coupon in the blockchain');
     }
 }
@@ -67,17 +67,16 @@ async function getBlockchainCouponById() {
 
 async function redeemBlockchainCoupon(coupon) {
 
-    if (coupon){
+    if (coupon) {
         //aggiorno lo stato sulla blockchain
         //se tutto corretto restituisco true
         console.log("STO AGGIORNANDO LO STATO SU BLOCKCHAIN")
-        return false;
+        return true;
 
     } else {
         return false;
     }
 }
-
 
 
 module.exports = {
