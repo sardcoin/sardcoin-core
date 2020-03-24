@@ -105,9 +105,6 @@ const createCoupon = async (req, res) => {
 
             await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
 
-            console.log("tokens Array", tokensArray);
-
-
             return res.status(HttpStatus.CREATED).send({
                 created: true,
                 title: data.title,

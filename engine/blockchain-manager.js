@@ -1,6 +1,40 @@
 'use strict';
 
 const HttpStatus = require('http-status-codes');
+const Request = require('request-promise');
+
+const BlockchainUrl = 'http://localhost:3000/api/';
+
+
+async function blockchainInterface(method, assets, body = null, params = null) {
+    let result;
+    let options;
+
+    if (params) {
+        options = {
+            method: method,
+            uri: BlockchainUrl + assets + '/' + params,
+            body: body || {},
+            json: true
+        };
+    } else {
+        options = {
+            method: method,
+            uri: BlockchainUrl + assets + '/',
+            body: body || {},
+            json: true
+        };
+    }
+
+    try {
+        result = await Request(options);
+        return result;
+    } catch (err) {
+        console.error(err);
+        throw new Error('Blockchain Interface');
+    }
+}
+
 
 async function createBlockchainUser() {
 
@@ -15,14 +49,45 @@ async function deleteBlockchainUser() {
 }
 
 async function createBlockchainCoupon(coupon, tokensArray) {
-    //Parametri: Il Coupon ed il numero di coupon da inserire
-    //verifica i parametri inseriti e
-    //inserisci il coupon nella blockchain
 
-    console.log("coupon ", coupon, "tokenArray ", tokensArray.length);
+    let result;
+    let params;
+    let body;
 
     if (coupon || tokensArray.length === 0) {
-        console.log("STO SCRIVENDO SU BLOCKCHAIN");
+
+        body = {
+            "$class": "eu.sardcoin.assets.Campaign",
+            "campaignId": coupon.id.toString(),
+            "state": "CREATED",
+            "title": coupon.title,
+            "price": coupon.price,
+            "economicValue": 0,
+            "creationTime": coupon.timestamp,
+            "dateConstraints": [],
+            "producer": "eu.sardcoin.participants.Producer#1",
+            "verifiers": [
+                "eu.sardcoin.participants.Verifier#1"
+            ]
+        };
+
+
+        result = await blockchainInterface('POST', 'Campaign', body);
+
+        if (result.state === 'CREATED') {
+            let campaignId = result.campaignId;
+            body = {
+                "$class": "eu.sardcoin.transactions.AddCoupons",
+                "campaign": "eu.sardcoin.assets.Campaign#" + campaignId,
+                "tokens": tokensArray
+            };
+            result = await blockchainInterface('POST', 'AddCoupons', body);
+
+            if (result) {
+                result = await blockchainInterface('GET', 'Campaign', null, campaignId);
+                console.log("Ho creato la seguente campagna :", result);
+            }
+        }
     }
     else {
         throw new Error('createBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
