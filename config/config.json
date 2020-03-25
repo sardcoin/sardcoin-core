@@ -1,0 +1,42 @@
+{
+  "development": {
+    "username": "root",
+    "password": "",
+    "database": "sardcoin",
+    "host": "127.0.0.1",
+    "siteURL": "http://localhost",
+    "port": 3306,
+    "dialect": "mysql",
+    "dialectOptions": {
+      "multipleStatements": true
+    },
+    "Paypal": {
+      "type": "express",
+      "mode": "sandbox",
+      "username": "",
+      "password": "",
+      "signature": "",
+      "secretPhrase": ""
+    }
+  },
+  "production": {
+    "username": "root",
+    "password": "",
+    "database": "sardcoin",
+    "host": "127.0.0.1",
+    "siteURL": "https://platform.sardcoin.eu",
+    "port": 3306,
+    "dialect": "mysql",
+    "dialectOptions": {
+      "multipleStatements": true
+    },
+    "Paypal": {
+      "type": "express",
+      "mode": "sandbox",
+      "username": "",
+      "password": "",
+      "signature": "",
+      "secretPhrase": ""
+    }
+  }
+}
