@@ -51,7 +51,6 @@ async function deleteBlockchainUser() {
 async function createBlockchainCoupon(coupon, tokensArray) {
 
     let result;
-    let params;
     let body;
 
     if (coupon || tokensArray.length === 0) {
@@ -71,6 +70,9 @@ async function createBlockchainCoupon(coupon, tokensArray) {
             ]
         };
 
+        if (coupon.valid_until !== undefined) {
+            body = Object.assign(body, {"expirationTime": coupon.valid_until});
+        }
 
         result = await blockchainInterface('POST', 'Campaign', body);
 
