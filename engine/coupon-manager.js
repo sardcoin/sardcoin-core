@@ -41,7 +41,7 @@ const createCoupon = async (req, res) => {
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-        console.log("insertResult ", insertResult);
+
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
                 await CategoriesManager.assignCategory({
@@ -101,7 +101,6 @@ const createCoupon = async (req, res) => {
             }
 
             // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
-            // se la scrittura è andata a buon fine, lancia la res 200, altrimenti la 500
 
             await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
 
@@ -121,7 +120,7 @@ const createCoupon = async (req, res) => {
     } catch (e) {
         console.error(e);
 
-        if (insertResult) { // TODO probably to catch
+        if (insertResult) {
             await internal_deleteCoupon(insertResult.dataValues.id);
         }
 

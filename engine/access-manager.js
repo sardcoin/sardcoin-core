@@ -6,8 +6,10 @@ const bcrypt = require('bcrypt-nodejs');
 const jwt = require('jsonwebtoken');
 const HttpStatus = require('http-status-codes');
 const Users = require('../models/index').User;
+const Verifiers = require('../models/index').Verifier;
 const CryptoJS = require('crypto-js');
-const config = require('../config/config')
+const config = require('../config/config');
+
 
 exports.createUser = function (req, res, next) {
     const user = req.body;
@@ -300,7 +302,7 @@ exports.getClientId = async function (producer_id) {
 }
 
 // done funzione per prelevare la secret dell'app paypal situata nel db
-exports.getPasswordSecret =async function (producer_id) {
+exports.getPasswordSecret = async function (producer_id) {
 
     return new Promise( ((resolve, reject) => {
         Users.findOne({
@@ -316,4 +318,19 @@ exports.getPasswordSecret =async function (producer_id) {
     }))
 }
 
+exports.getVerifiersFromProducer = async function(producer_id) {
+    let verifiers = [];
+    let result;
+
+    result = await Verifiers.findAll({
+        where: {producer : producer_id}
+    });
+
+    if (result){
+        for(var i = 0; i < result.length; i++) {
+            verifiers.push(result[i].dataValues['verifier']);
+        }
+    }
+    return verifiers;
+};
 

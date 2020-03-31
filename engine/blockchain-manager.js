@@ -1,6 +1,7 @@
 'use strict';
 
 const HttpStatus = require('http-status-codes');
+const AccManager = require('./access-manager');
 const Request = require('request-promise');
 
 const BlockchainUrl = 'http://localhost:3000/api/';
@@ -9,6 +10,8 @@ const BlockchainUrl = 'http://localhost:3000/api/';
 async function blockchainInterface(method, assets, body = null, params = null) {
     let result;
     let options;
+
+    console.log("body che ricevo ", body);
 
     if (params) {
         options = {
@@ -52,8 +55,12 @@ async function createBlockchainCoupon(coupon, tokensArray) {
 
     let result;
     let body;
+    let verifiers;
+    let verifiersForBody = [];
 
     if (coupon || tokensArray.length === 0) {
+
+        verifiers = await AccManager.getVerifiersFromProducer(coupon.owner);
 
         body = {
             "$class": "eu.sardcoin.assets.Campaign",
@@ -63,16 +70,23 @@ async function createBlockchainCoupon(coupon, tokensArray) {
             "price": coupon.price,
             "economicValue": 0,
             "creationTime": coupon.timestamp,
-            "dateConstraints": [],
-            "producer": "eu.sardcoin.participants.Producer#1",
-            "verifiers": [
-                "eu.sardcoin.participants.Verifier#1"
-            ]
+            "producer": "eu.sardcoin.participants.Producer#" + coupon.owner,
         };
 
-        if (coupon.valid_until !== undefined) {
+        if (coupon.valid_until !== null) {
             body = Object.assign(body, {"expirationTime": coupon.valid_until});
         }
+
+        if (verifiers.length !== 0) {
+            for (let verifier of verifiers) {
+                verifiersForBody.push("eu.sardcoin.participants.Verifier#" + verifier);
+            }
+            body = Object.assign(body, {verifiers: verifiersForBody});
+        }
+
+        // if(coupon.constraints !== undefined) {
+        //     body = Object.assign(body, {"dateConstraints": [coupon.constraints]});
+        // }
 
         result = await blockchainInterface('POST', 'Campaign', body);
 
@@ -144,7 +158,6 @@ async function redeemBlockchainCoupon(coupon) {
         return false;
     }
 }
-
 
 module.exports = {
     createBlockchainUser, editBlockchainUser, deleteBlockchainUser, createBlockchainCoupon,
