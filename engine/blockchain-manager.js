@@ -39,7 +39,60 @@ async function blockchainInterface(method, assets, body = null, params = null) {
 }
 
 
-async function createBlockchainUser() {
+async function createBlockchainUser(user_id, user_type) {
+
+    let body;
+    let result;
+    let type;
+
+    if (user_id && user_type) {
+        body = {
+            "$class": "eu.sardcoin.participants.Person",
+            "id": user_id,
+            "reputation": 10000
+        };
+
+        result = await blockchainInterface('POST', 'Person', body);
+
+        if (result) {
+            switch (user_type) {
+                case 0:
+                    type = 'Admin';
+                    break;
+                case 1:
+                    type = 'Producer';
+                    break;
+                case 2:
+                    type = 'Consumer';
+                    break;
+                case 3:
+                    type = 'Verifier';
+                    break;
+                case 4:
+                    type = 'Broker';
+                    break;
+                default:
+                    break;
+            }
+
+            body = {
+                "$class": "eu.sardcoin.participants." + type,
+                "id": user_id,
+                "p": "eu.sardcoin.participants.Person#" + user_id
+            };
+
+            result = await blockchainInterface('POST', type, body);
+
+            if (result){
+                console.log("Creato user #", user_id, " di tipo ", type);
+            }
+
+        }
+
+    } else {
+        throw new Error('createBlockchainUser - an error occurred when inserting the new user in the blockchain');
+    }
+
 
 }
 
@@ -163,7 +216,7 @@ async function buyBlockchainCoupon(user_id, order_list) {
                 "$class": "eu.sardcoin.transactions.BuyCoupon",
                 "coupon": "eu.sardcoin.assets.Coupon#" + order.token,
                 "caller": "eu.sardcoin.participants.Consumer#" + user_id
-            }
+            };
 
             result = await blockchainInterface('POST', 'BuyCoupon', body);
 
