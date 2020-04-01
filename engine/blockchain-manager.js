@@ -132,9 +132,26 @@ async function getBlockchainAvaiableCoupons(user) {
 
 async function buyBlockchainCoupon(user_id, order_list) {
 
-    if (user_id && order_list.length !== 0) {
+    let body;
+    let result;
 
-        console.log("STO SCRIVENDO SU BLOCKCHAIN");
+    if (user_id && order_list.length !== 0) {
+        console.log("user_id: ", user_id, " order_list: ", order_list);
+
+        for (let order of order_list) {
+
+            body = {
+                "$class": "eu.sardcoin.transactions.BuyCoupon",
+                "coupon": "eu.sardcoin.assets.Coupon#" + order.token,
+                "caller": "eu.sardcoin.participants.Consumer#" + user_id
+            }
+
+            result = await blockchainInterface('POST', 'BuyCoupon', body);
+
+            if (result) {
+                console.log("Coupon #", order.token, " acquistato regolarmente da consumer ", user_id, " e registrato in blockchain");
+            }
+        }
     }
     else {
         throw new Error('buyBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
