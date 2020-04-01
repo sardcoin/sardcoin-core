@@ -133,6 +133,7 @@ async function getBlockchainAvaiableCoupons(user) {
 async function buyBlockchainCoupon(user_id, order_list) {
 
     if (user_id && order_list.length !== 0) {
+
         console.log("STO SCRIVENDO SU BLOCKCHAIN");
     }
     else {
@@ -151,7 +152,7 @@ async function redeemBlockchainCoupon(coupon) {
     if (coupon) {
         //aggiorno lo stato sulla blockchain
         //se tutto corretto restituisco true
-        console.log("STO AGGIORNANDO LO STATO SU BLOCKCHAIN")
+        console.log("STO AGGIORNANDO LO STATO SU BLOCKCHAIN");
         return true;
 
     } else {
