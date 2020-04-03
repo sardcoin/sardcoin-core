@@ -395,7 +395,7 @@ const buyCoupons = async (req, res) => {
 
     const producer_id = req.body.producer_id
     const payment_id = req.body.payment_id
-    //console.log('payment_id buyCoupons', payment_id)
+    // console.log('payment_id buyCoupons', payment_id)
     // verifica che è in stallo
 
         try {
@@ -415,10 +415,11 @@ const buyCoupons = async (req, res) => {
                     message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
                 });
             } else if (payment_id) {
+                // console.log('farà capture')
                 const payment = await PaypalManager.captureOrder(payment_id, producer_id)
-                //console.log('payment description', payment)
-                //console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
-                //console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
+                // console.log('payment description', payment)
+                // console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
+                // console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
                 const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
                 if (valute != 'EUR') {
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
