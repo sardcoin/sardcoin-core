@@ -883,7 +883,6 @@ const redeemCoupon = (req, res) => {
             ]
         }
     }).then( async result => {
-        //console.log( 'resultresultresult', result)
 
             if (!result) {
                 const resp = await returnRedeemCouponList(data.token, verifier_id)
@@ -922,10 +921,10 @@ const redeemCoupon = (req, res) => {
                             CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package, verifier_id)
                                 .then(update => {
                                     if (update) {
-                                        return res.status(HttpStatus.OK).send({
-                                            redeemed: true,
-                                            token: data.token,
-                                        });
+                                        // return res.status(HttpStatus.OK).send({
+                                        //     redeemed: true,
+                                        //     token: data.token,
+                                        // });
                                     } else {
                                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                             error: true,
@@ -942,7 +941,6 @@ const redeemCoupon = (req, res) => {
                                     })
                                 })
                         } else {
-                            console.log("I cant't");
                             return res.status(HttpStatus.BAD_REQUEST).send({
                                 error: true,
                                 message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
@@ -958,32 +956,37 @@ const redeemCoupon = (req, res) => {
                         })
                     });
 
-                result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+                try {
+                    result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
 
-                if (result){
-                    return res.status(HttpStatus.OK).send({
-                        redeemed: true,
-                        token: data.token,
-                    });
-                } else {
+                    if (result){
+                        return res.status(HttpStatus.OK).send({
+                            redeemed: true,
+                            token: data.token,
+                        });
+                    }
+
+                } catch (e) {
+
                     CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package)
-                        .then(update => {
-                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                error: true,
-                                message: 'Some problem occurred during the editing in the blockchain.'
+                            .then(update => {
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the editing in the blockchain.'
+                                })
                             })
-                        })
-                        .catch( err => {
-                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                                error: true,
-                                message: 'Some problem occurred during the operation of redeeming.'
+                            .catch( err => {
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the operation of redeeming.'
+                                })
                             })
-                        })
                 }
             }
         })
         .catch(err => {
             console.log(err);
+
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'Some problem occurred during the redeem of the coupon.'

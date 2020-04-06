@@ -83,7 +83,7 @@ async function createBlockchainUser(user_id, user_type) {
 
             result = await blockchainInterface('POST', type, body);
 
-            if (result){
+            if (result) {
                 console.log("Creato user #", user_id, " di tipo ", type);
             }
 
@@ -238,14 +238,32 @@ async function getBlockchainCouponById() {
 
 async function redeemBlockchainCoupon(coupon) {
 
-    if (coupon) {
-        //aggiorno lo stato sulla blockchain
-        //se tutto corretto restituisco true
-        console.log("STO AGGIORNANDO LO STATO SU BLOCKCHAIN");
-        return true;
+    let body;
+    let result;
 
-    } else {
-        return false;
+    if (coupon.token) {
+
+        body = {
+            "$class": "eu.sardcoin.transactions.CouponRedemptionRequest",
+            "coupon": "eu.sardcoin.assets.Coupon#" + coupon.token
+        };
+
+        result = await blockchainInterface('POST', 'CouponRedemptionRequest', body);
+
+        //TODO aggiungere controllo sul verificatore che non è presente nella blockchain e annullare lo stato avaiable del coupon
+
+        body = {
+            "$class": "eu.sardcoin.transactions.CouponRedemptionApproval",
+            "coupon": "eu.sardcoin.assets.Coupon#" + coupon.token,
+            "result": true
+        };
+
+        result = await blockchainInterface('POST', 'CouponRedemptionApproval', body);
+
+        console.log("Il coupon#", coupon.token, "è stato verificato con risultato ", result.result);
+
+        return result;
+
     }
 }
 
