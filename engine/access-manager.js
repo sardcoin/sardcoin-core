@@ -9,67 +9,86 @@ const Users = require('../models/index').User;
 const Verifiers = require('../models/index').Verifier;
 const CryptoJS = require('crypto-js');
 const config = require('../config/config');
+const BlockchainManager = require('./blockchain-manager');
 
 
 exports.createUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    Users.findAll({
-        where: {
-            [Op.or]: [
-                {username: user.username},
-                {email: user.email}
-            ]
-        }
-    })
-        .then(userbn => {
-            // user !== null then a username or an email already exists in the sistem
-            // the registration has to be rejected
-
-            if (userbn.length !== 0) {
-                return res.status(HttpStatus.BAD_REQUEST).send({
-                    created: false,
-                    error: 'Username or email already exists'
-                });
-            } else {
-                // A new user can be created
-
-                Users.create({
-                    username: user.username,
-                    email: user.email,
-                    company_name: user.company_name,
-                    vat_number: user.vat_number,
-                    first_name: user.first_name,
-                    last_name: user.last_name,
-                    birth_place: user.birth_place,
-                    birth_date: new Date(user.birth_date),
-                    fiscal_code: user.fiscal_code,
-                    address: user.address,
-                    province: user.province,
-                    city: user.city,
-                    zip: user.zip,
-                    password: password,
-                    user_type: user.user_type,
-                    checksum: '0',
-                    email_paypal: user.email_paypal
-                })
-                    .then(newUser => {
-                        return res.status(HttpStatus.CREATED).send({
-                            created: true,
-                            first_name: newUser.get('first_name'),
-                            last_name: newUser.get('last_name')
-                        });
-                    })
-                    .catch(err => {
-                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                            created: false,
-                            username: user.username
-                        });
-                    })
+    try {
+        Users.findAll({
+            where: {
+                [Op.or]: [
+                    {username: user.username},
+                    {email: user.email}
+                ]
             }
         })
-    ;
+            .then(userbn => {
+                // user !== null then a username or an email already exists in the sistem
+                // the registration has to be rejected
+
+                if (userbn.length !== 0) {
+                    return res.status(HttpStatus.BAD_REQUEST).send({
+                        created: false,
+                        error: 'Username or email already exists'
+                    });
+                } else {
+                    // A new user can be created
+
+                    Users.create({
+                        username: user.username,
+                        email: user.email,
+                        company_name: user.company_name,
+                        vat_number: user.vat_number,
+                        first_name: user.first_name,
+                        last_name: user.last_name,
+                        birth_place: user.birth_place,
+                        birth_date: new Date(user.birth_date),
+                        fiscal_code: user.fiscal_code,
+                        address: user.address,
+                        province: user.province,
+                        city: user.city,
+                        zip: user.zip,
+                        password: password,
+                        user_type: user.user_type,
+                        checksum: '0',
+                        email_paypal: user.email_paypal
+                    })
+                        .then(async newUser => {
+                            try {
+                                await BlockchainManager.createBlockchainUser(newUser.id, newUser.user_type);
+                                return res.status(HttpStatus.CREATED).send({
+                                    created: true,
+                                    first_name: newUser.get('first_name'),
+                                    last_name: newUser.get('last_name')
+                                });
+                            } catch (e) {
+                                Users.destroy({
+                                    where : {id : newUser.id}
+                                }).then(result => {
+                                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                        created: false,
+                                        username: user.username
+                                    });
+                                });
+                            }
+                        })
+                        .catch(err => {
+                            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                created: false,
+                                username: user.username
+                            });
+                        })
+                }
+            });
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            created: false,
+            username: user.username
+        });
+    }
 };
 
 exports.getUserFromToken = function (req, res, next) {
@@ -285,7 +304,7 @@ exports.decryptKey = (idUser) => {
 
 exports.getClientId = async function (producer_id) {
 
-    return new Promise( ((resolve, reject) => {
+    return new Promise(((resolve, reject) => {
         Users.findOne({
             attributes: ["client_id"],
             where: {id: producer_id}
@@ -304,7 +323,7 @@ exports.getClientId = async function (producer_id) {
 // done funzione per prelevare la secret dell'app paypal situata nel db
 exports.getPasswordSecret = async function (producer_id) {
 
-    return new Promise( ((resolve, reject) => {
+    return new Promise(((resolve, reject) => {
         Users.findOne({
             attributes: ["password_secret"],
             where: {id: producer_id}
@@ -318,16 +337,16 @@ exports.getPasswordSecret = async function (producer_id) {
     }))
 }
 
-exports.getVerifiersFromProducer = async function(producer_id) {
+exports.getVerifiersFromProducer = async function (producer_id) {
     let verifiers = [];
     let result;
 
     result = await Verifiers.findAll({
-        where: {producer : producer_id}
+        where: {producer: producer_id}
     });
 
-    if (result){
-        for(var i = 0; i < result.length; i++) {
+    if (result) {
+        for (var i = 0; i < result.length; i++) {
             verifiers.push(result[i].dataValues['verifier']);
         }
     }

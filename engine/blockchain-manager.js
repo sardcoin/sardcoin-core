@@ -11,8 +11,6 @@ async function blockchainInterface(method, assets, body = null, params = null) {
     let result;
     let options;
 
-    console.log("body che ricevo ", body);
-
     if (params) {
         options = {
             method: method,
@@ -55,7 +53,7 @@ async function createBlockchainUser(user_id, user_type) {
         result = await blockchainInterface('POST', 'Person', body);
 
         if (result) {
-            switch (user_type) {
+            switch (parseInt(user_type)) {
                 case 0:
                     type = 'Admin';
                     break;
@@ -74,26 +72,19 @@ async function createBlockchainUser(user_id, user_type) {
                 default:
                     break;
             }
-
             body = {
                 "$class": "eu.sardcoin.participants." + type,
                 "id": user_id,
                 "p": "eu.sardcoin.participants.Person#" + user_id
             };
-
             result = await blockchainInterface('POST', type, body);
-
             if (result) {
                 console.log("Creato user #", user_id, " di tipo ", type);
             }
-
         }
-
     } else {
         throw new Error('createBlockchainUser - an error occurred when inserting the new user in the blockchain');
     }
-
-
 }
 
 async function editBlockchainUser() {
