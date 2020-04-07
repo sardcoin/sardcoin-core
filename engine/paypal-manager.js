@@ -263,6 +263,7 @@ let createOrder  = async function(req, res){
     // https://developer.paypal.com/docs/api/orders/v2/#definition-item
     request.requestBody({
       "intent": "CAPTURE",
+      "currency": "EUR",
       "application_context": {
         "brand_name": "SardCoin",
       },
