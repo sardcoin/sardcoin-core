@@ -402,7 +402,7 @@ const buyCoupons = async (req, res) => {
                     call: 'buyCoupons',
                     message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
                 });
-            } else if (payment_id) {
+            } else if (payment_id && price >= 1) {
                 // console.log('farà capture')
                 const payment = await PaypalManager.captureOrder(payment_id, producer_id)
                 // console.log('payment description', payment)
