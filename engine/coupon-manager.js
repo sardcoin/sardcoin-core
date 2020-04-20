@@ -544,6 +544,7 @@ const buyCoupons = async (req, res) => {
 
 const editCoupon = async (req, res) => {
     const data = req.body;
+    let result;
     try {
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
@@ -577,25 +578,30 @@ const editCoupon = async (req, res) => {
 
     let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0 ? null:  Number(data.valid_until) ;
     let visible_from = data.visible_from === null ? null : Number(data.visible_from) === 0 ? null: Number(data.visible_from);
-    Coupon.update({
-        title: data.title,
-        description: data.description,
-        image: data.image,
-        price: data.price,
-        visible_from: visible_from,
-        valid_from: Number(data.valid_from),
-        valid_until: valid_until,
-        constraints: data.constraints,
-        purchasable: data.purchasable,
-        brokers: data.brokers
-    }, {
-        where: {
-            [Op.and]: [
-                {owner: req.user.id},
-                {id: data.id}
-            ]
-        }
-    }).then(async couponUpdated => {
+
+    try {
+
+        await BlockchainManager.editBlockchainCoupon(data);
+
+        Coupon.update({
+            title: data.title,
+            description: data.description,
+            image: data.image,
+            price: data.price,
+            visible_from: visible_from,
+            valid_from: Number(data.valid_from),
+            valid_until: valid_until,
+            constraints: data.constraints,
+            purchasable: data.purchasable,
+            brokers: data.brokers
+        }, {
+            where: {
+                [Op.and]: [
+                    {owner: req.user.id},
+                    {id: data.id}
+                ]
+            }
+        }).then(async couponUpdated => {
             if (couponUpdated[0] === 0) {
                 return res.status(HttpStatus.NO_CONTENT).send({
                     updated: false,
@@ -606,6 +612,10 @@ const editCoupon = async (req, res) => {
             else {
 
                 try {
+
+                    //LA MIA IDEA ERA DI METTERLA QUI LA CHIAMATA ALLA BLOCKCHAIN
+                    //await BlockchainManager.editBlockchainCoupon(couponUpdated);
+
                     await CategoriesManager.removeAllCategory({
                         coupon_id: data.id,
                     });
@@ -637,11 +647,11 @@ const editCoupon = async (req, res) => {
 
                     }
                 }
-                    if (data.brokers) {
-                        for (let broker of data.brokers) {
-                            const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
-                        }// for each broker it associates the coupon created to him
-                    }// Broker association
+                if (data.brokers) {
+                    for (let broker of data.brokers) {
+                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                    }// for each broker it associates the coupon created to him
+                }// Broker association
 
                 return res.status(HttpStatus.OK).send({
                     updated: true,
@@ -649,15 +659,24 @@ const editCoupon = async (req, res) => {
                 })
             }
         })
-        .catch(err => {
-            console.log(err);
+            .catch(err => {
+                console.log(err);
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                updated: false,
-                coupon_id: data.id,
-                error: 'Cannot edit the coupon'
-            })
-        });
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    updated: false,
+                    coupon_id: data.id,
+                    error: 'Cannot edit the coupon'
+                })
+            });
+
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            coupon_id: data.id,
+            error: 'Cannot edit the coupon - Error with the blockchain'
+        })
+    }
+
 };
 
 const deleteCoupon = async (req, res) => {

@@ -154,18 +154,43 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     }
 }
 
-async function editBlockchainCoupon(newCoupon, campaign_id) {
-    if (newCoupon && campaign_id) {
+async function editBlockchainCoupon(edited_coupon) {
+
+    let body;
+    let result;
+
+    if (edited_coupon) {
+
+        body = {
+            "$class": "eu.sardcoin.transactions.EditCampaign",
+            "campaign": "eu.sardcoin.assets.Campaign#" + edited_coupon.id,
+            "title": edited_coupon.title,
+            "price": edited_coupon.price,
+            "expirationTime": edited_coupon.valid_until
+        };
+
+        result = await blockchainInterface('POST', 'EditCampaign', body);
 
     } else {
         throw new Error('editBlockchainCoupon - an error occurred when editing the coupon in the blockchain');
     }
 }
 
-async function deleteBlockchainCoupon(coupon, campaign_id) {
-    try {
+async function deleteBlockchainCoupon(campaign_id) {
 
-    } catch (err) {
+    let body;
+    let result;
+
+    if (campaign_id) {
+
+        body = {
+            "$class": "eu.sardcoin.transactions.DeleteCampaign",
+            "campaign": "eu.sardcoin.assets.Campaign#" + campaign_id,
+        };
+
+        result = await blockchainInterface('POST', 'DeleteCampaign', body);
+
+    } else {
         throw new Error('deleteBlockchainCoupon - an error occurred when removing the coupon in the blockchain');
     }
 }
