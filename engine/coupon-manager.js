@@ -713,58 +713,69 @@ const deleteCoupon = async (req, res) => {
 
     }
 
-    CouponsBrokers.destroy({
-        where: {
-          coupon_id: req.body.id
-        }
-    }).then( result => {
-        if((!result || result === 0 ) && req.body.type === 1){
+    try {
+
+        await BlockchainManager.deleteBlockchainCoupon(req.body.id);
+
+        CouponsBrokers.destroy({
+            where: {
+                coupon_id: req.body.id
+            }
+        }).then( result => {
+            if((!result || result === 0 ) && req.body.type === 1){
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                    deleted: false,
+                    coupon: parseInt(req.body.id),
+                    error: 'Cannot delete Coupon the coupon, internal error'
+                })
+            } else {
+                Coupon.destroy({
+                    where: {
+                        [Op.and]: [
+                            {id: req.body.id},
+                            {owner: req.user.id}
+                        ]
+                    }
+                })
+                    .then(coupon => {
+                        if (coupon === 0) {
+                            return res.status(HttpStatus.NO_CONTENT).json({
+                                deleted: false,
+                                coupon: parseInt(req.body.id),
+                                message: "This coupon doesn't exist or you doesn't own the coupon!"
+                            });
+                        } else {
+                            return res.status(HttpStatus.OK).json({
+                                deleted: true,
+                                coupon: parseInt(req.body.id),
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                            deleted: false,
+                            coupon: parseInt(req.body.id),
+                            error: 'Cannot deleteCoupon the coupon'
+                        })
+                    })
+            }
+        }).catch( err => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 coupon: parseInt(req.body.id),
-                error: 'Cannot delete Coupon the coupon, internal error'
+                error: 'Cannot deleteCoupon the coupon, internal error'
             })
-        } else {
-            Coupon.destroy({
-                where: {
-                    [Op.and]: [
-                        {id: req.body.id},
-                        {owner: req.user.id}
-                    ]
-                }
-            })
-                .then(coupon => {
-                    if (coupon === 0) {
-                        return res.status(HttpStatus.NO_CONTENT).json({
-                            deleted: false,
-                            coupon: parseInt(req.body.id),
-                            message: "This coupon doesn't exist or you doesn't own the coupon!"
-                        });
-                    } else {
-                        return res.status(HttpStatus.OK).json({
-                            deleted: true,
-                            coupon: parseInt(req.body.id),
-                        });
-                    }
-                })
-                .catch(err => {
-                    console.log(err);
+        })
 
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                        deleted: false,
-                        coupon: parseInt(req.body.id),
-                        error: 'Cannot deleteCoupon the coupon'
-                    })
-                })
-        }
-    }).catch( err => {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             deleted: false,
             coupon: parseInt(req.body.id),
-            error: 'Cannot deleteCoupon the coupon, internal error'
+            error: 'Cannot deleteCoupon the coupon, blockchain error'
         })
-    })
-
+    }
 };
 const importOfflineCoupon = (req, res) => {
     const data = req.body;
