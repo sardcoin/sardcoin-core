@@ -150,7 +150,7 @@ const getBrokerFromCouponId = (req, res) => {
 // get coupons bought to user
 const getReportBoughtProducerCoupons = (req, res) => {
     Sequelize.query(
-        'select COUNT(*) as bought, coupon_id, package, timestamp, price, ' +
+        'select COUNT(*) as bought, coupon_id, package, timestamp, price, consumer, package, ' +
         'EXTRACT(YEAR FROM coupons.timestamp) AS year, ' +
         'EXTRACT(month FROM coupons.timestamp) AS month, ' +
         'EXTRACT(day FROM coupons.timestamp) AS day ' +

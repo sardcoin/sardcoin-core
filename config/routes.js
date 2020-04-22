@@ -43,6 +43,7 @@ module.exports = function (app, passport, config) {
     app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);
     app.get(amPath    + 'getProducerFromId/:producer_id', AcM.getProducerFromId);
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
+    app.get(amPath    + 'getConsumers/', reqAuth, AcM.roleAuth(all), AcM.getConsumers);
 
     /****************** COUPONS **********************/
     // Open methods
@@ -72,7 +73,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'getBrokerCoupons/', reqAuth, AcM.roleAuth([broker, admin]), CouponManager.getBrokerCoupons);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer,broker, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.deleteCoupon);
-    app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
+    app.post(cmPath   + 'addImage', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
     app.get(cmPath    + 'getBrokerFromCouponId/:id', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getBrokerFromCouponId);
     app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponFromToken);

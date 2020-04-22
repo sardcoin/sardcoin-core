@@ -393,6 +393,7 @@ const buyCoupons = async (req, res) => {
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
 
+    const priceDb = await getFromIdIntern(list[0].id).dataValues.price ;
     const producer_id = req.body.producer_id
     const payment_id = req.body.payment_id
     // console.log('payment_id buyCoupons', payment_id)
@@ -407,14 +408,22 @@ const buyCoupons = async (req, res) => {
                 isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
 
             }
-            //console.log('is prepared', isPrepared)
+
+            if (price != priceDb) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, no correct price coupon'
+                });
+            }
+                //console.log('is prepared', isPrepared)
             if (!isPrepared) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     call: 'buyCoupons',
                     message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
                 });
-            } else if (payment_id) {
+            } else if (payment_id && price >= 1) {
                 // console.log('farà capture')
                 const payment = await PaypalManager.captureOrder(payment_id, producer_id)
                 // console.log('payment description', payment)

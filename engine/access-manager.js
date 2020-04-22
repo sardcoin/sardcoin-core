@@ -282,6 +282,29 @@ exports.getBrokers = function (req, res, next) {
         });
 };
 
+exports.getConsumers = function (req, res, next) {
+    Users.findAll({
+        where: {
+            user_type: 2
+        },
+        attributes: ['id', 'username', 'email', 'company_name',
+            'vat_number', 'first_name', 'last_name', 'address', 'province',
+            'city', 'zip']
+    })
+        .then(consumer => {
+            if (consumer === null) {
+                return res.status(HttpStatus.NO_CONTENT).send({})
+            }
+            return res.status(HttpStatus.OK).send(consumer)
+        })
+        .catch(err => {
+            console.log(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: err
+            })
+        });
+};
+
 exports.encryptKey = (string) => {
     const secretPhrase = config.development.Paypal.secretPhrase ? config.development.Paypal.secretPhrase : '';
     let encrypted = CryptoJS.AES.encrypt(string, secretPhrase).toString();
