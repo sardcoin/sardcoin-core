@@ -87,12 +87,20 @@ async function createBlockchainUser(user_id, user_type) {
     }
 }
 
-async function editBlockchainUser() {
-
+async function editBlockchainUser(user_id) {
 }
+
 
 async function deleteBlockchainUser() {
 
+    let result;
+
+    if (user_id) {
+        await blockchainInterface('DELETE', 'Person', null, user_id);
+    }
+    else {
+        throw new Error('deleteBlockchainUser - an error occurred when deleting the user in the blockchain');
+    }
 }
 
 async function createBlockchainCoupon(coupon, tokensArray) {
