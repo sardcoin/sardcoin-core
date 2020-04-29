@@ -381,7 +381,7 @@ const buyCoupons = async (req, res) => {
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
 
-    const priceDb = await getFromIdIntern(list[0].id).dataValues.price ;
+    const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price ;
     const producer_id = req.body.producer_id
     const payment_id = req.body.payment_id
     // console.log('payment_id buyCoupons', payment_id)
