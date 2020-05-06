@@ -110,9 +110,11 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     let verifiers;
     let verifiersForBody = [];
 
-    if (coupon || tokensArray.length === 0) {
+    if (coupon && tokensArray.length !== 0) {
 
         verifiers = await AccManager.getVerifiersFromProducer(coupon.owner);
+
+        console.log(coupon);
 
         body = {
             "$class": "eu.sardcoin.assets.Campaign",
@@ -124,6 +126,12 @@ async function createBlockchainCoupon(coupon, tokensArray) {
             "creationTime": coupon.timestamp,
             "producer": "eu.sardcoin.participants.Producer#" + coupon.owner,
         };
+
+        // 15 minuti
+        if ((coupon.visible_from - coupon.timestamp) < 900000){
+            console.log("risultato ", coupon.visible_from - coupon.timestamp);
+            body = Object.assign(body,{"delay": 0});
+        }
 
         if (coupon.valid_until !== null) {
             body = Object.assign(body, {"expirationTime": coupon.valid_until});
