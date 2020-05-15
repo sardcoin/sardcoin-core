@@ -103,12 +103,18 @@ async function deleteBlockchainUser() {
     }
 }
 
+async function addVerifiers (verifierList){
+
+}
+
 async function createBlockchainCoupon(coupon, tokensArray) {
 
     let result;
     let body;
     let verifiers;
     let verifiersForBody = [];
+    let min = 60000; //ms
+    let delay;
 
     if (coupon && tokensArray.length !== 0) {
 
@@ -127,10 +133,15 @@ async function createBlockchainCoupon(coupon, tokensArray) {
             "producer": "eu.sardcoin.participants.Producer#" + coupon.owner,
         };
 
-        // 15 minuti
-        if ((coupon.visible_from - coupon.timestamp) < 900000){
+        // 10 minuti
+        if ((coupon.visible_from - coupon.timestamp) < (10*min)){
             console.log("risultato ", coupon.visible_from - coupon.timestamp);
             body = Object.assign(body,{"delay": 0});
+        } else {
+            delay = (coupon.visible_from - coupon.timestamp) / min;
+            console.log("delay: ", delay);
+            body = Object.assign(body, {"delay": delay.toString()});
+            //MI CALCOLO LA DIFFERENZA DEI MINUTI
         }
 
         if (coupon.valid_until !== null) {
