@@ -101,8 +101,10 @@ const createCoupon = async (req, res) => {
             }
 
             // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
-
-            await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
+            //Se il coupon è privato non scrivere su blockchain (visible_from = null)
+            if (insertResult.visible_from != null) {
+                await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
+            }
 
             return res.status(HttpStatus.CREATED).send({
                 created: true,
@@ -590,7 +592,10 @@ const editCoupon = async (req, res) => {
 
     try {
 
-        await BlockchainManager.editBlockchainCoupon(data);
+        //se il coupon è privato
+        if (data.visible_from != null) {
+            await BlockchainManager.editBlockchainCoupon(data);
+        }
 
         Coupon.update({
             title: data.title,
@@ -621,9 +626,6 @@ const editCoupon = async (req, res) => {
             else {
 
                 try {
-
-                    //LA MIA IDEA ERA DI METTERLA QUI LA CHIAMATA ALLA BLOCKCHAIN
-                    //await BlockchainManager.editBlockchainCoupon(couponUpdated);
 
                     await CategoriesManager.removeAllCategory({
                         coupon_id: data.id,
@@ -724,7 +726,11 @@ const deleteCoupon = async (req, res) => {
 
     try {
 
-        await BlockchainManager.deleteBlockchainCoupon(req.body.id);
+        //console.log("data ",data);
+
+        // if (data.visible_from != null) {
+            await BlockchainManager.deleteBlockchainCoupon(req.body.id);
+        // }
 
         CouponsBrokers.destroy({
             where: {

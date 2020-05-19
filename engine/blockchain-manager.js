@@ -116,11 +116,11 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     let min = 60000; //ms
     let delay;
 
+    console.log(coupon);
+
     if (coupon && tokensArray.length !== 0) {
 
         verifiers = await AccManager.getVerifiersFromProducer(coupon.owner);
-
-        console.log(coupon);
 
         body = {
             "$class": "eu.sardcoin.assets.Campaign",
