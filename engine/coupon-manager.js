@@ -692,7 +692,8 @@ const editCoupon = async (req, res) => {
 
 const deleteCoupon = async (req, res) => {
     try {
-        const data = (await getFromIdIntern(req.body.id)).dataValues
+        const data = (await getFromIdIntern(req.body.id)).dataValues;
+
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
             if (result) {
@@ -726,11 +727,12 @@ const deleteCoupon = async (req, res) => {
 
     try {
 
-        //console.log("data ",data);
+        const data = (await getFromIdIntern(req.body.id)).dataValues;
 
-        // if (data.visible_from != null) {
+        //controllo se il coupon è privato
+         if (data.visible_from != null) {
             await BlockchainManager.deleteBlockchainCoupon(req.body.id);
-        // }
+         }
 
         CouponsBrokers.destroy({
             where: {
@@ -792,6 +794,7 @@ const deleteCoupon = async (req, res) => {
         })
     }
 };
+
 const importOfflineCoupon = (req, res) => {
     const data = req.body;
 
