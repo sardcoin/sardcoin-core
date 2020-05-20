@@ -367,6 +367,8 @@ exports.getVerifiersFromProducer = async function (producer_id) {
     result = await Verifiers.findAll({
         where: {producer: producer_id}
     });
+    //aggiungo come prima entry il produttore
+    verifiers.push(producer_id);
 
     if (result) {
         for (var i = 0; i < result.length; i++) {
