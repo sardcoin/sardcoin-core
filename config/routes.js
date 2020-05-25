@@ -11,7 +11,8 @@ const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
 const ReportManager = require('../engine/report-manager');
-const TokenManager = require('../engine/coupon-token-manager')
+const TokenManager = require('../engine/coupon-token-manager');
+const BlockchainManager = require('../engine/blockchain-manager');
 module.exports = function (app, passport, config) {
 
     /* PATHs */
@@ -23,6 +24,7 @@ module.exports = function (app, passport, config) {
     const catPath   = indexPath + 'categories/';
     const pkPath    = indexPath + 'packages/';
     const rpPath    = indexPath + 'reports/';
+    const bcPath    = indexPath + 'blockchain/';
 
     /* AUTH */
     const reqAuth = passport.authenticate('jwt', {session: false});
@@ -116,6 +118,8 @@ module.exports = function (app, passport, config) {
     // app.use(ErrorHandler.validationError);
     // app.use(ErrorHandler.fun404);
 
+    /****************** BLOCKCHAIN *********************/
+    app.get(bcPath + 'backupUsers/', BlockchainManager.migrateUsersDBtoBlockchain);
 
     app.use(function (err, req, res, next) {
         if (err.isBoom) {

@@ -3,7 +3,7 @@
 const HttpStatus = require('http-status-codes');
 const AccManager = require('./access-manager');
 const Request = require('request-promise');
-
+const Users = require('../models/index').User;
 const BlockchainUrl = 'http://localhost:3000/api/';
 
 
@@ -54,8 +54,7 @@ async function createBlockchainUser(user_id, user_type) {
         if (result) {
             switch (parseInt(user_type)) {
                 case 0:
-                    type = 'Admin';
-                    break;
+                    // Admin non esiste in blockchain
                 case 1:
                     type = 'Producer';
                     break;
@@ -287,11 +286,36 @@ async function redeemBlockchainCoupon(coupon) {
         console.log("Il coupon#", coupon.token, "è stato verificato con risultato ", result.result);
 
         return result;
-
     }
 }
 
+const migrateUsersDBtoBlockchain = async (req,res) => {
+
+    let users;
+    let user_id;
+    let user_type;
+
+    try {
+        users = await Users.findAll();
+
+        for (const user of users) {
+            user_id = user.dataValues.id;
+            user_type = user.dataValues.user_type;
+            await createBlockchainUser(user_id, user_type);
+        }
+        return res.status(HttpStatus.OK).send({message: "DB migrated successfully"});
+    }
+
+    catch (err) {
+        console.warn(err);
+    }
+
+};
+
+
+
+
 module.exports = {
     createBlockchainUser, deleteBlockchainUser, createBlockchainCoupon, editBlockchainCoupon, redeemBlockchainCoupon,
-    deleteBlockchainCoupon, buyBlockchainCoupon, addVerifiers
+    deleteBlockchainCoupon, buyBlockchainCoupon, addVerifiers, migrateUsersDBtoBlockchain
 };
