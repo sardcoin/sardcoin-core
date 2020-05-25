@@ -36,7 +36,6 @@ async function blockchainInterface(method, assets, body = null, params = null) {
     }
 }
 
-
 async function createBlockchainUser(user_id, user_type) {
 
     let body;
@@ -87,10 +86,6 @@ async function createBlockchainUser(user_id, user_type) {
     }
 }
 
-async function editBlockchainUser(user_id) {
-}
-
-
 async function deleteBlockchainUser() {
 
     let result;
@@ -132,8 +127,6 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     let verifiersForBody = [];
     let min = 60000; //ms
     let delay;
-
-    console.log(coupon);
 
     if (coupon && tokensArray.length !== 0) {
 
@@ -239,36 +232,12 @@ async function deleteBlockchainCoupon(campaign_id) {
     }
 }
 
-async function publishBlockchainCoupon(campaign_id) {
-    let body;
-    let result;
-
-    if (campaign_id) {
-        body = {
-            "$class": "eu.sardcoin.transactions.PublishCampaign",
-            "campaign": "eu.sardcoin.assets.Campaign#" + campaign_id
-        };
-
-        result = await blockchainInterface('POST', 'PublishCampaign', body);
-
-        if (result) {
-            console.log("Pubblicata la campagna #", campaign_id, "nella blockchain");
-        }
-    }
-
-}
-
-async function getBlockchainAvaiableCoupons(user) {
-
-}
-
 async function buyBlockchainCoupon(user_id, order_list) {
 
     let body;
     let result;
 
     if (user_id && order_list.length !== 0) {
-        console.log("user_id: ", user_id, " order_list: ", order_list);
 
         for (let order of order_list) {
 
@@ -288,11 +257,6 @@ async function buyBlockchainCoupon(user_id, order_list) {
     else {
         throw new Error('buyBlockchainCoupon - an error occurred when inserting the coupon in the blockchain');
     }
-
-}
-
-
-async function getBlockchainCouponById() {
 
 }
 
@@ -328,7 +292,6 @@ async function redeemBlockchainCoupon(coupon) {
 }
 
 module.exports = {
-    createBlockchainUser, editBlockchainUser, deleteBlockchainUser, createBlockchainCoupon,
-    editBlockchainCoupon, redeemBlockchainCoupon, deleteBlockchainCoupon, buyBlockchainCoupon,
-    getBlockchainCouponById, getBlockchainAvaiableCoupons, publishBlockchainCoupon, addVerifiers
+    createBlockchainUser, deleteBlockchainUser, createBlockchainCoupon, editBlockchainCoupon, redeemBlockchainCoupon,
+    deleteBlockchainCoupon, buyBlockchainCoupon, addVerifiers
 };
