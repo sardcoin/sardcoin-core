@@ -103,7 +103,24 @@ async function deleteBlockchainUser() {
     }
 }
 
-async function addVerifiers (verifierList){
+async function addVerifiers(verifierList, campaignId) {
+
+    let body;
+    let result;
+
+    if ((verifierList.length > 0) && campaignId != null) {
+        body = {
+            "$class": "eu.sardcoin.transactions.AddVerifiers",
+            "campaign": "eu.sardcoin.assets.Campaign#" + campaignId,
+            "verifiers": verifierList
+        };
+
+        result = await blockchainInterface('POST', 'AddVerifiers', body);
+
+    }
+    else {
+        throw new Error('addVerifiers - an error occurred when adding verifiers at campaign');
+    }
 
 }
 
@@ -134,9 +151,9 @@ async function createBlockchainCoupon(coupon, tokensArray) {
         };
 
         // 10 minuti
-        if ((coupon.visible_from - coupon.timestamp) < (10*min)){
+        if ((coupon.visible_from - coupon.timestamp) < (10 * min)) {
             //console.log("risultato ", coupon.visible_from - coupon.timestamp);
-            body = Object.assign(body,{"delay": 0});
+            body = Object.assign(body, {"delay": 0});
         } else {
             delay = (coupon.visible_from - coupon.timestamp) / min;
             //console.log("delay: ", delay);
@@ -313,5 +330,5 @@ async function redeemBlockchainCoupon(coupon) {
 module.exports = {
     createBlockchainUser, editBlockchainUser, deleteBlockchainUser, createBlockchainCoupon,
     editBlockchainCoupon, redeemBlockchainCoupon, deleteBlockchainCoupon, buyBlockchainCoupon,
-    getBlockchainCouponById, getBlockchainAvaiableCoupons, publishBlockchainCoupon
+    getBlockchainCouponById, getBlockchainAvaiableCoupons, publishBlockchainCoupon, addVerifiers
 };
