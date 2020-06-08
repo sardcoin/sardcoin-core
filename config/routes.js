@@ -120,6 +120,7 @@ module.exports = function (app, passport, config) {
 
     /****************** BLOCKCHAIN *********************/
     app.get(bcPath + 'backupUsers/', BlockchainManager.migrateUsersDBtoBlockchain);
+    //app.get(bcPath + 'backupCoupons/', BlockchainManager.migrateCouponsDBtoBlockchain);
 
     app.use(function (err, req, res, next) {
         if (err.isBoom) {

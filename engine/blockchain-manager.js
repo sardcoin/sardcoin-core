@@ -1,10 +1,16 @@
 'use strict';
 
+const _ = require ('lodash');
+const config = require('../config/config');
+
 const HttpStatus = require('http-status-codes');
 const AccManager = require('./access-manager');
 const Request = require('request-promise');
 const Users = require('../models/index').User;
-const BlockchainUrl = 'http://localhost:3000/api/';
+const Coupons = require('../models/index').Coupon;
+const CouponToken = require('../models/index').CouponToken;
+//const BlockchainUrl = 'http://localhost:3000/api/';
+const BlockchainUrl = config['blockchainUrl'];
 
 
 async function blockchainInterface(method, assets, body = null, params = null) {
@@ -54,7 +60,7 @@ async function createBlockchainUser(user_id, user_type) {
         if (result) {
             switch (parseInt(user_type)) {
                 case 0:
-                    // Admin non esiste in blockchain
+                // Admin non esiste in blockchain
                 case 1:
                     type = 'Producer';
                     break;
@@ -289,7 +295,7 @@ async function redeemBlockchainCoupon(coupon) {
     }
 }
 
-const migrateUsersDBtoBlockchain = async (req,res) => {
+const migrateUsersDBtoBlockchain = async (req, res) => {
 
     let users;
     let user_id;
@@ -303,7 +309,7 @@ const migrateUsersDBtoBlockchain = async (req,res) => {
             user_type = user.dataValues.user_type;
             await createBlockchainUser(user_id, user_type);
         }
-        return res.status(HttpStatus.OK).send({message: "DB migrated successfully"});
+        return res.status(HttpStatus.OK).send({message: "DB users migrated successfully"});
     }
 
     catch (err) {
@@ -312,7 +318,40 @@ const migrateUsersDBtoBlockchain = async (req,res) => {
 
 };
 
-
+// const migrateCouponsDBtoBlockchain = async (req, res) => {
+//
+//     let coupons;
+//     let coupon_id;
+//     let tokenArrayDB;
+//     let tokenArray = [];
+//
+//     try {
+//         coupons = await Coupons.findAll();
+//
+//         for (const coupon of coupons) {
+//             //controllo se il coupon non sia privato
+//             if (coupon.dataValues.visible_from != null) {
+//                 coupon_id = coupon.dataValues.id;
+//                 tokenArrayDB = await CouponToken.findAll({
+//                     where: {
+//                         coupon_id: coupon_id
+//                     }
+//                 });
+//
+//                 //console.log("coupon ",coupon.dataValues);
+//                 tokenArray = _.map(tokenArrayDB, "dataValues.token") ;
+//
+//                 await createBlockchainCoupon(coupon.dataValues, tokenArray);
+//             }
+//         }
+//         return res.status(HttpStatus.OK).send({message: "DB coupon migrated successfully"});
+//     }
+//
+//     catch (err) {
+//         console.warn(err);
+//     }
+//
+// };
 
 
 module.exports = {
