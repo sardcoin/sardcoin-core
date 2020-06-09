@@ -1,6 +1,8 @@
 'use strict';
 
 const _ = require ('lodash');
+
+const env = process.env.NODE_ENV || 'development';
 const config = require('../config/config');
 
 const HttpStatus = require('http-status-codes');
@@ -9,8 +11,7 @@ const Request = require('request-promise');
 const Users = require('../models/index').User;
 const Coupons = require('../models/index').Coupon;
 const CouponToken = require('../models/index').CouponToken;
-//const BlockchainUrl = 'http://localhost:3000/api/';
-const BlockchainUrl = config['blockchainUrl'];
+const BlockchainUrl = config[env]['blockchainUrl'];
 
 
 async function blockchainInterface(method, assets, body = null, params = null) {
