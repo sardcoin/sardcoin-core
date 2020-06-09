@@ -921,6 +921,7 @@ const importOfflinePackage = async (req, res) => {
 const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
+    let verifier = true;
 
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
@@ -989,6 +990,7 @@ const redeemCoupon = (req, res) => {
                                     })
                                 })
                         } else {
+                            verifier = false;
                             return res.status(HttpStatus.BAD_REQUEST).send({
                                 error: true,
                                 message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
@@ -1005,15 +1007,17 @@ const redeemCoupon = (req, res) => {
                     });
 
                 try {
-                    result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+                    console.log(verifier);
+                    if (verifier) {
+                        result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
 
-                    if (result){
-                        return res.status(HttpStatus.OK).send({
-                            redeemed: true,
-                            token: data.token,
-                        });
+                        if (result) {
+                            return res.status(HttpStatus.OK).send({
+                                redeemed: true,
+                                token: data.token,
+                            });
+                        }
                     }
-
                 } catch (e) {
 
                     CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package)
