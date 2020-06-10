@@ -6,7 +6,6 @@ const Sequelize = require('../models/index').sequelize;
 const HttpStatus = require('http-status-codes');
 
 exports.insertCouponToken = async function (coupon_id, token) {
-
     return new Promise((resolve, reject) => {
         CouponToken.create({
             token: token,

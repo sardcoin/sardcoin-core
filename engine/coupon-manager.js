@@ -19,6 +19,7 @@ const CouponTokenManager = require('./coupon-token-manager');
 const OrdersManager = require('./orders-manager');
 const PackageManager = require('./package-manager');
 const PaypalManager = require('./paypal-manager');
+const BlockchainManager = require('./blockchain-manager');
 
 /** Libraries and costants **/
 const HttpStatus = require('http-status-codes');
@@ -36,13 +37,17 @@ const ITEM_TYPE = {
 const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
+    let tokensArray = [];
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
 
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
-                await CategoriesManager.assignCategory({coupon_id: insertResult.dataValues.id, category_id: category.id})
+                await CategoriesManager.assignCategory({
+                    coupon_id: insertResult.dataValues.id,
+                    category_id: category.id
+                })
             } // Category association
 
             if (data.brokers) {
@@ -61,6 +66,9 @@ const createCoupon = async (req, res) => {
             // It creates 'quantity' tokens for the coupon inserted
             for (let i = 0; i < data.quantity; i++) {
                 token = generateUniqueToken(data.title, req.user.password);
+
+                // Aggiunta del token all'array
+                tokensArray.push(token);
 
                 if (data.type === ITEM_TYPE.COUPON) {
                     newToken = await CouponTokenManager.insertCouponToken(insertResult.get('id'), token);
@@ -81,7 +89,7 @@ const createCoupon = async (req, res) => {
                     console.error('Error either inserting or updating the CouponToken associated to the coupon');
                     await internal_deleteCoupon(insertResult.dataValues.id);
 
-                    if(couponToken) {
+                    if (couponToken) {
                         await CouponTokenManager.updateCouponToken(couponToken.dataValues.token, pack_coupon_id);
                     }
 
@@ -90,6 +98,12 @@ const createCoupon = async (req, res) => {
                         message: 'Error creating the tokens.',
                     });
                 }
+            }
+
+            // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
+            //Se il coupon è privato non scrivere su blockchain (visible_from = null)
+            if (insertResult.visible_from != null) {
+                await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
             }
 
             return res.status(HttpStatus.CREATED).send({
@@ -108,7 +122,7 @@ const createCoupon = async (req, res) => {
     } catch (e) {
         console.error(e);
 
-        if (insertResult) { // TODO probably to catch
+        if (insertResult) {
             await internal_deleteCoupon(insertResult.dataValues.id);
         }
 
@@ -263,10 +277,10 @@ const getPurchasedCouponsById = (req, res) => {
             if (coupons[0].dataValues.CouponTokens.length === 0) {
                 PackageTokens.findAll({
 
-                        where: {consumer: req.user.id, package_id: req.params.coupon_id},
+                    where: {consumer: req.user.id, package_id: req.params.coupon_id},
 
                     attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('package_id')), 'bought']]}
-                }).then( packages => {
+                }).then(packages => {
                     if (packages.length === 0) {
                         return res.status(HttpStatus.NO_CONTENT).send({});
 
@@ -480,6 +494,9 @@ const buyCoupons = async (req, res) => {
                     })
                 }
             }
+
+            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
+
         } catch (e) {
             console.error(e);
             await unlockTables();
@@ -512,6 +529,7 @@ const buyCoupons = async (req, res) => {
             await unlockTables();
             order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
 
+
             return res.status(HttpStatus.OK).send({
                 success: true,
                 message: 'The purchase has been finalized',
@@ -521,6 +539,11 @@ const buyCoupons = async (req, res) => {
         .catch(async err => {
             console.log(err);
             await unlockTables();
+
+            if (order_id) {
+                await OrderCoupon.destroy({where: {order_id: order_id}});
+                await Order.destroy({where: {id: order_id}});
+            }
 
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
@@ -532,6 +555,7 @@ const buyCoupons = async (req, res) => {
 
 const editCoupon = async (req, res) => {
     const data = req.body;
+    let result;
     try {
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
@@ -563,30 +587,37 @@ const editCoupon = async (req, res) => {
         });
     }
 
-    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0?null:  Number(data.valid_until) ;
-    let visible_from = data.visible_from === null ? null : Number(data.visible_from)==0?null: Number(data.visible_from);
-    Coupon.update({
-        title: data.title,
-        description: data.description,
-        image: data.image,
-        price: data.price,
-        visible_from: visible_from,
-        valid_from: Number(data.valid_from),
-        valid_until: valid_until,
-        constraints: data.constraints,
-        purchasable: data.purchasable,
-        brokers: data.brokers
-    }, {
-        where: {
-            [Op.and]: [
-                {owner: req.user.id},
-                {id: data.id}
-            ]
+    let valid_until = data.valid_until === null ? null : Number(data.valid_until) === 0 ? null:  Number(data.valid_until) ;
+    let visible_from = data.visible_from === null ? null : Number(data.visible_from) === 0 ? null: Number(data.visible_from);
+
+    try {
+
+        //se il coupon è privato
+        if (data.visible_from != null) {
+            await BlockchainManager.editBlockchainCoupon(data);
         }
-    })
-        .then(async couponUpdated => {
+
+        Coupon.update({
+            title: data.title,
+            description: data.description,
+            image: data.image,
+            price: data.price,
+            visible_from: visible_from,
+            valid_from: Number(data.valid_from),
+            valid_until: valid_until,
+            constraints: data.constraints,
+            purchasable: data.purchasable,
+            brokers: data.brokers
+        }, {
+            where: {
+                [Op.and]: [
+                    {owner: req.user.id},
+                    {id: data.id}
+                ]
+            }
+        }).then(async couponUpdated => {
             if (couponUpdated[0] === 0) {
-                return res.status(HttpStatus.NO_CONTENT).json({
+                return res.status(HttpStatus.NO_CONTENT).send({
                     updated: false,
                     coupon_id: data.id,
                     message: "This coupon doesn't exist"
@@ -595,6 +626,7 @@ const editCoupon = async (req, res) => {
             else {
 
                 try {
+
                     await CategoriesManager.removeAllCategory({
                         coupon_id: data.id,
                     });
@@ -608,6 +640,7 @@ const editCoupon = async (req, res) => {
                         message: 'Error deleted categories.'
                     });
                 }
+
                 if (data.categories) {
                     for (let i = 0; i < data.categories.length; i++) {
                         try {
@@ -625,31 +658,42 @@ const editCoupon = async (req, res) => {
 
                     }
                 }
-                    if (data.brokers) {
-                        for (let broker of data.brokers) {
-                            const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
-                        }// for each broker it associates the coupon created to him
-                    }// Broker association
+                if (data.brokers) {
+                    for (let broker of data.brokers) {
+                        const newBroker = await CouponBrokerManager.insertCouponBroker(data.id, broker.id);
+                    }// for each broker it associates the coupon created to him
+                }// Broker association
 
-                return res.status(HttpStatus.OK).json({
+                return res.status(HttpStatus.OK).send({
                     updated: true,
                     coupon_id: data.id
                 })
             }
         })
-        .catch(err => {
-            console.log(err);
+            .catch(err => {
+                console.log(err);
 
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                updated: false,
-                coupon_id: data.id,
-                error: 'Cannot edit the coupon'
-            })
-        });
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    updated: false,
+                    coupon_id: data.id,
+                    error: 'Cannot edit the coupon'
+                })
+            });
+
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            coupon_id: data.id,
+            error: 'Cannot edit the coupon - Error with the blockchain'
+        })
+    }
+
 };
+
 const deleteCoupon = async (req, res) => {
     try {
-        const data = (await getFromIdIntern(req.body.id)).dataValues
+        const data = (await getFromIdIntern(req.body.id)).dataValues;
+
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
             if (result) {
@@ -681,59 +725,76 @@ const deleteCoupon = async (req, res) => {
 
     }
 
-    CouponsBrokers.destroy({
-        where: {
-          coupon_id: req.body.id
-        }
-    }).then( result => {
-        if((!result || result === 0 ) && req.body.type === 1){
+    try {
+
+        const data = (await getFromIdIntern(req.body.id)).dataValues;
+
+        //controllo se il coupon è privato
+         if (data.visible_from != null) {
+            await BlockchainManager.deleteBlockchainCoupon(req.body.id);
+         }
+
+        CouponsBrokers.destroy({
+            where: {
+                coupon_id: req.body.id
+            }
+        }).then( result => {
+            if((!result || result === 0 ) && req.body.type === 1){
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                    deleted: false,
+                    coupon: parseInt(req.body.id),
+                    error: 'Cannot delete Coupon the coupon, internal error'
+                })
+            } else {
+                Coupon.destroy({
+                    where: {
+                        [Op.and]: [
+                            {id: req.body.id},
+                            {owner: req.user.id}
+                        ]
+                    }
+                })
+                    .then(coupon => {
+                        if (coupon === 0) {
+                            return res.status(HttpStatus.NO_CONTENT).json({
+                                deleted: false,
+                                coupon: parseInt(req.body.id),
+                                message: "This coupon doesn't exist or you doesn't own the coupon!"
+                            });
+                        } else {
+                            return res.status(HttpStatus.OK).json({
+                                deleted: true,
+                                coupon: parseInt(req.body.id),
+                            });
+                        }
+                    })
+                    .catch(err => {
+                        console.log(err);
+
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+                            deleted: false,
+                            coupon: parseInt(req.body.id),
+                            error: 'Cannot deleteCoupon the coupon'
+                        })
+                    })
+            }
+        }).catch( err => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
                 deleted: false,
                 coupon: parseInt(req.body.id),
-                error: 'Cannot delete Coupon the coupon, internal error'
+                error: 'Cannot deleteCoupon the coupon, internal error'
             })
-        } else {
-            Coupon.destroy({
-                where: {
-                    [Op.and]: [
-                        {id: req.body.id},
-                        {owner: req.user.id}
-                    ]
-                }
-            })
-                .then(coupon => {
-                    if (coupon === 0) {
-                        return res.status(HttpStatus.NO_CONTENT).json({
-                            deleted: false,
-                            coupon: parseInt(req.body.id),
-                            message: "This coupon doesn't exist or you doesn't own the coupon!"
-                        });
-                    } else {
-                        return res.status(HttpStatus.OK).json({
-                            deleted: true,
-                            coupon: parseInt(req.body.id),
-                        });
-                    }
-                })
-                .catch(err => {
-                    console.log(err);
+        })
 
-                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
-                        deleted: false,
-                        coupon: parseInt(req.body.id),
-                        error: 'Cannot deleteCoupon the coupon'
-                    })
-                })
-        }
-    }).catch( err => {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).json({
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             deleted: false,
             coupon: parseInt(req.body.id),
-            error: 'Cannot deleteCoupon the coupon, internal error'
+            error: 'Cannot deleteCoupon the coupon, blockchain error'
         })
-    })
-
+    }
 };
+
 const importOfflineCoupon = (req, res) => {
     const data = req.body;
 
@@ -860,6 +921,7 @@ const importOfflinePackage = async (req, res) => {
 const redeemCoupon = (req, res) => {
     const data = req.body;
     const verifier_id = req.user.id;
+    let verifier = true;
 
     // Join between CouponToken and Coupon where token = givenToken and consumer is not null
     CouponToken.findOne({
@@ -870,7 +932,6 @@ const redeemCoupon = (req, res) => {
             ]
         }
     }).then( async result => {
-        //console.log( 'resultresultresult', result)
 
             if (!result) {
                 const resp = await returnRedeemCouponList(data.token, verifier_id)
@@ -909,10 +970,10 @@ const redeemCoupon = (req, res) => {
                             CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package, verifier_id)
                                 .then(update => {
                                     if (update) {
-                                        return res.status(HttpStatus.OK).send({
-                                            redeemed: true,
-                                            token: data.token,
-                                        });
+                                        // return res.status(HttpStatus.OK).send({
+                                        //     redeemed: true,
+                                        //     token: data.token,
+                                        // });
                                     } else {
                                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                             error: true,
@@ -929,7 +990,7 @@ const redeemCoupon = (req, res) => {
                                     })
                                 })
                         } else {
-                            console.log("I cant't");
+                            verifier = false;
                             return res.status(HttpStatus.BAD_REQUEST).send({
                                 error: true,
                                 message: 'Either you are not authorized to redeem the selected coupon or the coupon was already redeemed.',
@@ -943,11 +1004,41 @@ const redeemCoupon = (req, res) => {
                             error: true,
                             message: 'Some problem occurred during the operation of redeeming.'
                         })
-                    })
+                    });
+
+                try {
+                    console.log(verifier);
+                    if (verifier) {
+                        result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+
+                        if (result) {
+                            return res.status(HttpStatus.OK).send({
+                                redeemed: true,
+                                token: data.token,
+                            });
+                        }
+                    }
+                } catch (e) {
+
+                    CouponTokenManager.updateCouponToken(couponTkn.token, couponTkn.coupon_id, couponTkn.consumer, couponTkn.package)
+                            .then(update => {
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the editing in the blockchain.'
+                                })
+                            })
+                            .catch( err => {
+                                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                                    error: true,
+                                    message: 'Some problem occurred during the operation of redeeming.'
+                                })
+                            })
+                }
             }
         })
         .catch(err => {
             console.log(err);
+
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'Some problem occurred during the redeem of the coupon.'
@@ -1269,6 +1360,8 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
 };
 const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
+        coupon.image = coupon.title.replace(/ /g, '_') + '.png';
+
         Coupon.create({
             title: coupon.title,
             description: coupon.description,
