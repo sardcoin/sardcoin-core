@@ -17,7 +17,8 @@
       "password": "",
       "signature": "",
       "secretPhrase": ""
-    }
+    },
+    "blockchainUrl": "http://localhost:3000/api/"
   },
   "production": {
     "username": "root",
@@ -36,6 +37,7 @@
       "password": "",
       "signature": "",
       "secretPhrase": ""
-    }
+    },
+    "blockchainUrl": "http://46.51.136.158:3000/api/"
   }
 }
