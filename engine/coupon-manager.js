@@ -1360,7 +1360,7 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
 };
 const insertCoupon = (coupon, owner) => {
     return new Promise((resolve, reject) => {
-        coupon.image = coupon.title.replace(/ /g, '_') + '.png';
+        //coupon.image = coupon.title.replace(/ /g, '_') + '.png';
 
         Coupon.create({
             title: coupon.title,
