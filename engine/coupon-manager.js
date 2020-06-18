@@ -38,6 +38,7 @@ const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
     let tokensArray = [];
+    console.log('data', data)
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
@@ -602,9 +603,9 @@ const editCoupon = async (req, res) => {
             description: data.description,
             image: data.image,
             price: data.price,
-            visible_from: visible_from,
-            valid_from: Number(data.valid_from),
-            valid_until: valid_until,
+            visible_from: visible_from + 7200000,
+            valid_from: Number(data.valid_from) + 7200000,
+            valid_until: valid_until + 7200000,
             constraints: data.constraints,
             purchasable: data.purchasable,
             brokers: data.brokers
@@ -1369,10 +1370,10 @@ const insertCoupon = (coupon, owner) => {
             timestamp: Number(Date.now()),
             price: coupon.price,
             visible_from: coupon.visible_from === null ? null : Number(coupon.visible_from) === 0?
-                            null:  Number(coupon.visible_from),
-            valid_from: Number(coupon.valid_from),
+                            null:  Number(coupon.visible_from) + 7200000,
+            valid_from: Number(coupon.valid_from) + 7200000,
             valid_until: coupon.valid_until === null ? null : Number(coupon.valid_until) === 0 ?
-                        null: Number(coupon.valid_until),
+                        null: Number(coupon.valid_until) + 7200000,
             purchasable: coupon.purchasable,
             constraints: coupon.constraints,
             type: coupon.type,
