@@ -201,15 +201,23 @@ async function editBlockchainCoupon(edited_coupon) {
 
     let body;
     let result;
+    let datePlaceholder = new Date (3471289201 * 1000);
+    let expTime;
 
     if (edited_coupon) {
+
+        expTime = edited_coupon.valid_until;
+
+        if (edited_coupon.valid_until === null){
+            expTime = datePlaceholder;
+        }
 
         body = {
             "$class": "eu.sardcoin.transactions.EditCampaign",
             "campaign": "eu.sardcoin.assets.Campaign#" + edited_coupon.id,
             "title": edited_coupon.title,
             "price": edited_coupon.price,
-            "expirationTime": edited_coupon.valid_until
+            "expirationTime": expTime
         };
 
         result = await blockchainInterface('POST', 'EditCampaign', body);
