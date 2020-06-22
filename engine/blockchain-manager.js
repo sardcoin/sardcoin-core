@@ -134,7 +134,8 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     let min = 60000; //ms
     let delay;
 
-    if (coupon && tokensArray.length !== 0) {
+    //sto mettendo 9 minuti a causa dell'imprecisione del confronto tra ms
+    if (coupon && tokensArray.length !== 0 && (coupon.visible_from - coupon.timestamp) > (9 * min)) {
 
         verifiers = await AccManager.getVerifiersFromProducer(coupon.owner);
 
@@ -151,7 +152,7 @@ async function createBlockchainCoupon(coupon, tokensArray) {
 
         // 10 minuti
         if ((coupon.visible_from - coupon.timestamp) < (10 * min)) {
-            //console.log("risultato ", coupon.visible_from - coupon.timestamp);
+            console.log("risultato ", coupon.visible_from - coupon.timestamp);
             body = Object.assign(body, {"delay": 0});
         } else {
             delay = (coupon.visible_from - coupon.timestamp) / min;
@@ -205,6 +206,7 @@ async function editBlockchainCoupon(edited_coupon) {
     let expTime;
 
     if (edited_coupon) {
+
 
         expTime = edited_coupon.valid_until;
 

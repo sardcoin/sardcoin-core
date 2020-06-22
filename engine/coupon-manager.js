@@ -611,7 +611,6 @@ const editCoupon = async (req, res) => {
                 description: data.description,
                 image: data.image,
                 price: data.price,
-                visible_from: visible_from,
                 valid_from: Number(data.valid_from),
                 valid_until: valid_until,
                 constraints: data.constraints,
