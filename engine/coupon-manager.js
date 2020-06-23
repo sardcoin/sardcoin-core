@@ -204,7 +204,7 @@ const getByToken = async (req, res) => {
 };
 const getProducerCoupons = (req, res) => {
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
+        'SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
         'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
         'GROUP BY id',
@@ -563,6 +563,7 @@ const buyCoupons = async (req, res) => {
 
 const editCoupon = async (req, res) => {
     const data = req.body;
+
     let result;
     try {
         if (data.type === ITEM_TYPE.PACKAGE) {
@@ -608,6 +609,7 @@ const editCoupon = async (req, res) => {
 
             Coupon.update({
                 title: data.title,
+                short_description: data.short_description,
                 description: data.description,
                 image: data.image,
                 price: data.price,
@@ -1098,7 +1100,7 @@ const filterCouponsByText = (coupons, text) => {
 };
 const availableCoupons = async () => {
     return await Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, 0 AS quantity_pack ' +
+        'SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, 0 AS quantity_pack ' +
         'FROM coupons ' +
         'JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id ' +
         'WHERE coupon_tokens.consumer IS NULL ' +
@@ -1108,7 +1110,7 @@ const availableCoupons = async () => {
         'AND (coupons.valid_until >= CURRENT_TIMESTAMP OR coupons.valid_until IS NULL) ' +
         'GROUP BY coupons.id ' +
         'UNION ( ' +
-        '  SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, COUNT(DISTINCT coupon_tokens.package) AS quantity_pack  ' +
+        '  SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type,  COUNT(*) AS quantity, COUNT(DISTINCT coupon_tokens.package) AS quantity_pack  ' +
         '  FROM coupons ' +
         '  JOIN package_tokens ON coupons.id = package_tokens.package_id' +
         '  JOIN coupon_tokens ON package_tokens.token = coupon_tokens.package ' +
@@ -1384,6 +1386,7 @@ const insertCoupon = (coupon, owner) => {
 
         Coupon.create({
             title: coupon.title,
+            short_description: coupon.short_description,
             description: coupon.description,
             image: coupon.image,
             timestamp: Number(Date.now()),
@@ -1436,7 +1439,7 @@ const unlockTables = () => {
 };
 const getBrokerCoupons = (req, res) => {
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, \n' +
+        'SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, \n' +
         '    COUNT(CASE WHEN consumer IS null AND verifier IS null AND package IS null  THEN 1 END) AS quantity\n' +
         '    FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id  JOIN coupon_broker ON\n' +
         '        coupon_broker.coupon_id = coupons.id WHERE coupon_broker.broker_id = $1 AND ' +
@@ -1607,7 +1610,7 @@ const isCouponFromToken = (req, res) => {
 
 const getProducerCouponsOffline = (req, res) => {
     Sequelize.query(
-        'SELECT id, title, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
+        'SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
         'COUNT(CASE WHEN consumer = 5 AND verifier IS null AND package IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = :id ' +
         'AND visible_from IS null AND coupon_tokens.package is null AND (coupon_tokens.consumer is null OR  coupon_tokens.consumer = 5) ' +
