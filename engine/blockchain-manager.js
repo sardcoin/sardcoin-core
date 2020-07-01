@@ -134,7 +134,8 @@ async function createBlockchainCoupon(coupon, tokensArray) {
     let min = 60000; //ms
     let delay;
 
-    if (coupon && tokensArray.length !== 0) {
+    //sto mettendo 9 minuti a causa dell'imprecisione del confronto tra ms
+    if (coupon && tokensArray.length !== 0 && (coupon.visible_from - coupon.timestamp) > (9 * min)) {
 
         verifiers = await AccManager.getVerifiersFromProducer(coupon.owner);
 
@@ -151,7 +152,7 @@ async function createBlockchainCoupon(coupon, tokensArray) {
 
         // 10 minuti
         if ((coupon.visible_from - coupon.timestamp) < (10 * min)) {
-            //console.log("risultato ", coupon.visible_from - coupon.timestamp);
+            console.log("risultato ", coupon.visible_from - coupon.timestamp);
             body = Object.assign(body, {"delay": 0});
         } else {
             delay = (coupon.visible_from - coupon.timestamp) / min;
@@ -201,15 +202,24 @@ async function editBlockchainCoupon(edited_coupon) {
 
     let body;
     let result;
+    let datePlaceholder = new Date (3471289201 * 1000);
+    let expTime;
 
     if (edited_coupon) {
+
+
+        expTime = edited_coupon.valid_until;
+
+        if (edited_coupon.valid_until === null){
+            expTime = datePlaceholder;
+        }
 
         body = {
             "$class": "eu.sardcoin.transactions.EditCampaign",
             "campaign": "eu.sardcoin.assets.Campaign#" + edited_coupon.id,
             "title": edited_coupon.title,
             "price": edited_coupon.price,
-            "expirationTime": edited_coupon.valid_until
+            "expirationTime": expTime
         };
 
         result = await blockchainInterface('POST', 'EditCampaign', body);
