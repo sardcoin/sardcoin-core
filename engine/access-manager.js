@@ -360,6 +360,45 @@ exports.getPasswordSecret = async function (producer_id) {
 
 exports.updatePaypalCredentials = async function (req, res, next) {
 
+    const user = req.body;
+
+    try {
+        Users.update({
+            email_paypal: user.email_paypal,
+            client_id: user.client_id,
+            password_secret: user.password_secret
+    },
+        {
+            where: {
+                id: req.user.id
+            }
+        }
+    ).then(updatedUser => {
+            if (updatedUser[0] === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({
+                    updated: false,
+                    user_id: req.user.id,
+                    message: 'An error occurred while updating the requested user\'s paypal credentials'
+                })
+            }
+
+            return res.status(HttpStatus.OK).send({
+                updated: true,
+                user_id: req.user.id
+            })
+        }).catch( err =>{
+            console.warn(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            user_id: req.user.id,
+            error: 'Cannot update the paypal credentials'
+        })});
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            username: user.username
+        });
+    }
 };
 
 exports.getVerifiersFromProducer = async function (producer_id) {

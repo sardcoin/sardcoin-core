@@ -46,6 +46,7 @@ module.exports = function (app, passport, config) {
     app.get(amPath    + 'getProducerFromId/:producer_id', AcM.getProducerFromId);
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
     app.get(amPath    + 'getConsumers/', reqAuth, AcM.roleAuth(all), AcM.getConsumers);
+    app.put(amPath    + 'updatePaypalCredentials/', reqAuth, AcM.roleAuth([producer, broker, admin]), AcM.updatePaypalCredentials);
 
     /****************** COUPONS **********************/
     // Open methods
