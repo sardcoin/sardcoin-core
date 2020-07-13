@@ -939,6 +939,53 @@ const importOfflinePackage = async (req, res) => {
     })
 };
 
+const editCouponDescription = async (req, res) => {
+    try {
+
+        const data = req.body;
+
+        if (data) {
+
+            Coupon.update({
+                short_description: data.short_description,
+                description: data.description,
+            }, {
+                where: {
+                    [Op.and]: [
+                        {owner: req.user.id},
+                        {id: data.id}
+                    ]
+                }
+            }).then(async couponUpdated => {
+                if (couponUpdated[0] === 0) {
+                    return res.status(HttpStatus.NO_CONTENT).send({
+                        updated: false,
+                        coupon_id: data.id,
+                        message: "This coupon doesn't exist"
+                    })
+                }
+                else {
+                    return res.status(HttpStatus.OK).send({
+                        updated: true,
+                        coupon_id: data.id
+                    })
+                }
+            })
+                .catch(err => {
+                    console.log(err);
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        updated: false,
+                        coupon_id: data.id,
+                        error: 'Cannot edit the coupon'
+                    })
+                });
+
+        }
+    } catch (e) {
+
+    }
+};
 
 const redeemCoupon = (req, res) => {
     const data = req.body;
@@ -1853,6 +1900,6 @@ module.exports = {
     getPackageBuyed: getPackageBought,
     getCouponBought,
     preBuy,
-    removePreBuy
-
+    removePreBuy,
+    editCouponDescription
 };
