@@ -151,6 +151,7 @@ exports.updateUser = function (req, res, next) {
         city: user.city,
         zip: user.zip,
         password: password,
+        email: user.email ? user.email : null,
         email_paypal: user.email_paypal
     }, {
         where: {
