@@ -138,15 +138,13 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    // console.log(user);
-
     Users.update({
         company_name: user.company_name,
         vat_number: user.vat_number,
         first_name: user.first_name,
         last_name: user.last_name,
         birth_place: user.birth_place,
-        birth_date: new Date(user.birth_date),
+        birth_date: user.birth_date || user.birth_date !== '' ? new Date(user.birth_date) : null,
         fiscal_code: user.fiscal_code,
         address: user.address,
         province: user.province,
@@ -358,6 +356,10 @@ exports.getPasswordSecret = async function (producer_id) {
         })
     }))
 }
+
+exports.updatePaypalCredentials = async function (req, res, next) {
+
+};
 
 exports.getVerifiersFromProducer = async function (producer_id) {
     let verifiers = [];
