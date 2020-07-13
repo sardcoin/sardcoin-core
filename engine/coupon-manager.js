@@ -503,7 +503,7 @@ const buyCoupons = async (req, res) => {
                 }
             }
 
-            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
+            //await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
 
         } catch (e) {
             console.error(e);
@@ -536,7 +536,7 @@ const buyCoupons = async (req, res) => {
             // The purchase is done
             await unlockTables();
             order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
-
+            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
 
             return res.status(HttpStatus.OK).send({
                 success: true,
