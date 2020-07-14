@@ -398,7 +398,9 @@ const isCouponRedeemed = async (req, res) => { // TODO
 const buyCoupons = async (req, res) => {
     //console.log('req.body', req.body)
 
-    const list = req.body.coupon_list;
+    const listFull = req.body.coupon_list;
+    let list = [];
+    list.push(req.body.coupon_list[0])
     const quantity = req.body.coupon_list[0].quantity
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
