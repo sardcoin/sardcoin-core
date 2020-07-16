@@ -605,7 +605,7 @@ const editCoupon = async (req, res) => {
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
             //se il coupon è privato
             if (data.visible_from != null) {
-                await BlockchainManager.editBlockchainCoupon(data);
+             await BlockchainManager.editBlockchainCoupon(data);
             }
 
             Coupon.update({
