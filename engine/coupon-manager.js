@@ -1043,6 +1043,7 @@ const redeemCoupon = (req, res) => {
                 package: result.dataValues.package
             };
             const producer_id = result.dataValues.Coupons[0].dataValues.owner;
+            const visible_from = result.dataValues.Coupons[0].dataValues.visible_from;
 
             await isVerifierAuthorized(producer_id, verifier_id)
                 .then(authorization => {
@@ -1090,7 +1091,11 @@ const redeemCoupon = (req, res) => {
             try {
                 console.log(verifier);
                 if (verifier) {
-                    result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+
+                    //controllo se il coupon è privato
+                    if (visible_from != null) {
+                        result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+                    }
 
                     if (result) {
                         return res.status(HttpStatus.OK).send({
