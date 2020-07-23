@@ -10,12 +10,6 @@ let config    = require(__dirname + '/../config/config.json');
 const paypal = require('@paypal/checkout-server-sdk');
 
 let createOrder  = async function(req, res){
-  // console.log('reqreqreq coupon_id', req.params.coupon_id)
-  // console.log('reqreqreq price', req.params.price)
-  // console.log('reqreqreq producer', req.params.producer)
-  // console.log('reqreqreq quantity', req.params.quantity)
-  // console.log('reqreqreq consumer', req.params.consumer)
-
   const coupon_id = req.params.coupon_id
   const price = req.params.price
   const producer_id = req.params.producer
@@ -27,17 +21,13 @@ let createOrder  = async function(req, res){
   let isPending
   try {
     isPending = await CouponTokenManager.isCouponsPendening(consumer, coupon_id, quantity)
-    // console.log('isPending isCouponsPendening', isPending)
 
     if (!isPending) {
       isPending = await  PackageManager.isPackagePendening(consumer, coupon_id, quantity)
-      // console.log('isPending isPackagePendening', isPending)
 
 
     }
-    //console.log('is pending', isPending)
     if (!isPending) {
-      // console.log('!isPending ', isPending)
 
       return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
 
@@ -61,16 +51,12 @@ let createOrder  = async function(req, res){
   }
   try {
     client_id = (await AccessManager.getClientId(producer_id)).getDataValue('client_id')
-    // console.log('reqreqreq client_id', client_id)
 
     password_secret = (await AccessManager.getPasswordSecret(producer_id)).getDataValue('password_secret')
-    // console.log('reqreqreq password_secret', password_secret)
 
     totalPrice = (price * quantity).toFixed(2)
-    // console.log('reqreqreq totalPrice', totalPrice)
 
   } catch (e) {
-    // console.log('catch  errorclient_id or password_secret', e)
 
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
@@ -90,9 +76,7 @@ let createOrder  = async function(req, res){
     let request = new paypal.orders.OrdersCreateRequest();
     console.log(`request: ${JSON.stringify(request)}`);
 
-    // add request item description
-    // https://developer.paypal.com/docs/api/orders/v2/#definition-purchase_unit_request
-    // https://developer.paypal.com/docs/api/orders/v2/#definition-item
+
     request.requestBody({
       "intent": "CAPTURE",
       "currency": "EUR",
@@ -111,15 +95,11 @@ let createOrder  = async function(req, res){
         }
       ]
     })
-    //console.log('resresres', res)
 
 
 
     let response = await client.execute(request);
-    // console.log(`Response: ${JSON.stringify(response)}`);
-    // // If call returns body in response, you can get the deserialized version from the result attribute of the response.
-    // console.log(`Order: ${JSON.stringify(response.result)}`);
-    // console.log('resresres', res)
+
 
     return res.status(HttpStatus.OK).send(
         JSON.stringify(response.result)
@@ -204,7 +184,6 @@ const getClient = (client_id, password_secret, user_id) => {
   // console.log(`environmentLive: ${JSON.stringify(environment)}`);
 
   let client = new paypal.core.PayPalHttpClient(environment);
-  // console.log(`client: ${JSON.stringify(client)}`);
 
 
   return client
