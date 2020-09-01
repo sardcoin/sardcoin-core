@@ -9,10 +9,10 @@ const Coupon = require('../models/index').Coupon;
 const User = require('../models/index').User;
 const CouponTokenManager = require('./coupon-token-manager');
 const PackageManager = require('./package-manager');
+let config    = require(__dirname + '/../config/config.json');
 
 // new payment paypal
 const paypal = require('@paypal/checkout-server-sdk');
-let env;
 
 /** PUBLIC METHODS **/
 // old payment
@@ -263,6 +263,7 @@ let createOrder  = async function(req, res){
     // https://developer.paypal.com/docs/api/orders/v2/#definition-item
     request.requestBody({
       "intent": "CAPTURE",
+      "currency": "EUR",
       "application_context": {
         "brand_name": "SardCoin",
       },
@@ -422,13 +423,19 @@ const getClient = (client_id, password_secret, user_id) => {
   // console.log('process', process);
   // console.log('process.env', process.env);
   let environment = undefined
-  if (user_id == 1 || user_id == 15) { //if user has 1 or 15 (username producer or broker, paypal running of sandbox
-                                      // this users have client id and password secret generated for sandbox
-    environment = new paypal.core.SandboxEnvironment(client_id, password_secret);
+  //console.log('config', config)
+  if(config.test == false) {
+    if (user_id == 1 || user_id == 15) { //if user has 1 or 15 (username producer or broker, paypal running of sandbox
+      // this users have client id and password secret generated for sandbox
+      environment = new paypal.core.SandboxEnvironment(client_id, password_secret); // clientId and password secret (into db) Sandbox mode for userId=1 and 15 (producer and broker)
 
-  } else {
-    environment = new paypal.core.LiveEnvironment(client_id,password_secret);
+    } else {
+      environment = new paypal.core.LiveEnvironment(client_id, password_secret); // clientId and password secret (into db) live mode
 
+
+    }
+  } else if (config.test == true) {
+    environment = new paypal.core.SandboxEnvironment(client_id, password_secret); // clientId and password secret (into db) Sandbox mode
 
   }
   // console.log(`environmentLive: ${JSON.stringify(environment)}`);

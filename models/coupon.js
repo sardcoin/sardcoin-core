@@ -8,7 +8,8 @@ module.exports = (sequelize, DataType) => {
             primaryKey: true
         },
         title:        DataType.STRING(255),
-        description:  DataType.STRING(255),
+        short_description: DataType.STRING(255),
+        description:  DataType.STRING(55000),
         image:        DataType.STRING(100),
         timestamp:    DataType.DATE,
         price:        DataType.INTEGER(10),

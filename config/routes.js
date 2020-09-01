@@ -11,7 +11,8 @@ const OrderManager = require('../engine/orders-manager');
 const PaypalManager = require('../engine/paypal-manager');
 const CatManager = require('../engine/categories-manager');
 const ReportManager = require('../engine/report-manager');
-const TokenManager = require('../engine/coupon-token-manager')
+const TokenManager = require('../engine/coupon-token-manager');
+const BlockchainManager = require('../engine/blockchain-manager');
 module.exports = function (app, passport, config) {
 
     /* PATHs */
@@ -23,6 +24,7 @@ module.exports = function (app, passport, config) {
     const catPath   = indexPath + 'categories/';
     const pkPath    = indexPath + 'packages/';
     const rpPath    = indexPath + 'reports/';
+    const bcPath    = indexPath + 'blockchain/';
 
     /* AUTH */
     const reqAuth = passport.authenticate('jwt', {session: false});
@@ -43,6 +45,7 @@ module.exports = function (app, passport, config) {
     app.delete(amPath + 'delete/', reqAuth, AcM.roleAuth([admin]), AcM.deleteUser);
     app.get(amPath    + 'getProducerFromId/:producer_id', AcM.getProducerFromId);
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
+    app.get(amPath    + 'getConsumers/', reqAuth, AcM.roleAuth(all), AcM.getConsumers);
 
     /****************** COUPONS **********************/
     // Open methods
@@ -72,7 +75,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'getBrokerCoupons/', reqAuth, AcM.roleAuth([broker, admin]), CouponManager.getBrokerCoupons);
     app.put(cmPath    + 'editCoupon/', expressJoi(Schemas.updateCouponSchema), reqAuth, AcM.roleAuth([producer,broker, admin]), CouponManager.editCoupon);
     app.delete(cmPath + 'deleteCoupon/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.deleteCoupon);
-    app.post(cmPath   + 'addImage/', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
+    app.post(cmPath   + 'addImage', multipartyMiddleware, reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.addImage);
     app.put(cmPath    + 'redeemCoupon/', reqAuth, AcM.roleAuth([verifier, producer, admin]), CouponManager.redeemCoupon);
     app.get(cmPath    + 'getBrokerFromCouponId/:id', reqAuth, AcM.roleAuth([producer, admin]), CouponManager.getBrokerFromCouponId);
     app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponFromToken);
@@ -115,6 +118,9 @@ module.exports = function (app, passport, config) {
     // app.use(ErrorHandler.validationError);
     // app.use(ErrorHandler.fun404);
 
+    /****************** BLOCKCHAIN *********************/
+    app.get(bcPath + 'backupUsers/', BlockchainManager.migrateUsersDBtoBlockchain);
+    //app.get(bcPath + 'backupCoupons/', BlockchainManager.migrateCouponsDBtoBlockchain);
 
     app.use(function (err, req, res, next) {
         if (err.isBoom) {
