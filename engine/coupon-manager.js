@@ -38,11 +38,16 @@ const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
     let tokensArray = [];
+    let is_broker = 0;
 
     try {
 
+        if(data.brokers != undefined && data.brokers.length > 0){
+            is_broker = 1;
+        }
+
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
-            insertResult = await insertCoupon(data, req.user.id);
+            insertResult = await insertCoupon(data, req.user.id, is_broker);
 
             if (insertResult) { // If the coupon has been created
                 for (let category of data.categories) {
@@ -104,7 +109,8 @@ const createCoupon = async (req, res) => {
 
                 // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
                 //Se il coupon è privato non scrivere su blockchain (visible_from = null)
-                if (insertResult.visible_from != null) {
+
+                if (insertResult.visible_from != null && is_broker == 0 && insertResult.type == 0) {
                     await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
                 }
 
@@ -396,7 +402,7 @@ const isCouponRedeemed = async (req, res) => { // TODO
 
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
-    //console.log('req.body', req.body)
+    console.log('req.body', req.body)
 
     const listFull = req.body.coupon_list;
     let list = [];
@@ -404,6 +410,7 @@ const buyCoupons = async (req, res) => {
     const quantity = req.body.coupon_list[0].quantity
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
+    const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker;
 
     const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price;
     const producer_id = req.body.producer_id
@@ -505,7 +512,8 @@ const buyCoupons = async (req, res) => {
                 }
             }
 
-            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
+            if (!is_broker && type == 0)
+                await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
 
         } catch (e) {
             console.error(e);
@@ -603,8 +611,9 @@ const editCoupon = async (req, res) => {
     try {
 
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
+            const is_broker = (await getFromIdIntern(data.id)).dataValues.is_broker;
             //se il coupon è privato
-            if (data.visible_from != null) {
+            if (data.visible_from != null && is_broker == 0) {
              await BlockchainManager.editBlockchainCoupon(data);
             }
 
@@ -750,7 +759,7 @@ const deleteCoupon = async (req, res) => {
         const data = (await getFromIdIntern(req.body.id)).dataValues;
 
         //controllo se il coupon è privato
-        if (data.visible_from != null) {
+        if (data.visible_from != null && data.is_broker == 0) {
             await BlockchainManager.deleteBlockchainCoupon(req.body.id);
         }
 
@@ -1044,6 +1053,7 @@ const redeemCoupon = (req, res) => {
             };
             const producer_id = result.dataValues.Coupons[0].dataValues.owner;
             const visible_from = result.dataValues.Coupons[0].dataValues.visible_from;
+            const is_broker = result.dataValues.Coupons[0].dataValues.is_broker;
 
             await isVerifierAuthorized(producer_id, verifier_id)
                 .then(authorization => {
@@ -1093,7 +1103,7 @@ const redeemCoupon = (req, res) => {
                 if (verifier) {
 
                     //controllo se il coupon è privato
-                    if (visible_from != null) {
+                    if (visible_from != null && is_broker == 0) {
                         result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
                     }
 
@@ -1444,7 +1454,7 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
         });
     }
 };
-const insertCoupon = (coupon, owner) => {
+const insertCoupon = (coupon, owner, is_broker) => {
     return new Promise((resolve, reject) => {
         //coupon.image = coupon.title.replace(/ /g, '_') + '.png';
 
@@ -1464,6 +1474,7 @@ const insertCoupon = (coupon, owner) => {
             constraints: coupon.constraints,
             type: coupon.type,
             owner: owner,
+            is_broker: is_broker
         })
             .then(newCoupon => {
                 resolve(newCoupon);

@@ -20,6 +20,7 @@ module.exports = (sequelize, DataType) => {
         constraints:  DataType.STRING(255),
         type:         DataType.INTEGER(1),
         owner:        DataType.INTEGER(11),
+        is_broker:    DataType.INTEGER(1)
     }, {
         freezeTableName: true,
         timestamps: false,
