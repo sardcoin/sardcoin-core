@@ -39,7 +39,6 @@ const createCoupon = async (req, res) => {
 
     try {
         insertResult = await insertCoupon(data, req.user.id);
-
         if (insertResult) { // If the coupon has been created
             for (let category of data.categories) {
                 await CategoriesManager.assignCategory({coupon_id: insertResult.dataValues.id, category_id: category.id})
@@ -342,9 +341,15 @@ const getAvailableByTextAndCatId = async (req, res) => {
     let text = req.params.text;
 
     try {
+
         // The text received is separated by dash
-        text = text.split('-').toString().replace(new RegExp(',', 'g'), ' ').toLowerCase();
-        coupons = filterCouponsByText((await availableCouponsByCategoryId(req.params.category_id)), text);
+        if (text !== 'noText') {
+            text = text.split('-').toString().replace(new RegExp(',', 'g'), ' ').toLowerCase();
+            coupons = filterCouponsByText((await availableCouponsByCategoryId(req.params.category_id)), text);
+        } else {
+            coupons = await availableCouponsByCategoryId(req.params.category_id);
+        }
+
 
         if (coupons.length === 0) {
             return res.status(HttpStatus.NO_CONTENT).send({});
