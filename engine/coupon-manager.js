@@ -613,7 +613,7 @@ const editCoupon = async (req, res) => {
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
             const is_broker = (await getFromIdIntern(data.id)).dataValues.is_broker;
             //se il coupon è privato
-            if (data.visible_from != null && is_broker == 0) {
+            if (data.visible_from != null && is_broker == 0 && data.type == 0) {
              await BlockchainManager.editBlockchainCoupon(data);
             }
 
@@ -759,7 +759,7 @@ const deleteCoupon = async (req, res) => {
         const data = (await getFromIdIntern(req.body.id)).dataValues;
 
         //controllo se il coupon è privato
-        if (data.visible_from != null && data.is_broker == 0) {
+        if (data.visible_from != null && data.is_broker == 0 && data.type == 0) {
             await BlockchainManager.deleteBlockchainCoupon(req.body.id);
         }
 
