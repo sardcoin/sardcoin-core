@@ -33,7 +33,7 @@ let createOrder  = async function(req, res){
 
           {
             error: true,
-            message: 'This coupon is unavailable'
+            message: 'This coupon is unavailable, try again.'
           }
 
       );
@@ -44,7 +44,7 @@ let createOrder  = async function(req, res){
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
-          message: 'Internal server error isCouponsPendening'
+          message: 'Internal server error isCouponsPending'
         }
 
     );
@@ -61,7 +61,7 @@ let createOrder  = async function(req, res){
     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send(
         {
           error: true,
-          message: 'Internal server errorclient_id or password_secret'
+          message: 'Internal server error client_id or password_secret'
         }
 
     );
@@ -183,7 +183,7 @@ const getClient = (client_id, password_secret, user_id) => {
   }
   // console.log(`environmentLive: ${JSON.stringify(environment)}`);
 
-  let client = new paypal.core.PayPalHttpClient(environment);
+  const client = new paypal.core.PayPalHttpClient(environment);
 
 
   return client

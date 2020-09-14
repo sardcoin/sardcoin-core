@@ -402,15 +402,15 @@ const isCouponRedeemed = async (req, res) => { // TODO
 
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
-    console.log('req.body', req.body)
+    // console.log('req.body', req.body)
 
-    const listFull = req.body.coupon_list;
+    // const listFull = req.body.coupon_list;
     let list = [];
     list.push(req.body.coupon_list[0])
     const quantity = req.body.coupon_list[0].quantity
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
-    const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker;
+    // const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker; // unused
 
     const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price;
     const producer_id = req.body.producer_id
@@ -1277,8 +1277,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
         isNotExpired = await isCouponNotExpired(coupon_id);
         isPurchasable = await isItemPurchasable(coupon_id, user_id, ITEM_TYPE.COUPON);
 
-        // TODO aggiungere prepare = user_id (utente intenzionato all'acquisto)
-
         if (isNotExpired && isPurchasable) {
             coupon = await Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL AND prepare = :user_id ' +
                 'AND coupon_id = :coupon_id AND package IS NUll ' + lastPieceOfQuery + 'LIMIT 1',
@@ -1817,7 +1815,7 @@ const getCouponBought = async function (id) {
 };
 
 const preBuy = async function (req, res) {
-    const time = 100000  // 5 minuti sono 300000
+    const time = 300000  // 5 minuti sono 300000
     console.log('rreq.body.coupon_list[0]', req.body.coupon_list[0])
     let type = req.body.coupon_list[0].type
     let coupon_id = req.body.coupon_list[0].id // il coupon che modifico
