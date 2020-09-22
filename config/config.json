@@ -1,5 +1,5 @@
 {
-  "test": true,
+  "test": false,
   "development": {
     "username": "root",
     "password": "",
