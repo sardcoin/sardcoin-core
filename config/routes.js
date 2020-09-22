@@ -46,6 +46,7 @@ module.exports = function (app, passport, config) {
     app.get(amPath    + 'getProducerFromId/:producer_id', AcM.getProducerFromId);
     app.get(amPath    + 'getBrokers/', reqAuth, AcM.roleAuth(all), AcM.getBrokers);
     app.get(amPath    + 'getConsumers/', reqAuth, AcM.roleAuth(all), AcM.getConsumers);
+    app.put(amPath    + 'updatePaypalCredentials/', reqAuth, AcM.roleAuth([producer, broker, admin]), AcM.updatePaypalCredentials);
 
     /****************** COUPONS **********************/
     // Open methods
@@ -81,6 +82,7 @@ module.exports = function (app, passport, config) {
     app.get(cmPath    + 'isCouponFromToken/:token', reqAuth, AcM.roleAuth([consumer, verifier, producer, admin]), CouponManager.isCouponFromToken);
     app.get(cmPath    + 'getProducerTokensOfflineById/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.getProducerTokensOfflineById);
     app.get(cmPath    + 'buyProducerTokensOfflineByToken/:token/:id', reqAuth, AcM.roleAuth([producer, admin]), TokenManager.buyProducerTokensOfflineByToken);
+    app.put(cmPath    + 'editCouponDescription/', reqAuth, AcM.roleAuth([producer, broker, admin]), CouponManager.editCouponDescription);
 
     /****************** PACKAGE **********************/
     app.get(pkPath    + 'getBrokerPackages/', reqAuth, AcM.roleAuth([broker, admin]), PackageManager.getBrokerPackages);
@@ -92,11 +94,8 @@ module.exports = function (app, passport, config) {
     app.get(ordPath + 'getLastOrder/', reqAuth, AcM.roleAuth([consumer, admin]), OrderManager.getLastOrder);
 
     /****************** PAYPAL PAYMENTS *****************/
-    //app.post(payPath + 'setCheckout', reqAuth, AcM.roleAuth(all), PaypalManager.setCheckout(config));
-    //app.get(payPath + 'confirm', PaypalManager.confirm(config));
-    //app.post(payPath + 'pay', reqAuth, AcM.roleAuth(all), PaypalManager.pay(config));
-    app.get(payPath + 'createOrder/:coupon_id/:price/:producer/:quantity/:consumer', PaypalManager.createOrder);// TODO add permission required
-    // app.get(payPath + 'captureOrder/:order', PaypalManager.captureOrder); // non dovrebbe servire
+
+    app.get(payPath + 'createOrder/:coupon_id/:price/:producer/:quantity/:consumer', reqAuth, AcM.roleAuth([consumer, admin]), PaypalManager.createOrder);// TODO add permission required
 
     /****************** CATEGORIES *****************/
     app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),

@@ -38,11 +38,16 @@ const createCoupon = async (req, res) => {
     const data = req.body;
     let insertResult, newToken, couponToken, token, pack_coupon_id;
     let tokensArray = [];
+    let is_broker = 0;
 
     try {
 
+        if(data.brokers != undefined && data.brokers.length > 0){
+            is_broker = 1;
+        }
+
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
-            insertResult = await insertCoupon(data, req.user.id);
+            insertResult = await insertCoupon(data, req.user.id, is_broker);
 
             if (insertResult) { // If the coupon has been created
                 for (let category of data.categories) {
@@ -104,7 +109,8 @@ const createCoupon = async (req, res) => {
 
                 // scrivi su blockchain con i dati ottenuti da insertResult + token generato (da hashare)
                 //Se il coupon è privato non scrivere su blockchain (visible_from = null)
-                if (insertResult.visible_from != null) {
+
+                if (insertResult.visible_from != null && is_broker == 0 && insertResult.type == 0) {
                     await BlockchainManager.createBlockchainCoupon(insertResult, tokensArray);
                 }
 
@@ -396,12 +402,15 @@ const isCouponRedeemed = async (req, res) => { // TODO
 
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
-    //console.log('req.body', req.body)
+    // console.log('req.body', req.body)
 
-    const list = req.body.coupon_list;
+    // const listFull = req.body.coupon_list;
+    let list = [];
+    list.push(req.body.coupon_list[0])
     const quantity = req.body.coupon_list[0].quantity
     const type = req.body.coupon_list[0].type
     const price = req.body.coupon_list[0].price
+    // const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker; // unused
 
     const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price;
     const producer_id = req.body.producer_id
@@ -503,7 +512,8 @@ const buyCoupons = async (req, res) => {
                 }
             }
 
-            await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
+            if (!is_broker && type == 0)
+                await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
 
         } catch (e) {
             console.error(e);
@@ -518,7 +528,7 @@ const buyCoupons = async (req, res) => {
 
     query += 'COMMIT';
 
-    //console.log(query);
+    //console.log("query",query);
     // return res.send({query: query, order_list: order_list});
 
     Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
@@ -536,7 +546,6 @@ const buyCoupons = async (req, res) => {
             // The purchase is done
             await unlockTables();
             order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
-
 
             return res.status(HttpStatus.OK).send({
                 success: true,
@@ -569,7 +578,7 @@ const editCoupon = async (req, res) => {
         if (data.type === ITEM_TYPE.PACKAGE) {
             const result = await getPackageBought(data.id)
             if (result) {
-                return res.status(HttpStatus.OK).send({
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     bought: true,
                     message: 'Is not possible update package, This package is bought.'
@@ -581,7 +590,7 @@ const editCoupon = async (req, res) => {
         if (data.type === ITEM_TYPE.COUPON) {
             const result = await getCouponBought(data.id)
             if (result) {
-                return res.status(HttpStatus.OK).send({
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     bought: true,
                     message: 'Is not possible update coupon, This coupon is bought.'
@@ -602,9 +611,10 @@ const editCoupon = async (req, res) => {
     try {
 
         if ((data.valid_until > data.valid_from) || data.valid_until === 0 || data.valid_until === null) {
+            const is_broker = (await getFromIdIntern(data.id)).dataValues.is_broker;
             //se il coupon è privato
-            if (data.visible_from != null) {
-                await BlockchainManager.editBlockchainCoupon(data);
+            if (data.visible_from != null && is_broker == 0 && data.type == 0) {
+             await BlockchainManager.editBlockchainCoupon(data);
             }
 
             Coupon.update({
@@ -749,7 +759,7 @@ const deleteCoupon = async (req, res) => {
         const data = (await getFromIdIntern(req.body.id)).dataValues;
 
         //controllo se il coupon è privato
-        if (data.visible_from != null) {
+        if (data.visible_from != null && data.is_broker == 0 && data.type == 0) {
             await BlockchainManager.deleteBlockchainCoupon(req.body.id);
         }
 
@@ -939,6 +949,64 @@ const importOfflinePackage = async (req, res) => {
     })
 };
 
+const editCouponDescription = async (req, res) => {
+    try {
+
+        const data = req.body;
+
+        if (data) {
+
+            if (data.type === ITEM_TYPE.COUPON) {
+                const result = await getCouponBought(data.id);
+                if (result) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        bought: true,
+                        message: 'Is not possible update coupon, This coupon is bought.'
+                    });
+                }
+            }
+
+            Coupon.update({
+                short_description: data.short_description,
+                description: data.description,
+            }, {
+                where: {
+                    [Op.and]: [
+                        {owner: req.user.id},
+                        {id: data.id}
+                    ]
+                }
+            }).then(async couponUpdated => {
+                if (couponUpdated[0] === 0) {
+                    return res.status(HttpStatus.NO_CONTENT).send({
+                        updated: false,
+                        coupon_id: data.id,
+                        message: "This coupon doesn't exist"
+                    })
+                }
+                else {
+                    return res.status(HttpStatus.OK).send({
+                        updated: true,
+                        coupon_id: data.id
+                    })
+                }
+            })
+                .catch(err => {
+                    console.log(err);
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        updated: false,
+                        coupon_id: data.id,
+                        error: 'Cannot edit the coupon'
+                    })
+                });
+
+        }
+    } catch (e) {
+
+    }
+};
 
 const redeemCoupon = (req, res) => {
     const data = req.body;
@@ -984,6 +1052,8 @@ const redeemCoupon = (req, res) => {
                 package: result.dataValues.package
             };
             const producer_id = result.dataValues.Coupons[0].dataValues.owner;
+            const visible_from = result.dataValues.Coupons[0].dataValues.visible_from;
+            const is_broker = result.dataValues.Coupons[0].dataValues.is_broker;
 
             await isVerifierAuthorized(producer_id, verifier_id)
                 .then(authorization => {
@@ -1031,7 +1101,11 @@ const redeemCoupon = (req, res) => {
             try {
                 console.log(verifier);
                 if (verifier) {
-                    result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+
+                    //controllo se il coupon è privato
+                    if (visible_from != null && is_broker == 0) {
+                        result = await BlockchainManager.redeemBlockchainCoupon(couponTkn);
+                    }
 
                     if (result) {
                         return res.status(HttpStatus.OK).send({
@@ -1202,8 +1276,6 @@ const getBuyCouponQuery = async (coupon_id, user_id, tokenExcluded = []) => {
     try {
         isNotExpired = await isCouponNotExpired(coupon_id);
         isPurchasable = await isItemPurchasable(coupon_id, user_id, ITEM_TYPE.COUPON);
-
-        // TODO aggiungere prepare = user_id (utente intenzionato all'acquisto)
 
         if (isNotExpired && isPurchasable) {
             coupon = await Sequelize.query('SELECT * FROM `coupon_tokens` AS `CouponTokens` WHERE consumer IS NULL AND prepare = :user_id ' +
@@ -1380,7 +1452,7 @@ const isVerifierAuthorized = async (producer_id, verifier_id) => {
         });
     }
 };
-const insertCoupon = (coupon, owner) => {
+const insertCoupon = (coupon, owner, is_broker) => {
     return new Promise((resolve, reject) => {
         //coupon.image = coupon.title.replace(/ /g, '_') + '.png';
 
@@ -1400,6 +1472,7 @@ const insertCoupon = (coupon, owner) => {
             constraints: coupon.constraints,
             type: coupon.type,
             owner: owner,
+            is_broker: is_broker
         })
             .then(newCoupon => {
                 resolve(newCoupon);
@@ -1742,7 +1815,7 @@ const getCouponBought = async function (id) {
 };
 
 const preBuy = async function (req, res) {
-    const time = 100000  // 5 minuti sono 300000
+    const time = 300000  // 5 minuti sono 300000
     console.log('rreq.body.coupon_list[0]', req.body.coupon_list[0])
     let type = req.body.coupon_list[0].type
     let coupon_id = req.body.coupon_list[0].id // il coupon che modifico
@@ -1853,6 +1926,6 @@ module.exports = {
     getPackageBuyed: getPackageBought,
     getCouponBought,
     preBuy,
-    removePreBuy
-
+    removePreBuy,
+    editCouponDescription
 };

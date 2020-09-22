@@ -36,7 +36,6 @@ exports.createUser = function (req, res, next) {
                     });
                 } else {
                     // A new user can be created
-
                     Users.create({
                         username: user.username,
                         email: user.email,
@@ -45,7 +44,7 @@ exports.createUser = function (req, res, next) {
                         first_name: user.first_name,
                         last_name: user.last_name,
                         birth_place: user.birth_place,
-                        birth_date: new Date(user.birth_date),
+                        birth_date: user.birth_date || user.birth_date !== '' ? new Date(user.birth_date) : null,
                         fiscal_code: user.fiscal_code,
                         address: user.address,
                         province: user.province,
@@ -139,21 +138,20 @@ exports.updateUser = function (req, res, next) {
     const user = req.body;
     const password = bcrypt.hashSync(user.password);
 
-    // console.log(user);
-
     Users.update({
         company_name: user.company_name,
         vat_number: user.vat_number,
         first_name: user.first_name,
         last_name: user.last_name,
         birth_place: user.birth_place,
-        birth_date: new Date(user.birth_date),
+        birth_date: user.birth_date || user.birth_date !== '' ? new Date(user.birth_date) : null,
         fiscal_code: user.fiscal_code,
         address: user.address,
         province: user.province,
         city: user.city,
         zip: user.zip,
         password: password,
+        email: user.email ? user.email : null,
         email_paypal: user.email_paypal
     }, {
         where: {
@@ -359,6 +357,49 @@ exports.getPasswordSecret = async function (producer_id) {
         })
     }))
 }
+
+exports.updatePaypalCredentials = async function (req, res, next) {
+
+    const user = req.body;
+
+    try {
+        Users.update({
+            email_paypal: user.email_paypal,
+            client_id: user.client_id,
+            password_secret: user.password_secret
+    },
+        {
+            where: {
+                id: req.user.id
+            }
+        }
+    ).then(updatedUser => {
+            if (updatedUser[0] === 0) {
+                return res.status(HttpStatus.NO_CONTENT).send({
+                    updated: false,
+                    user_id: req.user.id,
+                    message: 'An error occurred while updating the requested user\'s paypal credentials'
+                })
+            }
+
+            return res.status(HttpStatus.OK).send({
+                updated: true,
+                user_id: req.user.id
+            })
+        }).catch( err =>{
+            console.warn(err);
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            user_id: req.user.id,
+            error: 'Cannot update the paypal credentials'
+        })});
+    } catch (e) {
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            updated: false,
+            username: user.username
+        });
+    }
+};
 
 exports.getVerifiersFromProducer = async function (producer_id) {
     let verifiers = [];
