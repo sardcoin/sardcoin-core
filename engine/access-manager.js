@@ -64,6 +64,8 @@ exports.createUser = function (req, res, next) {
                                     last_name: newUser.get('last_name')
                                 });
                             } catch (e) {
+                                console.log(e);
+
                                 Users.destroy({
                                     where : {id : newUser.id}
                                 }).then(result => {
@@ -72,17 +74,15 @@ exports.createUser = function (req, res, next) {
                                         username: user.username
                                     });
                                 });
-
-                                console.log(e);
                             }
                         })
                         .catch(err => {
+                            console.log(err);
+
                             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                                 created: false,
                                 username: user.username
                             });
-
-                            console.log(err);
                         })
                 }
             });
