@@ -72,6 +72,8 @@ exports.createUser = function (req, res, next) {
                                         username: user.username
                                     });
                                 });
+
+                                console.log(e);
                             }
                         })
                         .catch(err => {
@@ -79,6 +81,8 @@ exports.createUser = function (req, res, next) {
                                 created: false,
                                 username: user.username
                             });
+
+                            console.log(err);
                         })
                 }
             });
