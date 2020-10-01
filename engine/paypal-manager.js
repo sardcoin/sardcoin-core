@@ -15,6 +15,7 @@ let createOrder  = async function(req, res){
   const producer_id = req.params.producer
   const quantity = req.params.quantity
   const consumer = req.params.consumer
+  const companyName = req.params.companyName
   let client_id
   let password_secret
   let totalPrice
@@ -72,7 +73,6 @@ let createOrder  = async function(req, res){
 
     let client = getClient(client_id,password_secret, producer_id);
     console.log(`client: ${JSON.stringify(client)}`);
-
     let request = new paypal.orders.OrdersCreateRequest();
     console.log(`request: ${JSON.stringify(request)}`);
 
@@ -80,9 +80,7 @@ let createOrder  = async function(req, res){
     request.requestBody({
       "intent": "CAPTURE",
       "currency": "EUR",
-      "application_context": {
-        "brand_name": "SardCoin",
-      },
+
 
       "purchase_units": [
         {

@@ -36,6 +36,7 @@ async function blockchainInterface(method, assets, body = null, params = null) {
 
     try {
         result = await Request(options);
+        console.log('resultato', result)
         return result;
     } catch (err) {
         console.error(err);
@@ -264,7 +265,7 @@ async function buyBlockchainCoupon(user_id, order_list) {
             };
 
             result = await blockchainInterface('POST', 'BuyCoupon', body);
-
+            console.log('resultresult', result)
             if (result) {
                 console.log("Coupon #", order.token, " acquistato regolarmente da consumer ", user_id, " e registrato in blockchain");
             }

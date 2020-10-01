@@ -403,171 +403,182 @@ const isCouponRedeemed = async (req, res) => { // TODO
 // The application could fail in every point, revert the buy in that case
 const buyCoupons = async (req, res) => {
     // console.log('req.body', req.body)
-
-    // const listFull = req.body.coupon_list;
-    let list = [];
-    list.push(req.body.coupon_list[0])
-    const quantity = req.body.coupon_list[0].quantity
-    const type = req.body.coupon_list[0].type
-    const price = req.body.coupon_list[0].price
-    // const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker; // unused
-
-    const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price;
-    const producer_id = req.body.producer_id
-    const payment_id = req.body.payment_id
-    // console.log('payment_id buyCoupons', payment_id)
-    // verifica che è in stallo
-
     try {
-        let isPrepared = undefined
-        if (type == 0) {
-            isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
 
-        } else if (type == 1) {
-            isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
+        // const listFull = req.body.coupon_list;
+        let list = [];
+        list.push(req.body.coupon_list[0])
+        const quantity = req.body.coupon_list[0].quantity
+        const type = req.body.coupon_list[0].type
+        const price = req.body.coupon_list[0].price
+        const is_broker = (await getFromIdIntern(list[0].id)).dataValues.is_broker; // unused
+        const companyName = req.body.coupon_list[0].price
 
-        }
+        const priceDb = (await getFromIdIntern(list[0].id)).dataValues.price;
+        const producer_id = req.body.producer_id
+        const payment_id = req.body.payment_id
+        // console.log('payment_id buyCoupons', payment_id)
+        // verifica che è in stallo
 
-        if (price != priceDb) {
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                call: 'buyCoupons',
-                message: 'An error occurred while finalizing the purchase, no correct price coupon'
-            });
-        }
-        //console.log('is prepared', isPrepared)
-        if (!isPrepared) {
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                call: 'buyCoupons',
-                message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
-            });
-        } else if (payment_id && price >= 1) {
-            // console.log('farà capture')
-            const payment = await PaypalManager.captureOrder(payment_id, producer_id)
-            // console.log('payment description', payment)
-            // console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
-            // console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
-            const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
-            if (valute != 'EUR') {
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    error: true,
-                    call: 'buyCoupons',
-                    message: 'An error occurred while finalizing the purchase, error valute'
-                })
-            }
-            const value = payment.purchase_units[0].payments.captures[0].amount.value
-            if (price * quantity != value) {
-                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                    error: true,
-                    call: 'buyCoupons',
-                    message: 'An error occurred while finalizing the purchase, error total amount'
-                })
-            }
-
-        }
-    } catch (e) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            call: 'buyCoupons',
-            message: 'An error occurred while finalizing the purchase, error result prepare coupon'
-        })
-    }
-    //TODO verifica che è acquistato...... captureOrder DI PAYPAL
-
-
-    let order_list = [];
-    let query = 'START TRANSACTION; ';
-    let tokenToExclude = [];
-    let buyQueryResult;
-    let order_id;
-
-    const lock = await lockTables();
-
-    if (!lock) {
-        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-            error: true,
-            call: 'buyCoupons',
-            message: 'An error occurred while finalizing the purchase'
-        });
-    }
-    //console.log('console.log(list)', list)
-    for (let i = 0; i < list.length; i++) {
         try {
-            tokenToExclude = [];
+            let isPrepared = undefined
+            if (type == 0) {
+                isPrepared = await CouponTokenManager.isCouponsPendening(req.user.id, list[0].id, list[0].quantity)
 
-            for (let j = 0; j < list[i].quantity; j++) {
-                buyQueryResult = await getBuyQuery(list[i].id, req.user.id, list[i].type, tokenToExclude);
-                if (!buyQueryResult.error) {
-                    query += buyQueryResult.query;
-                    tokenToExclude.push(buyQueryResult.token);
-                    order_list.push({token: buyQueryResult.token, type: list[i].type});
-                } else {
-                    await unlockTables();
+            } else if (type == 1) {
+                isPrepared = await PackageManager.isPackagePendening(req.user.id, list[0].id, list[0].quantity)
+
+            }
+
+            if (price != priceDb) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, no correct price coupon'
+                });
+            }
+            //console.log('is prepared', isPrepared)
+            if (!isPrepared) {
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase, no correct prepare coupon'
+                });
+            } else if (payment_id && price >= 1) {
+                // console.log('farà capture')
+                const payment = await PaypalManager.captureOrder(payment_id, producer_id)
+                // console.log('payment description', payment)
+                // console.log('payment.purchase_units[0].payments description', payment.purchase_units[0].payments)
+                // console.log('payment.purchase_units[0].payments.captures[0].amount description', payment.purchase_units[0].payments.captures[0].amount)
+                const valute = payment.purchase_units[0].payments.captures[0].amount.currency_code
+                if (valute != 'EUR') {
                     return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                         error: true,
                         call: 'buyCoupons',
-                        message: 'An error occurred while finalizing the purchase'
+                        message: 'An error occurred while finalizing the purchase, error valute'
                     })
                 }
+                const value = payment.purchase_units[0].payments.captures[0].amount.value
+                if (price * quantity != value) {
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        call: 'buyCoupons',
+                        message: 'An error occurred while finalizing the purchase, error total amount'
+                    })
+                }
+
             }
-
-            if (!is_broker && type == 0)
-                await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
-
         } catch (e) {
-            console.error(e);
-            await unlockTables();
+            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                error: true,
+                call: 'buyCoupons',
+                message: 'An error occurred while finalizing the purchase, error result prepare coupon'
+            })
+        }
+        //TODO verifica che è acquistato...... captureOrder DI PAYPAL
+
+
+        let order_list = [];
+        let query = 'START TRANSACTION; ';
+        let tokenToExclude = [];
+        let buyQueryResult;
+        let order_id;
+
+        const lock = await lockTables();
+
+        if (!lock) {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 call: 'buyCoupons',
                 message: 'An error occurred while finalizing the purchase'
-            })
+            });
         }
-    }
+        //console.log('console.log(list)', list)
+        for (let i = 0; i < list.length; i++) {
+            try {
+                tokenToExclude = [];
 
-    query += 'COMMIT';
+                for (let j = 0; j < list[i].quantity; j++) {
+                    buyQueryResult = await getBuyQuery(list[i].id, req.user.id, list[i].type, tokenToExclude);
+                    if (!buyQueryResult.error) {
+                        query += buyQueryResult.query;
+                        tokenToExclude.push(buyQueryResult.token);
+                        order_list.push({token: buyQueryResult.token, type: list[i].type});
+                    } else {
+                        await unlockTables();
+                        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                            error: true,
+                            call: 'buyCoupons',
+                            message: 'An error occurred while finalizing the purchase'
+                        })
+                    }
+                }
 
-    //console.log("query",query);
-    // return res.send({query: query, order_list: order_list});
-
-    Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
-        .then(async result => {
-            if (result[0] === 0) { // The database has not been updated
+                if (!is_broker && type == 0) {
+                    const bK = await BlockchainManager.buyBlockchainCoupon(req.user.id, order_list);
+                    console.log('bK', bK)
+                }
+            } catch (e) {
+                console.error(e);
                 await unlockTables();
+                return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                    error: true,
+                    call: 'buyCoupons',
+                    message: 'An error occurred while finalizing the purchase'
+                })
+            }
+        }
+
+        query += 'COMMIT';
+
+        //console.log("query",query);
+        // return res.send({query: query, order_list: order_list});
+
+        Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
+            .then(async result => {
+                if (result[0] === 0) { // The database has not been updated
+                    await unlockTables();
+
+                    return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+                        error: true,
+                        call: 'buyCoupons',
+                        message: 'An error occured while finalizing the purchase'
+                    });
+                }
+
+                // The purchase is done
+                await unlockTables();
+                order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
+
+                return res.status(HttpStatus.OK).send({
+                    success: true,
+                    message: 'The purchase has been finalized',
+                    order_id: order_id
+                })
+            })
+            .catch(async err => {
+                console.log(err);
+                await unlockTables();
+
+                if (order_id) {
+                    await OrderCoupon.destroy({where: {order_id: order_id}});
+                    await Order.destroy({where: {id: order_id}});
+                }
 
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     call: 'buyCoupons',
                     message: 'An error occured while finalizing the purchase'
                 });
-            }
-
-            // The purchase is done
-            await unlockTables();
-            order_id = await OrdersManager.createOrderFromCart(req.user.id, order_list);
-
-            return res.status(HttpStatus.OK).send({
-                success: true,
-                message: 'The purchase has been finalized',
-                order_id: order_id
-            })
-        })
-        .catch(async err => {
-            console.log(err);
-            await unlockTables();
-
-            if (order_id) {
-                await OrderCoupon.destroy({where: {order_id: order_id}});
-                await Order.destroy({where: {id: order_id}});
-            }
-
-            return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
-                error: true,
-                call: 'buyCoupons',
-                message: 'An error occured while finalizing the purchase'
             });
+    } catch (e)  {
+        console.log(e);
+        return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
+            error: true,
+            call: 'buyCoupons',
+            message: 'An error occured while finalizing the purchase, '
         });
+    }
 };
 
 const editCoupon = async (req, res) => {
