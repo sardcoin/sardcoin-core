@@ -95,7 +95,7 @@ module.exports = function (app, passport, config) {
 
     /****************** PAYPAL PAYMENTS *****************/
 
-    app.get(payPath + 'createOrder/:coupon_id/:price/:producer/:quantity/:consumer', reqAuth, AcM.roleAuth([consumer, admin]), PaypalManager.createOrder);// TODO add permission required
+    app.get(payPath + 'createOrder/:coupon_id/:price/:producer/:quantity/:consumer/:companyName', reqAuth, AcM.roleAuth([consumer, admin]), PaypalManager.createOrder);// TODO add permission required
 
     /****************** CATEGORIES *****************/
     app.get(catPath + 'getAll', CatManager.getAll); // reqAuth, AcM.roleAuth([admin, consumer]),
