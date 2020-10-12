@@ -77,7 +77,7 @@ const getCouponsPackage = async (req, res) => {
     const id = req.params.package_id;
     //console.log('ididididid', id)
     const token = await CouponTokenManager.getTokenByIdPackage(id)
-    //console.log('tokentokentoken', token)
+    console.log('tokentokentoken', token)
     const cpTokens = await CouponTokenManager.getCouponsByTokenPackage(token.dataValues.token)
 
     for (const cpToken of cpTokens) {
@@ -103,7 +103,7 @@ exports.insertTokenPackage = async (package_id, token) => {
             package_id: package_id
         })
             .then(newPackage => {
-                //console.log('\nNEW PACKAGE: ', newPackage.dataValues);
+                console.log('\nNEW PACKAGE: ', newPackage.dataValues);
                 resolve(newPackage);
             })
             .catch(err => {

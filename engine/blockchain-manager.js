@@ -157,7 +157,7 @@ async function createBlockchainCoupon(coupon, tokensArray) {
             body = Object.assign(body, {"delay": 0});
         } else {
             delay = (coupon.visible_from - coupon.timestamp) / min;
-            //console.log("delay: ", delay);
+            console.log("delay: ", delay);
             body = Object.assign(body, {"delay": delay.toString()});
             //MI CALCOLO LA DIFFERENZA DEI MINUTI
         }

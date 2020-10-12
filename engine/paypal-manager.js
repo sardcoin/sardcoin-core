@@ -164,7 +164,7 @@ const getClient = (client_id, password_secret, user_id) => {
   // console.log('process', process);
   // console.log('process.env', process.env);
   let environment = undefined
-  //console.log('config', config)
+  console.log('config', config)
   if(config.test == false) {
     if (user_id == 1 || user_id == 15) { //if user has 1 or 15 (username producer or broker, paypal running of sandbox
       // this users have client id and password secret generated for sandbox

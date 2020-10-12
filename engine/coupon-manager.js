@@ -211,7 +211,7 @@ const getByToken = async (req, res) => {
 const getProducerCoupons = (req, res) => {
     Sequelize.query(
         'SELECT id, title, short_description, description, image, price, visible_from, valid_from, valid_until, purchasable, constraints, owner, type, ' +
-        'COUNT(CASE WHEN consumer IS NOT null AND verifier IS null THEN 1 END) AS buyed, COUNT(*) AS quantity ' +
+        'COUNT(CASE WHEN consumer IS NOT null  then 1 else NULL end) AS buyed, COUNT(*) AS quantity ' +
         'FROM coupons JOIN coupon_tokens ON coupons.id = coupon_tokens.coupon_id WHERE owner = $1 ' +
         'GROUP BY id',
         {bind: [req.user.id], type: Sequelize.QueryTypes.SELECT},
@@ -277,7 +277,7 @@ const getPurchasedCoupons = async (req, res) => {
 
 };
 const getPurchasedCouponsById = (req, res) => {
-    //console.log('req.params.coupon_idreq.params.coupon_id',req.params)
+    console.log('req.params.coupon_idreq.params.coupon_id',req.params)
     Coupon.findAll({
         include: [{
             model: CouponToken,
@@ -287,7 +287,7 @@ const getPurchasedCouponsById = (req, res) => {
         attributes: {include: [[Sequelize.fn('COUNT', Sequelize.col('coupon_id')), 'bought']]}
     })
         .then(coupons => {
-            //console.log('coupons, coupons', coupons)
+            console.log('coupons, coupons', coupons)
             if (coupons[0].dataValues.CouponTokens.length === 0) {
                 PackageTokens.findAll({
 
@@ -335,7 +335,7 @@ const getAvailableCoupons = async (req, res) => {
     try {
         coupons = await availableCoupons();
 
-        //console.log('couponscoupons', coupons )
+        console.log('couponscoupons', coupons )
         if (coupons.length === 0) {
             return res.status(HttpStatus.NO_CONTENT).send({});
         }
@@ -437,7 +437,7 @@ const buyCoupons = async (req, res) => {
                     message: 'An error occurred while finalizing the purchase, no correct price coupon'
                 });
             }
-            //console.log('is prepared', isPrepared)
+            console.log('is prepared', isPrepared)
             if (!isPrepared) {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
@@ -493,7 +493,7 @@ const buyCoupons = async (req, res) => {
                 message: 'An error occurred while finalizing the purchase'
             });
         }
-        //console.log('console.log(list)', list)
+        console.log('console.log(list)', list)
         for (let i = 0; i < list.length; i++) {
             try {
                 tokenToExclude = [];
@@ -531,7 +531,7 @@ const buyCoupons = async (req, res) => {
 
         query += 'COMMIT';
 
-        //console.log("query",query);
+        console.log("query",query);
         // return res.send({query: query, order_list: order_list});
 
         Sequelize.query(query, {type: Sequelize.QueryTypes.UPDATE}, {model: CouponToken})
@@ -1036,16 +1036,16 @@ const redeemCoupon = (req, res) => {
 
         if (!result) {
             const resp = await returnRedeemCouponList(data.token, verifier_id)
-            //console.log( 'resp', resp)
+            console.log( 'resp', resp)
             if (resp.redeemed) {
-                //console.log( 'resp.redeemed', resp.redeemed)
+                console.log( 'resp.redeemed', resp.redeemed)
                 return res.status(HttpStatus.OK).send({
                     redeemed: true,
                     token: resp.token,
                 });
 
             } else if (resp.coupons && resp.coupons.length > 0) {
-                //console.log('resp.coupons && resp.coupons.length > 0')
+                console.log('resp.coupons && resp.coupons.length > 0')
                 return res.status(HttpStatus.OK).send({
                     coupons: resp.coupons,
                 });
@@ -1646,7 +1646,7 @@ const formatArray = (arrayCoupons) => {
 
         arrayResult = [];
     }
-    //console.log('arrayResultFull', arrayResultFull)
+    console.log('arrayResultFull', arrayResultFull)
     return arrayResultFull;
 }
 
@@ -1717,7 +1717,7 @@ const getProducerCouponsOffline = (req, res) => {
 };
 
 const returnRedeemCouponList = (token, verifier) => {
-    //console.log( 'returnRedeemCouponList', returnRedeemCouponList)
+    console.log( 'returnRedeemCouponList', returnRedeemCouponList)
     return new Promise((resolve, reject) => {
 
         CouponToken.findAll({
@@ -1728,10 +1728,10 @@ const returnRedeemCouponList = (token, verifier) => {
                 ]
             }
         }).then(async resultPackage => {
-            //console.log('resultPackage', resultPackage)
+            console.log('resultPackage', resultPackage)
 
             if (resultPackage.length === 0) {
-                //console.log('resultPackage 0', resultPackage)
+                console.log('resultPackage 0', resultPackage)
 
                 resolve(false)
             }
@@ -1740,11 +1740,11 @@ const returnRedeemCouponList = (token, verifier) => {
                 let couponsArray = [];
                 //let count = 0;
                 for (const cp of resultPackage) {
-                    //console.log('count', count++)
+                    console.log('count', count++)
                     //trovo l'owner del coupon
                     const producer_coupon_id = cp.dataValues.Coupons[0].dataValues.owner;
                     const isVerifier = await isVerifierAuthorized(producer_coupon_id, verifier)
-                    //console.log('isVerifier', isVerifier)
+                    console.log('isVerifier', isVerifier)
 
                     if (isVerifier) {
                         couponsArray.push(cp.dataValues)
@@ -1763,7 +1763,7 @@ const returnRedeemCouponList = (token, verifier) => {
                     })
                 }
                 if (couponsArray.length > 1) {
-                    //console.log('couponsArray > 1', couponsArray)
+                    console.log('couponsArray > 1', couponsArray)
 
                     resolve({
                         coupons: formatArray(couponsArray)

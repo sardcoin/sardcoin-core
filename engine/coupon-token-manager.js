@@ -109,7 +109,7 @@ exports.getTokenByIdCoupon = (coupon_id) => {
 };
 exports.getCouponsByTokenPackage = async (token) => {
 
-    //console.log('tokentoken', token)
+    console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -131,7 +131,7 @@ exports.getCouponsByTokenPackage = async (token) => {
 
 exports.getCouponsByTokenPackageNotConsumed = async (token) => {
 
-    //console.log('tokentoken', token)
+    console.log('tokentoken', token)
 
     return new Promise((resolve, reject) => {
         CouponToken.findAll({
@@ -219,9 +219,9 @@ exports.buyProducerTokensOfflineByToken = async (req, res) => {
 
 exports.pendingCouponToken = async function ( user_id, coupon_id, quantity) {
 
-    //console.log('user pendingCouponToken', user_id)
-    //console.log('coupon_id pendingCouponToken', coupon_id)
-    //console.log('coupon_id pendingCouponToken', quantity)
+    console.log('user pendingCouponToken', user_id)
+    console.log('coupon_id pendingCouponToken', coupon_id)
+    console.log('coupon_id pendingCouponToken', quantity)
 
     // se c'è già pending allora si azzera e si rifà
     try {
@@ -231,7 +231,7 @@ exports.pendingCouponToken = async function ( user_id, coupon_id, quantity) {
             {model: CouponToken}
         );
 
-        //console.log('risultato pendingCouponToken', result)
+        console.log('risultato pendingCouponToken', result)
         return result;
 
     } catch (e) {
@@ -241,8 +241,8 @@ exports.pendingCouponToken = async function ( user_id, coupon_id, quantity) {
 
 exports.removePendingCouponToken = async function ( user_id, coupon_id, quantity) {
 
-    //console.log('user removePendingCouponToken', user_id)
-    //console.log('coupon_id removePendingCouponToken', coupon_id)
+    console.log('user removePendingCouponToken', user_id)
+    console.log('coupon_id removePendingCouponToken', coupon_id)
     try {
         const result = await Sequelize.query('UPDATE `coupon_tokens` AS `CouponTokens` SET prepare = null  WHERE  consumer IS NULL ' +
             'AND coupon_id = :coupon_id AND prepare = :user_id AND package IS NUll  AND verifier IS NULL LIMIT :quantity ',
@@ -250,7 +250,7 @@ exports.removePendingCouponToken = async function ( user_id, coupon_id, quantity
             {model: CouponToken}
         );
 
-        //console.log('risultato removePendingCouponToken', result)
+        console.log('risultato removePendingCouponToken', result)
         return result;
 
     } catch (e) {
@@ -261,8 +261,8 @@ exports.removePendingCouponToken = async function ( user_id, coupon_id, quantity
 exports.isCouponsPendening = async function ( user_id, coupon_id, quantity) {
 
 
-    //console.log('user isCouponsPendening', user_id)
-    //console.log('coupon_id isCouponsPendening', coupon_id)
+    console.log('user isCouponsPendening', user_id)
+    console.log('coupon_id isCouponsPendening', coupon_id)
     try {
         const result = await  Sequelize.query(
             'SELECT * ' +
@@ -270,7 +270,7 @@ exports.isCouponsPendening = async function ( user_id, coupon_id, quantity) {
             {replacements: {coupon_id: coupon_id, user_id: user_id }, type: Sequelize.QueryTypes.SELECT},
             {model: CouponToken}
         );
-        //console.log('risultato isPackagePendening', result)
+        console.log('risultato isPackagePendening', result)
 
         if (result.length == quantity) {
             return true
