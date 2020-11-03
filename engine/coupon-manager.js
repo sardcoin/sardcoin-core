@@ -62,7 +62,8 @@ const createCoupon = async (req, res) => {
                         await internal_deleteCoupon(insertResult);
                         return res.status(HttpStatus.BAD_REQUEST).send({
                             error: true,
-                            message: 'It is not possible to add a broker authorized to use a package.'
+                            message: 'It is not possible to add a broker authorized to use a package.',
+                            toast: 'Non è possibile aggiungere un Broker'
                         });
                     } // The package cannot be transferred to another broker
                     for (let broker of data.brokers) {
@@ -103,6 +104,8 @@ const createCoupon = async (req, res) => {
                         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                             error: true,
                             message: 'Error creating the tokens.',
+                            toast: 'Errore creazione token'
+
                         });
                     }
                 }
@@ -117,13 +120,17 @@ const createCoupon = async (req, res) => {
                 return res.status(HttpStatus.CREATED).send({
                     created: true,
                     title: data.title,
-                    quantity: data.quantity
+                    quantity: data.quantity,
+                    toast: 'Il coupon è stato creato'
+
                 });
 
             } else {
                 return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                     error: true,
                     message: 'Error inserting the new coupon.',
+                    toast: 'Errore inserimento coupon, dati richiesti non validi'
+
                 });
             }
         }
@@ -131,6 +138,7 @@ const createCoupon = async (req, res) => {
             return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
                 error: true,
                 message: 'Error inserting the new coupon.',
+                toast: 'Errore inserimento coupon, date non valide'
             });
         }
     } catch (e) {
@@ -147,6 +155,8 @@ const createCoupon = async (req, res) => {
         return res.status(HttpStatus.INTERNAL_SERVER_ERROR).send({
             error: true,
             message: 'Error inserting the new coupon.',
+            toast: 'Errore inserimento coupon, errore interno di sistema'
+
         });
     }
 };
